@@ -461,7 +461,9 @@
       for (const it of filtered) {
         const b = document.createElement("button");
         b.className = "itembtn";
-        b.textContent = `${it.code || "(no code)"} — ${it.title || ""} [${it.status}]`;
+        const title = it.title || "(no title)";
+        const status = it.status || "no status";
+        b.textContent = `${title} (${status})`;
         b.onclick = () => selectItem(it.id);
         host.appendChild(b);
       }
