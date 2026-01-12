@@ -7,6 +7,7 @@
 
   <!-- Supabase JS via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     :root { --bg:#0b0e14; --fg:#e9effa; --muted:#a9b6c8; --card:#121826; --line:rgba(255,255,255,.12); }
@@ -119,6 +120,7 @@
         <div class="btnrow" style="margin-top:10px;">
           <button id="btnSave">Save changes</button>
           <button id="btnReload">Reload item</button>
+          <button id="btnExportPdf">Export PDF</button>
         </div>
         <div id="saveMsg" class="tiny" style="margin-top:10px;"></div>
 
@@ -202,6 +204,9 @@
           </div>
         </div>
 
+        <label>5 opmerkingen page 1 (remarks_1)</label>
+        <textarea id="remarks_1"></textarea>
+
         <div class="hr"></div>
         <h2 style="margin:0 0 8px; font-size:16px;">Page 2</h2>
 
@@ -245,6 +250,9 @@
         <label>11 tekst (text11)</label>
         <textarea id="text11"></textarea>
 
+        <label>11a opmerkingen page 2 (remarks_2)</label>
+        <textarea id="remarks_2"></textarea>
+
         <div class="hr"></div>
         <h2 style="margin:0 0 8px; font-size:16px;">Page 3</h2>
 
@@ -258,6 +266,9 @@
           <div></div>
         </div>
 
+        <label>13a opmerkingen page 3 (remarks_3)</label>
+        <textarea id="remarks_3"></textarea>
+
         <div class="hr"></div>
         <h2 style="margin:0 0 8px; font-size:16px;">Page 4</h2>
 
@@ -266,6 +277,9 @@
 
         <label>15 blz B tekst (page_b_text)</label>
         <textarea id="page_b_text"></textarea>
+
+        <label>15a opmerkingen page 4 (remarks_4)</label>
+        <textarea id="remarks_4"></textarea>
 
         <div class="hr"></div>
         <h2 style="margin:0 0 8px; font-size:16px;">Page 5</h2>
@@ -280,11 +294,17 @@
         <label>17 blz C tekst (page_c_text)</label>
         <textarea id="page_c_text"></textarea>
 
+        <label>17a opmerkingen page 5 (remarks_5)</label>
+        <textarea id="remarks_5"></textarea>
+
         <div class="hr"></div>
         <h2 style="margin:0 0 8px; font-size:16px;">Page 6</h2>
 
         <label>18 handleiding (handleiding_text)</label>
         <textarea id="handleiding_text"></textarea>
+
+        <label>19 opmerkingen page 6 (remarks_6)</label>
+        <textarea id="remarks_6"></textarea>
 
         <div class="hr"></div>
       </div>
@@ -492,14 +512,20 @@
       $("opdracht2_text").value = row.opdracht2_text || "";
       $("woord_text").value = row.woord_text || "";
       $("beschrijving_text").value = row.beschrijving_text || "";
+      $("remarks_1").value = row.remarks_1 || "";
       $("text11").value = row.text11 || "";
+      $("remarks_2").value = row.remarks_2 || "";
       $("page_a_title_letters").value = row.page_a_title_letters || "";
       $("page_a_text").value = row.page_a_text || "";
+      $("remarks_3").value = row.remarks_3 || "";
       $("page_b_title_letters").value = row.page_b_title_letters || "";
       $("page_b_text").value = row.page_b_text || "";
+      $("remarks_4").value = row.remarks_4 || "";
       $("page_c_title_letters").value = row.page_c_title_letters || "";
       $("page_c_text").value = row.page_c_text || "";
+      $("remarks_5").value = row.remarks_5 || "";
       $("handleiding_text").value = row.handleiding_text || "";
+      $("remarks_6").value = row.remarks_6 || "";
 
       // paths
       $("story_audio_path").value = row.story_audio_path || "";
@@ -554,18 +580,25 @@
           image1_path: $("image1_path").value.trim(),
           image2_path: $("image2_path").value.trim(),
 
+          remarks_1: $("remarks_1").value,
+
           text11: $("text11").value,
+          remarks_2: $("remarks_2").value,
 
           page_a_title_letters: $("page_a_title_letters").value,
           page_a_text: $("page_a_text").value,
+          remarks_3: $("remarks_3").value,
 
           page_b_title_letters: $("page_b_title_letters").value,
           page_b_text: $("page_b_text").value,
+          remarks_4: $("remarks_4").value,
 
           page_c_title_letters: $("page_c_title_letters").value,
           page_c_text: $("page_c_text").value,
+          remarks_5: $("remarks_5").value,
 
-          handleiding_text: $("handleiding_text").value
+          handleiding_text: $("handleiding_text").value,
+          remarks_6: $("remarks_6").value
         };
 
         // Only update if version matches what we loaded
@@ -596,6 +629,46 @@
       if (!currentItem) return;
       await selectItem(currentItem.id);
       msg($("saveMsg"), "Reloaded.");
+    }
+
+    async function exportPdf() {
+      if (!currentItem) return;
+      if (!window.html2pdf) {
+        msg($("saveMsg"), "PDF export library not loaded.", false);
+        return;
+      }
+
+      const filenameBase = ($("code").textContent || "mpop_item").trim().replace(/[^a-zA-Z0-9_-]+/g, "_");
+      const filename = `${filenameBase}.pdf`;
+      const editor = $("editor");
+      const content = editor.cloneNode(true);
+      const btnrow = content.querySelector(".btnrow");
+      if (btnrow) btnrow.remove();
+      const saveMsg = content.querySelector("#saveMsg");
+      if (saveMsg) saveMsg.remove();
+
+      const temp = document.createElement("div");
+      temp.style.position = "fixed";
+      temp.style.left = "-10000px";
+      temp.style.top = "0";
+      temp.appendChild(content);
+      document.body.appendChild(temp);
+
+      try {
+        await window.html2pdf()
+          .set({
+            margin: 10,
+            filename,
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+          })
+          .from(content)
+          .save();
+      } catch (e) {
+        msg($("saveMsg"), e.message || String(e), false);
+      } finally {
+        temp.remove();
+      }
     }
 
     // -----------------------------
@@ -802,6 +875,7 @@
 
     $("btnSave").onclick = saveItem;
     $("btnReload").onclick = reloadItem;
+    $("btnExportPdf").onclick = exportPdf;
 
     $("btnPlayStoryAudio").onclick = () => {
       try { toggleAudio($("btnPlayStoryAudio"), $("story_audio_path").value); }
