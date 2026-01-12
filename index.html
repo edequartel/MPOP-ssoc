@@ -31,6 +31,9 @@
     button:hover { background: rgba(255,255,255,.12); }
     .btnrow { display:flex; gap:8px; flex-wrap:wrap; }
     .btnrow button { width:auto; padding:10px 12px; }
+    .inlineRow { display:flex; gap:8px; align-items:center; }
+    .inlineRow input { flex:1; }
+    .inlineRow button { width:auto; padding:8px 10px; }
     .list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
     .itembtn { text-align:left; }
     .split { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
@@ -113,6 +116,11 @@
           <div class="pill">Version: <span id="version" class="ok mono"></span></div>
           <div class="pill">Updated: <span id="updatedAt" class="ok mono"></span></div>
         </div>
+        <div class="btnrow" style="margin-top:10px;">
+          <button id="btnSave">Save changes</button>
+          <button id="btnReload">Reload item</button>
+        </div>
+        <div id="saveMsg" class="tiny" style="margin-top:10px;"></div>
 
         <label>Title</label>
         <input id="title" />
@@ -131,14 +139,11 @@
             <label>1a verhaal tekst</label>
             <textarea id="story_text"></textarea>
 
-            <label>1b verhaal audio (upload to mpop-audio)</label>
-            <input id="story_audio_file" type="file" accept="audio/*" />
-            <div class="btnrow" style="margin-top:8px;">
-              <button id="btnUploadStoryAudio">Upload story audio</button>
-              <button id="btnLinkStoryAudio">Get signed link</button>
+            <label>1b verhaal audio path</label>
+            <div class="inlineRow">
+              <input id="story_audio_path" placeholder="/sounds/nl/stories/bal-001.mp3" />
+              <button id="btnPlayStoryAudio" disabled>Play</button>
             </div>
-            <div class="tiny mono" id="story_audio_path"></div>
-            <div class="tiny" id="story_audio_link"></div>
 
             <label>2a klankzuiver</label>
             <textarea id="klankzuiver_text"></textarea>
@@ -151,26 +156,20 @@
             <label>3a opdracht tekst</label>
             <textarea id="opdracht1_text"></textarea>
 
-            <label>3b opdracht audio</label>
-            <input id="opdracht1_audio_file" type="file" accept="audio/*" />
-            <div class="btnrow" style="margin-top:8px;">
-              <button id="btnUploadOpdracht1Audio">Upload opdracht 1 audio</button>
-              <button id="btnLinkOpdracht1Audio">Get signed link</button>
+            <label>3b opdracht audio path</label>
+            <div class="inlineRow">
+              <input id="opdracht1_audio_path" placeholder="/sounds/nl/opdracht/opdracht1.mp3" />
+              <button id="btnPlayOpdracht1Audio" disabled>Play</button>
             </div>
-            <div class="tiny mono" id="opdracht1_audio_path"></div>
-            <div class="tiny" id="opdracht1_audio_link"></div>
 
             <label>4a opdracht tekst</label>
             <textarea id="opdracht2_text"></textarea>
 
-            <label>4b opdracht audio</label>
-            <input id="opdracht2_audio_file" type="file" accept="audio/*" />
-            <div class="btnrow" style="margin-top:8px;">
-              <button id="btnUploadOpdracht2Audio">Upload opdracht 2 audio</button>
-              <button id="btnLinkOpdracht2Audio">Get signed link</button>
+            <label>4b opdracht audio path</label>
+            <div class="inlineRow">
+              <input id="opdracht2_audio_path" placeholder="/sounds/nl/opdracht/opdracht2.mp3" />
+              <button id="btnPlayOpdracht2Audio" disabled>Play</button>
             </div>
-            <div class="tiny mono" id="opdracht2_audio_path"></div>
-            <div class="tiny" id="opdracht2_audio_link"></div>
           </div>
         </div>
 
@@ -181,14 +180,11 @@
             <label>6a woord tekst</label>
             <input id="woord_text" />
 
-            <label>6b woord audio</label>
-            <input id="woord_audio_file" type="file" accept="audio/*" />
-            <div class="btnrow" style="margin-top:8px;">
-              <button id="btnUploadWoordAudio">Upload woord audio</button>
-              <button id="btnLinkWoordAudio">Get signed link</button>
+            <label>6b woord audio path</label>
+            <div class="inlineRow">
+              <input id="woord_audio_path" placeholder="/sounds/nl/woorden/woord.mp3" />
+              <button id="btnPlayWoordAudio" disabled>Play</button>
             </div>
-            <div class="tiny mono" id="woord_audio_path"></div>
-            <div class="tiny" id="woord_audio_link"></div>
 
             <label>7 afbeelding (upload to mpop-images)</label>
             <input id="image1_file" type="file" accept="image/*" />
@@ -204,14 +200,11 @@
             <label>8a beschrijving tekst</label>
             <textarea id="beschrijving_text"></textarea>
 
-            <label>8b beschrijving audio</label>
-            <input id="beschrijving_audio_file" type="file" accept="audio/*" />
-            <div class="btnrow" style="margin-top:8px;">
-              <button id="btnUploadBeschrijvingAudio">Upload beschrijving audio</button>
-              <button id="btnLinkBeschrijvingAudio">Get signed link</button>
+            <label>8b beschrijving audio path</label>
+            <div class="inlineRow">
+              <input id="beschrijving_audio_path" placeholder="/sounds/nl/beschrijving/beschrijving.mp3" />
+              <button id="btnPlayBeschrijvingAudio" disabled>Play</button>
             </div>
-            <div class="tiny mono" id="beschrijving_audio_path"></div>
-            <div class="tiny" id="beschrijving_audio_link"></div>
 
             <label>10 afbeelding</label>
             <input id="image2_file" type="file" accept="image/*" />
@@ -276,12 +269,6 @@
         <div class="list" id="soundsList" style="margin-top:10px;"></div>
 
         <div class="hr"></div>
-
-        <div class="btnrow">
-          <button id="btnSave">Save changes</button>
-          <button id="btnReload">Reload item</button>
-        </div>
-        <div id="saveMsg" class="tiny" style="margin-top:10px;"></div>
       </div>
     </div>
   </div>
@@ -296,6 +283,8 @@
     let sbConfigKey = "";
     let authRefreshRunning = false;
     let authListenerBound = false;
+    const audioPlayers = new Map();
+    const AUDIO_ENDPOINT = "https://www.tastenbraille.com/braillestudio";
 
     const $ = (id) => document.getElementById(id);
 
@@ -493,20 +482,20 @@
       $("handleiding_text").value = row.handleiding_text || "";
 
       // paths
-      $("story_audio_path").textContent = row.story_audio_path || "";
-      $("opdracht1_audio_path").textContent = row.opdracht1_audio_path || "";
-      $("opdracht2_audio_path").textContent = row.opdracht2_audio_path || "";
-      $("woord_audio_path").textContent = row.woord_audio_path || "";
-      $("beschrijving_audio_path").textContent = row.beschrijving_audio_path || "";
+      $("story_audio_path").value = row.story_audio_path || "";
+      $("opdracht1_audio_path").value = row.opdracht1_audio_path || "";
+      $("opdracht2_audio_path").value = row.opdracht2_audio_path || "";
+      $("woord_audio_path").value = row.woord_audio_path || "";
+      $("beschrijving_audio_path").value = row.beschrijving_audio_path || "";
       $("image1_path").textContent = row.image1_path || "";
       $("image2_path").textContent = row.image2_path || "";
 
-      // links
-      $("story_audio_link").innerHTML = "";
-      $("opdracht1_audio_link").innerHTML = "";
-      $("opdracht2_audio_link").innerHTML = "";
-      $("woord_audio_link").innerHTML = "";
-      $("beschrijving_audio_link").innerHTML = "";
+      setPlayButton("btnPlayStoryAudio", $("story_audio_path").value);
+      setPlayButton("btnPlayOpdracht1Audio", $("opdracht1_audio_path").value);
+      setPlayButton("btnPlayOpdracht2Audio", $("opdracht2_audio_path").value);
+      setPlayButton("btnPlayWoordAudio", $("woord_audio_path").value);
+      setPlayButton("btnPlayBeschrijvingAudio", $("beschrijving_audio_path").value);
+
       $("image1_link").innerHTML = "";
       $("image2_link").innerHTML = "";
     }
@@ -532,6 +521,12 @@
           woord_text: $("woord_text").value,
 
           beschrijving_text: $("beschrijving_text").value,
+
+          story_audio_path: $("story_audio_path").value.trim(),
+          opdracht1_audio_path: $("opdracht1_audio_path").value.trim(),
+          opdracht2_audio_path: $("opdracht2_audio_path").value.trim(),
+          woord_audio_path: $("woord_audio_path").value.trim(),
+          beschrijving_audio_path: $("beschrijving_audio_path").value.trim(),
 
           text11: $("text11").value,
 
@@ -575,6 +570,49 @@
       if (!currentItem) return;
       await selectItem(currentItem.id);
       msg($("saveMsg"), "Reloaded.");
+    }
+
+    // -----------------------------
+    // Audio playback (endpoint + path)
+    // -----------------------------
+    function buildAudioUrl(path) {
+      const trimmed = (path || "").trim();
+      if (!trimmed) return "";
+      if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+        return trimmed;
+      }
+      const base = AUDIO_ENDPOINT.replace(/\/+$/,"");
+      const suffix = trimmed.startsWith("/") ? trimmed : "/" + trimmed;
+      return base + suffix;
+    }
+
+    function setPlayButton(btnId, path) {
+      const btn = $(btnId);
+      btn.disabled = !path || !path.trim();
+      btn.textContent = "Play";
+    }
+
+    function wireAudioInput(inputId, btnId) {
+      const input = $(inputId);
+      input.addEventListener("input", () => setPlayButton(btnId, input.value));
+    }
+
+    function toggleAudio(btn, path) {
+      const url = buildAudioUrl(path);
+      if (!url) throw new Error("No audio path saved for this field yet.");
+      let player = audioPlayers.get(url);
+      if (!player) {
+        player = new Audio(url);
+        audioPlayers.set(url, player);
+        player.addEventListener("ended", () => { btn.textContent = "Play"; });
+      }
+      if (!player.paused) {
+        player.pause();
+        btn.textContent = "Play";
+        return;
+      }
+      btn.textContent = "Pause";
+      player.play();
     }
 
     // -----------------------------
@@ -764,28 +802,34 @@
     $("btnSave").onclick = saveItem;
     $("btnReload").onclick = reloadItem;
 
-    // Upload buttons -> update db path fields
-    $("btnUploadStoryAudio").onclick = async () => {
-      try { await uploadAndSetField({ bucket:"mpop-audio", fileInputId:"story_audio_file", dbField:"story_audio_path", defaultName:"story" }); }
+    $("btnPlayStoryAudio").onclick = () => {
+      try { toggleAudio($("btnPlayStoryAudio"), $("story_audio_path").value); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
-    $("btnUploadOpdracht1Audio").onclick = async () => {
-      try { await uploadAndSetField({ bucket:"mpop-audio", fileInputId:"opdracht1_audio_file", dbField:"opdracht1_audio_path", defaultName:"opdracht1" }); }
+    $("btnPlayOpdracht1Audio").onclick = () => {
+      try { toggleAudio($("btnPlayOpdracht1Audio"), $("opdracht1_audio_path").value); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
-    $("btnUploadOpdracht2Audio").onclick = async () => {
-      try { await uploadAndSetField({ bucket:"mpop-audio", fileInputId:"opdracht2_audio_file", dbField:"opdracht2_audio_path", defaultName:"opdracht2" }); }
+    $("btnPlayOpdracht2Audio").onclick = () => {
+      try { toggleAudio($("btnPlayOpdracht2Audio"), $("opdracht2_audio_path").value); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
-    $("btnUploadWoordAudio").onclick = async () => {
-      try { await uploadAndSetField({ bucket:"mpop-audio", fileInputId:"woord_audio_file", dbField:"woord_audio_path", defaultName:"woord" }); }
+    $("btnPlayWoordAudio").onclick = () => {
+      try { toggleAudio($("btnPlayWoordAudio"), $("woord_audio_path").value); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
-    $("btnUploadBeschrijvingAudio").onclick = async () => {
-      try { await uploadAndSetField({ bucket:"mpop-audio", fileInputId:"beschrijving_audio_file", dbField:"beschrijving_audio_path", defaultName:"beschrijving" }); }
+    $("btnPlayBeschrijvingAudio").onclick = () => {
+      try { toggleAudio($("btnPlayBeschrijvingAudio"), $("beschrijving_audio_path").value); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
 
+    wireAudioInput("story_audio_path", "btnPlayStoryAudio");
+    wireAudioInput("opdracht1_audio_path", "btnPlayOpdracht1Audio");
+    wireAudioInput("opdracht2_audio_path", "btnPlayOpdracht2Audio");
+    wireAudioInput("woord_audio_path", "btnPlayWoordAudio");
+    wireAudioInput("beschrijving_audio_path", "btnPlayBeschrijvingAudio");
+
+    // Upload buttons -> update db path fields
     $("btnUploadImage1").onclick = async () => {
       try { await uploadAndSetField({ bucket:"mpop-images", fileInputId:"image1_file", dbField:"image1_path", defaultName:"image1" }); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
@@ -796,27 +840,6 @@
     };
 
     // Link buttons (signed URLs)
-    $("btnLinkStoryAudio").onclick = async () => {
-      try { await linkForField({ bucket:"mpop-audio", dbField:"story_audio_path", outElId:"story_audio_link" }); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
-    $("btnLinkOpdracht1Audio").onclick = async () => {
-      try { await linkForField({ bucket:"mpop-audio", dbField:"opdracht1_audio_path", outElId:"opdracht1_audio_link" }); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
-    $("btnLinkOpdracht2Audio").onclick = async () => {
-      try { await linkForField({ bucket:"mpop-audio", dbField:"opdracht2_audio_path", outElId:"opdracht2_audio_link" }); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
-    $("btnLinkWoordAudio").onclick = async () => {
-      try { await linkForField({ bucket:"mpop-audio", dbField:"woord_audio_path", outElId:"woord_audio_link" }); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
-    $("btnLinkBeschrijvingAudio").onclick = async () => {
-      try { await linkForField({ bucket:"mpop-audio", dbField:"beschrijving_audio_path", outElId:"beschrijving_audio_link" }); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
-
     $("btnLinkImage1").onclick = async () => {
       try { await linkForField({ bucket:"mpop-images", dbField:"image1_path", outElId:"image1_link" }); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
