@@ -122,10 +122,10 @@
         </div>
         <div id="saveMsg" class="tiny" style="margin-top:10px;"></div>
 
-        <label>Title</label>
+        <label>Title (title)</label>
         <input id="title" />
 
-        <label>Status</label>
+        <label>Status (status)</label>
         <select id="statusSelect">
           <option value="draft">draft</option>
           <option value="in_review">in_review</option>
@@ -137,10 +137,10 @@
 
         <div class="split">
           <div>
-            <label>1a verhaal tekst</label>
+            <label>1a verhaal tekst (story_text)</label>
             <textarea id="story_text"></textarea>
 
-            <label>1b verhaal audio path</label>
+            <label>1b verhaal audio path (story_audio_path)</label>
             <div class="inlineRow">
               <input id="story_audio_path" placeholder="/sounds/nl/stories/bal-001.mp3" />
               <button id="btnPlayStoryAudio" disabled>Play</button>
@@ -148,10 +148,10 @@
           </div>
 
           <div>
-            <label>Beschrijving object</label>
+            <label>Beschrijving object (beschrijving_object)</label>
             <textarea id="beschrijving_object"></textarea>
 
-            <label>Audio object path</label>
+            <label>Audio object path (audio_object)</label>
             <div class="inlineRow">
               <input id="audio_object" placeholder="/sounds/nl/objects/object.mp3" />
               <button id="btnPlayAudioObject" disabled>Play</button>
@@ -161,24 +161,29 @@
 
         <div class="split">
           <div>
-            <label>7 afbeelding path</label>
+            <label>7 afbeelding path (image1_path)</label>
             <input id="image1_path" placeholder="/resources/images/bal.png" />
+            <img id="image1_preview" alt="image preview" style="display:none; max-width:100%; border-radius:8px; margin-top:8px; border:1px solid var(--line);" />
           </div>
           <div>
-            <label>2a klankzuiver</label>
+            <label>2a klankzuiver (klankzuiver_text)</label>
             <textarea id="klankzuiver_text"></textarea>
 
-            <label>2a klankzuiver letters</label>
-            <input id="klankzuiver_letters" />
+            <label>2a klankzuiver audio path (klankzuiver_audio_path)</label>
+            <div class="inlineRow">
+              <input id="klankzuiver_letters" placeholder="/sounds/nl/klankzuiver/klankzuiver.mp3" />
+              <button id="btnPlayKlankzuiverAudio" disabled>Play</button>
+            </div>
+
           </div>
         </div>
 
         <div class="split">
           <div>
-            <label>3a opdracht tekst</label>
+            <label>3a opdracht tekst (opdracht1_text)</label>
             <textarea id="opdracht1_text"></textarea>
 
-            <label>3b opdracht audio path</label>
+            <label>3b opdracht audio path (opdracht1_audio_path)</label>
             <div class="inlineRow">
               <input id="opdracht1_audio_path" placeholder="/sounds/nl/opdracht/opdracht1.mp3" />
               <button id="btnPlayOpdracht1Audio" disabled>Play</button>
@@ -186,10 +191,10 @@
           </div>
 
           <div>
-            <label>4a opdracht tekst</label>
+            <label>4a opdracht tekst (opdracht2_text)</label>
             <textarea id="opdracht2_text"></textarea>
 
-            <label>4b opdracht audio path</label>
+            <label>4b opdracht audio path (opdracht2_audio_path)</label>
             <div class="inlineRow">
               <input id="opdracht2_audio_path" placeholder="/sounds/nl/opdracht/opdracht2.mp3" />
               <button id="btnPlayOpdracht2Audio" disabled>Play</button>
@@ -202,39 +207,42 @@
 
         <div class="split">
           <div>
-            <label>6a woord tekst</label>
-            <input id="woord_text" />
-
-            <label>6b woord audio path</label>
-            <div class="inlineRow">
-              <input id="woord_audio_path" placeholder="/sounds/nl/woorden/woord.mp3" />
-              <button id="btnPlayWoordAudio" disabled>Play</button>
-            </div>
-
-          </div>
-
-          <div>
-            <label>8a beschrijving tekst</label>
+            <label>8a beschrijving tekst (beschrijving_text)</label>
             <textarea id="beschrijving_text"></textarea>
 
-            <label>8b beschrijving audio path</label>
+            <label>8b beschrijving audio path (beschrijving_audio_path)</label>
             <div class="inlineRow">
               <input id="beschrijving_audio_path" placeholder="/sounds/nl/beschrijving/beschrijving.mp3" />
               <button id="btnPlayBeschrijvingAudio" disabled>Play</button>
             </div>
+          </div>
+          <div>
+            <label>6a woord tekst (woord_text)</label>
+            <input id="woord_text" />
 
-            <label>10 afbeelding</label>
-            <input id="image2_file" type="file" accept="image/*" />
-            <div class="btnrow" style="margin-top:8px;">
-              <button id="btnUploadImage2">Upload image 2</button>
-              <button id="btnLinkImage2">Get signed link</button>
+            <label>6b woord audio path (woord_audio_path)</label>
+            <div class="inlineRow">
+              <input id="woord_audio_path" placeholder="/sounds/nl/woorden/woord.mp3" />
+              <button id="btnPlayWoordAudio" disabled>Play</button>
             </div>
-            <div class="tiny mono" id="image2_path"></div>
-            <div class="tiny" id="image2_link"></div>
           </div>
         </div>
 
-        <label>11 tekst</label>
+        <div class="list" id="soundsList" style="margin-top:10px;"></div>
+        <div id="soundsMsg" class="tiny" style="margin-top:8px;"></div>
+
+        <div class="split">
+          <div>
+            <label>10 afbeelding (image2_path)</label>
+            <input id="image2_path" placeholder="/resources/images/bal.png" />
+            <img id="image2_preview" alt="image preview" style="display:none; max-width:100%; border-radius:8px; margin-top:8px; border:1px solid var(--line);" />
+          </div>
+
+          <div>
+          </div>
+        </div>
+
+        <label>11 tekst (text11)</label>
         <textarea id="text11"></textarea>
 
         <div class="hr"></div>
@@ -242,13 +250,13 @@
 
         <div class="split">
           <div>
-            <label>12 blz A titel woord letters</label>
+            <label>12 blz A titel woord letters (page_a_title_letters)</label>
             <input id="page_a_title_letters" />
-            <label>13 blz A tekst</label>
+            <label>13 blz A tekst (page_a_text)</label>
             <textarea id="page_a_text"></textarea>
           </div>
           <div>
-            <label>14 blz B titel woord letters</label>
+            <label>14 blz B titel woord letters (page_b_title_letters)</label>
             <input id="page_b_title_letters" />
           </div>
         </div>
@@ -256,41 +264,21 @@
         <div class="hr"></div>
         <h2 style="margin:0 0 8px; font-size:16px;">Page 4</h2>
 
-        <label>15 blz B tekst</label>
+        <label>15 blz B tekst (page_b_text)</label>
         <textarea id="page_b_text"></textarea>
 
         <div class="split">
           <div>
-            <label>16 blz C titel woord letters</label>
+            <label>16 blz C titel woord letters (page_c_title_letters)</label>
             <input id="page_c_title_letters" />
           </div>
           <div></div>
         </div>
-        <label>17 blz C tekst</label>
+        <label>17 blz C tekst (page_c_text)</label>
         <textarea id="page_c_text"></textarea>
 
-        <label>18 handleiding</label>
+        <label>18 handleiding (handleiding_text)</label>
         <textarea id="handleiding_text"></textarea>
-
-        <div class="hr"></div>
-
-        <h2 style="margin:0 0 8px; font-size:16px;">4) Geluiden (table: mpop_sounds)</h2>
-        <div class="split">
-          <div>
-            <label>Label</label>
-            <input id="sound_label" placeholder="e.g., intro / bird / door" />
-          </div>
-          <div>
-            <label>Audio file</label>
-            <input id="sound_file" type="file" accept="audio/*" />
-          </div>
-        </div>
-        <div class="btnrow" style="margin-top:10px;">
-          <button id="btnAddSound">Upload + add sound</button>
-          <button id="btnRefreshSounds">Refresh sounds</button>
-        </div>
-        <div id="soundsMsg" class="tiny" style="margin-top:8px;"></div>
-        <div class="list" id="soundsList" style="margin-top:10px;"></div>
 
         <div class="hr"></div>
       </div>
@@ -493,7 +481,7 @@
       $("beschrijving_object").value = row.beschrijving_object || "";
       $("audio_object").value = row.audio_object || "";
       $("klankzuiver_text").value = row.klankzuiver_text || "";
-      $("klankzuiver_letters").value = row.klankzuiver_letters || "";
+      $("klankzuiver_letters").value = row.klankzuiver_audio_path || "";
       $("opdracht1_text").value = row.opdracht1_text || "";
       $("opdracht2_text").value = row.opdracht2_text || "";
       $("woord_text").value = row.woord_text || "";
@@ -514,7 +502,7 @@
       $("woord_audio_path").value = row.woord_audio_path || "";
       $("beschrijving_audio_path").value = row.beschrijving_audio_path || "";
       $("image1_path").value = row.image1_path || "";
-      $("image2_path").textContent = row.image2_path || "";
+      $("image2_path").value = row.image2_path || "";
 
       setPlayButton("btnPlayStoryAudio", $("story_audio_path").value);
       setPlayButton("btnPlayAudioObject", $("audio_object").value);
@@ -522,8 +510,11 @@
       setPlayButton("btnPlayOpdracht2Audio", $("opdracht2_audio_path").value);
       setPlayButton("btnPlayWoordAudio", $("woord_audio_path").value);
       setPlayButton("btnPlayBeschrijvingAudio", $("beschrijving_audio_path").value);
+      setPlayButton("btnPlayKlankzuiverAudio", $("klankzuiver_letters").value);
+      updateImagePreview("image1_path", "image1_preview");
+      updateImagePreview("image2_path", "image2_preview");
 
-      $("image2_link").innerHTML = "";
+      updateImage2Preview();
     }
 
     // -----------------------------
@@ -541,7 +532,7 @@
           beschrijving_object: $("beschrijving_object").value.trim(),
           audio_object: $("audio_object").value.trim(),
           klankzuiver_text: $("klankzuiver_text").value,
-          klankzuiver_letters: $("klankzuiver_letters").value,
+          klankzuiver_audio_path: $("klankzuiver_letters").value.trim(),
 
           opdracht1_text: $("opdracht1_text").value,
           opdracht2_text: $("opdracht2_text").value,
@@ -556,6 +547,7 @@
           woord_audio_path: $("woord_audio_path").value.trim(),
           beschrijving_audio_path: $("beschrijving_audio_path").value.trim(),
           image1_path: $("image1_path").value.trim(),
+          image2_path: $("image2_path").value.trim(),
 
           text11: $("text11").value,
 
@@ -613,6 +605,24 @@
       const base = AUDIO_ENDPOINT.replace(/\/+$/,"");
       const suffix = trimmed.startsWith("/") ? trimmed : "/" + trimmed;
       return base + suffix;
+    }
+
+    function buildImageUrl(path) {
+      return buildAudioUrl(path);
+    }
+
+    function updateImagePreview(inputId, imgId) {
+      const img = $(imgId);
+      const input = $(inputId);
+      const path = (input.value || "").trim() || input.placeholder || "";
+      const url = buildImageUrl(path);
+      if (!url) {
+        img.style.display = "none";
+        img.removeAttribute("src");
+        return;
+      }
+      img.src = url;
+      img.style.display = "block";
     }
 
     function setPlayButton(btnId, path) {
@@ -723,7 +733,7 @@
 
       sounds = data || [];
       renderSounds();
-      msg($("soundsMsg"), `Loaded ${sounds.length} sound(s).`);
+        msg($("soundsMsg"), `Loaded ${sounds.length} sound(s).`);
     }
 
     function renderSounds() {
@@ -747,69 +757,26 @@
             <div class="pill">Label: <span class="ok mono">${escapeHtml(s.label || "")}</span></div>
             <div class="pill">Order: <span class="ok mono">${escapeHtml(String(s.sort_order ?? 0))}</span></div>
           </div>
-          <div class="tiny mono" style="margin-top:6px;">${escapeHtml(s.audio_path || "")}</div>
-          <div class="btnrow" style="margin-top:8px;">
-            <button data-id="${s.id}" class="btnSoundLink">Get signed link</button>
+          <label style="margin-top:8px;">Audio path (audio_path)</label>
+          <div class="inlineRow">
+            <input value="${escapeHtml(s.audio_path || "")}" readonly />
+            <button data-id="${s.id}" class="btnSoundPlay" ${s.audio_path ? "" : "disabled"}>Play</button>
           </div>
-          <div class="tiny" id="sound_link_${s.id}"></div>
         `;
         host.appendChild(wrap);
       }
 
-      for (const btn of document.querySelectorAll(".btnSoundLink")) {
+      for (const btn of document.querySelectorAll(".btnSoundPlay")) {
         btn.onclick = async () => {
           try {
             const id = btn.getAttribute("data-id");
             const sound = sounds.find(x => x.id === id);
             if (!sound?.audio_path) throw new Error("No audio_path.");
-            const url = await signedLink("mpop-audio", sound.audio_path, 3600);
-            const el = document.getElementById("sound_link_" + id);
-            el.innerHTML = `<a href="${url}" target="_blank" rel="noreferrer">Open (valid 1 hour)</a>`;
+            toggleAudio(btn, sound.audio_path);
           } catch (e) {
             msg($("soundsMsg"), e.message || String(e), false);
           }
         };
-      }
-    }
-
-    async function addSound() {
-      if (!currentItem) return;
-      try {
-        msg($("soundsMsg"), "Uploading sound...");
-        const code = mustHaveCode();
-        const label = $("sound_label").value.trim() || "sound";
-        const file = $("sound_file").files?.[0];
-        if (!file) throw new Error("Select an audio file.");
-
-        const ext = (file.name.split(".").pop() || "").toLowerCase();
-        const safeExt = ext ? "." + ext : "";
-
-        // Path: code/sounds/<label>-<timestamp>.ext
-        const stamp = new Date().toISOString().replaceAll(":","").replaceAll(".","").replaceAll("-","");
-        const safeLabel = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-        const path = `${code}/sounds/${safeLabel}-${stamp}${safeExt}`;
-
-        await uploadToBucket("mpop-audio", path, file);
-
-        // Insert sound row
-        const nextOrder = (sounds[sounds.length - 1]?.sort_order ?? -1) + 1;
-        const { error } = await sb
-          .from("mpop_sounds")
-          .insert({
-            mpop_item_id: currentItem.id,
-            label,
-            audio_path: path,
-            sort_order: nextOrder
-          });
-
-        if (error) throw error;
-
-        $("sound_label").value = "";
-        $("sound_file").value = "";
-        await loadSounds();
-        msg($("soundsMsg"), "Sound added.");
-      } catch (e) {
-        msg($("soundsMsg"), e.message || String(e), false);
       }
     }
 
@@ -839,6 +806,10 @@
       try { toggleAudio($("btnPlayAudioObject"), $("audio_object").value); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
+    $("btnPlayKlankzuiverAudio").onclick = () => {
+      try { toggleAudio($("btnPlayKlankzuiverAudio"), $("klankzuiver_letters").value); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
     $("btnPlayOpdracht1Audio").onclick = () => {
       try { toggleAudio($("btnPlayOpdracht1Audio"), $("opdracht1_audio_path").value); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
@@ -858,26 +829,20 @@
 
     wireAudioInput("story_audio_path", "btnPlayStoryAudio");
     wireAudioInput("audio_object", "btnPlayAudioObject");
+    wireAudioInput("klankzuiver_letters", "btnPlayKlankzuiverAudio");
     wireAudioInput("opdracht1_audio_path", "btnPlayOpdracht1Audio");
     wireAudioInput("opdracht2_audio_path", "btnPlayOpdracht2Audio");
     wireAudioInput("woord_audio_path", "btnPlayWoordAudio");
     wireAudioInput("beschrijving_audio_path", "btnPlayBeschrijvingAudio");
+    $("image1_path").addEventListener("input", () => updateImagePreview("image1_path", "image1_preview"));
+    $("image2_path").addEventListener("input", () => updateImagePreview("image2_path", "image2_preview"));
 
     // Upload buttons -> update db path fields
-    $("btnUploadImage2").onclick = async () => {
-      try { await uploadAndSetField({ bucket:"mpop-images", fileInputId:"image2_file", dbField:"image2_path", defaultName:"image2" }); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
 
     // Link buttons (signed URLs)
-    $("btnLinkImage2").onclick = async () => {
-      try { await linkForField({ bucket:"mpop-images", dbField:"image2_path", outElId:"image2_link" }); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
 
     // Sounds
-    $("btnAddSound").onclick = addSound;
-    $("btnRefreshSounds").onclick = loadSounds;
+    // no add/refresh buttons in UI; keep loadSounds for selection changes
 
     // -----------------------------
     // Boot: restore from localStorage (optional convenience)
