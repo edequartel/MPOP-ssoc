@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>mPOP SSoC Editor (Supabase)</title>
+
+  <!-- Supabase JS via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root { --bg:#0b0e14; --fg:#e9effa; --muted:#a9b6c8; --card:#121826; --line:rgba(255,255,255,.12); }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--fg); margin:16px; }
+    h1 { font-size:20px; margin:0 0 10px; }
+    .row { display:grid; grid-template-columns: 360px 1fr; gap:12px; align-items:start; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
+    .muted { color:var(--muted); font-size:13px; line-height:1.4; }
+    label { display:block; font-size:13px; color:var(--muted); margin:10px 0 6px; }
+    input, textarea, select, button {
+      width:100%;
+      box-sizing:border-box;
+      border-radius:10px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color:var(--fg);
+      padding:10px;
+      font-size:14px;
+    }
+    textarea { min-height:80px; resize:vertical; }
+    button { cursor:pointer; background: rgba(255,255,255,.08); }
+    button:hover { background: rgba(255,255,255,.12); }
+    .btnrow { display:flex; gap:8px; flex-wrap:wrap; }
+    .btnrow button { width:auto; padding:10px 12px; }
+    .list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+    .itembtn { text-align:left; }
+    .split { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    .kpi { display:flex; gap:10px; flex-wrap:wrap; }
+    .pill { border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-size:12px; color:var(--muted); }
+    .ok { color:#b7f7c1; }
+    .err { color:#ffb4b4; }
+    .hr { height:1px; background:var(--line); margin:10px 0; }
+    .tiny { font-size:12px; color:var(--muted); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  </style>
+</head>
+
+<body>
+  <h1>mPOP SSoC Editor</h1>
+  <div class="muted">
+    Single-file HTML editor for your Supabase tables <span class="mono">mpop_items</span> and <span class="mono">mpop_sounds</span>.
+    Uses Supabase Auth + RLS as the security boundary.
+  </div>
+
+  <div class="hr"></div>
+
+  <div class="row">
+    <!-- LEFT: Auth + List -->
+    <div class="card">
+      <h2 style="margin:0 0 8px; font-size:16px;">1) Connect & Sign in</h2>
+
+      <label>Supabase URL</label>
+      <input id="sbUrl" placeholder="https://xxxx.supabase.co" />
+
+      <label>Supabase anon key</label>
+      <textarea id="sbAnon" placeholder="Your publishable/anon key"></textarea>
+
+      <div class="hr"></div>
+
+      <div id="authLoggedOut">
+        <label>Email</label>
+        <input id="email" type="email" placeholder="name@school.nl" />
+
+        <label>Password</label>
+        <input id="password" type="password" placeholder="••••••••" />
+
+        <div class="btnrow" style="margin-top:10px;">
+          <button id="btnSignIn">Sign in</button>
+          <button id="btnSignUp">Sign up</button>
+        </div>
+        <div id="authMsg" class="tiny" style="margin-top:10px;"></div>
+      </div>
+
+      <div id="authLoggedIn" style="display:none;">
+        <div class="kpi">
+          <div class="pill">Signed in: <span id="userEmail" class="ok"></span></div>
+          <div class="pill">Role: <span id="userRole" class="ok"></span></div>
+        </div>
+        <div class="btnrow" style="margin-top:10px;">
+          <button id="btnRefresh">Refresh list</button>
+          <button id="btnSignOut">Sign out</button>
+        </div>
+        <div id="listMsg" class="tiny" style="margin-top:10px;"></div>
+
+        <div class="hr"></div>
+
+        <h2 style="margin:0 0 8px; font-size:16px;">2) Select an mPOP item</h2>
+        <label>Search</label>
+        <input id="search" placeholder="type code/title (e.g., bal-001)" />
+
+        <div class="list" id="itemsList"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Editor -->
+    <div class="card">
+      <h2 style="margin:0 0 8px; font-size:16px;">3) Edit item</h2>
+      <div id="editorHint" class="muted">Sign in and select an item to edit.</div>
+
+      <div id="editor" style="display:none;">
+        <div class="kpi">
+          <div class="pill">Code: <span id="code" class="ok mono"></span></div>
+          <div class="pill">Status: <span id="status" class="ok mono"></span></div>
+          <div class="pill">Version: <span id="version" class="ok mono"></span></div>
+          <div class="pill">Updated: <span id="updatedAt" class="ok mono"></span></div>
+        </div>
+
+        <label>Title</label>
+        <input id="title" />
+
+        <label>Status</label>
+        <select id="statusSelect">
+          <option value="draft">draft</option>
+          <option value="in_review">in_review</option>
+          <option value="approved">approved</option>
+        </select>
+
+        <div class="hr"></div>
+
+        <div class="split">
+          <div>
+            <label>1a verhaal tekst</label>
+            <textarea id="story_text"></textarea>
+
+            <label>1b verhaal audio (upload to mpop-audio)</label>
+            <input id="story_audio_file" type="file" accept="audio/*" />
+            <div class="btnrow" style="margin-top:8px;">
+              <button id="btnUploadStoryAudio">Upload story audio</button>
+              <button id="btnLinkStoryAudio">Get signed link</button>
+            </div>
+            <div class="tiny mono" id="story_audio_path"></div>
+            <div class="tiny" id="story_audio_link"></div>
+
+            <label>2a klankzuiver</label>
+            <textarea id="klankzuiver_text"></textarea>
+
+            <label>2a klankzuiver letters</label>
+            <input id="klankzuiver_letters" />
+          </div>
+
+          <div>
+            <label>3a opdracht tekst</label>
+            <textarea id="opdracht1_text"></textarea>
+
+            <label>3b opdracht audio</label>
+            <input id="opdracht1_audio_file" type="file" accept="audio/*" />
+            <div class="btnrow" style="margin-top:8px;">
+              <button id="btnUploadOpdracht1Audio">Upload opdracht 1 audio</button>
+              <button id="btnLinkOpdracht1Audio">Get signed link</button>
+            </div>
+            <div class="tiny mono" id="opdracht1_audio_path"></div>
+            <div class="tiny" id="opdracht1_audio_link"></div>
+
+            <label>4a opdracht tekst</label>
+            <textarea id="opdracht2_text"></textarea>
+
+            <label>4b opdracht audio</label>
+            <input id="opdracht2_audio_file" type="file" accept="audio/*" />
+            <div class="btnrow" style="margin-top:8px;">
+              <button id="btnUploadOpdracht2Audio">Upload opdracht 2 audio</button>
+              <button id="btnLinkOpdracht2Audio">Get signed link</button>
+            </div>
+            <div class="tiny mono" id="opdracht2_audio_path"></div>
+            <div class="tiny" id="opdracht2_audio_link"></div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="split">
+          <div>
+            <label>6a woord tekst</label>
+            <input id="woord_text" />
+
+            <label>6b woord audio</label>
+            <input id="woord_audio_file" type="file" accept="audio/*" />
+            <div class="btnrow" style="margin-top:8px;">
+              <button id="btnUploadWoordAudio">Upload woord audio</button>
+              <button id="btnLinkWoordAudio">Get signed link</button>
+            </div>
+            <div class="tiny mono" id="woord_audio_path"></div>
+            <div class="tiny" id="woord_audio_link"></div>
+
+            <label>7 afbeelding (upload to mpop-images)</label>
+            <input id="image1_file" type="file" accept="image/*" />
+            <div class="btnrow" style="margin-top:8px;">
+              <button id="btnUploadImage1">Upload image 1</button>
+              <button id="btnLinkImage1">Get signed link</button>
+            </div>
+            <div class="tiny mono" id="image1_path"></div>
+            <div class="tiny" id="image1_link"></div>
+          </div>
+
+          <div>
+            <label>8a beschrijving tekst</label>
+            <textarea id="beschrijving_text"></textarea>
+
+            <label>8b beschrijving audio</label>
+            <input id="beschrijving_audio_file" type="file" accept="audio/*" />
+            <div class="btnrow" style="margin-top:8px;">
+              <button id="btnUploadBeschrijvingAudio">Upload beschrijving audio</button>
+              <button id="btnLinkBeschrijvingAudio">Get signed link</button>
+            </div>
+            <div class="tiny mono" id="beschrijving_audio_path"></div>
+            <div class="tiny" id="beschrijving_audio_link"></div>
+
+            <label>10 afbeelding</label>
+            <input id="image2_file" type="file" accept="image/*" />
+            <div class="btnrow" style="margin-top:8px;">
+              <button id="btnUploadImage2">Upload image 2</button>
+              <button id="btnLinkImage2">Get signed link</button>
+            </div>
+            <div class="tiny mono" id="image2_path"></div>
+            <div class="tiny" id="image2_link"></div>
+          </div>
+        </div>
+
+        <label>11 tekst</label>
+        <textarea id="text11"></textarea>
+
+        <div class="split">
+          <div>
+            <label>12 blz A titel woord letters</label>
+            <input id="page_a_title_letters" />
+            <label>13 blz A tekst</label>
+            <textarea id="page_a_text"></textarea>
+          </div>
+          <div>
+            <label>14 blz B titel woord letters</label>
+            <input id="page_b_title_letters" />
+            <label>15 blz B tekst</label>
+            <textarea id="page_b_text"></textarea>
+          </div>
+        </div>
+
+        <div class="split">
+          <div>
+            <label>16 blz C titel woord letters</label>
+            <input id="page_c_title_letters" />
+          </div>
+          <div></div>
+        </div>
+        <label>17 blz C tekst</label>
+        <textarea id="page_c_text"></textarea>
+
+        <label>18 handleiding</label>
+        <textarea id="handleiding_text"></textarea>
+
+        <div class="hr"></div>
+
+        <h2 style="margin:0 0 8px; font-size:16px;">4) Geluiden (table: mpop_sounds)</h2>
+        <div class="split">
+          <div>
+            <label>Label</label>
+            <input id="sound_label" placeholder="e.g., intro / bird / door" />
+          </div>
+          <div>
+            <label>Audio file</label>
+            <input id="sound_file" type="file" accept="audio/*" />
+          </div>
+        </div>
+        <div class="btnrow" style="margin-top:10px;">
+          <button id="btnAddSound">Upload + add sound</button>
+          <button id="btnRefreshSounds">Refresh sounds</button>
+        </div>
+        <div id="soundsMsg" class="tiny" style="margin-top:8px;"></div>
+        <div class="list" id="soundsList" style="margin-top:10px;"></div>
+
+        <div class="hr"></div>
+
+        <div class="btnrow">
+          <button id="btnSave">Save changes</button>
+          <button id="btnReload">Reload item</button>
+        </div>
+        <div id="saveMsg" class="tiny" style="margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // -----------------------------
+    // Supabase client + state
+    // -----------------------------
+    let sb = null;
+    let currentItem = null; // full row from mpop_items
+    let sounds = [];
+
+    const $ = (id) => document.getElementById(id);
+
+    function msg(el, text, ok=true) {
+      el.innerHTML = text ? `<span class="${ok ? 'ok' : 'err'}">${escapeHtml(text)}</span>` : '';
+    }
+    function escapeHtml(s) {
+      return (s ?? '').toString()
+        .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+        .replaceAll('"','&quot;').replaceAll("'","&#039;");
+    }
+
+    function ensureClient() {
+      const url = $("sbUrl").value.trim();
+      const key = $("sbAnon").value.trim();
+      if (!url || !key) throw new Error("Please provide Supabase URL and anon key.");
+      if (!window.supabase || !window.supabase.createClient) {
+        throw new Error("Supabase JS not loaded. Check the CDN script tag.");
+      }
+      sb = window.supabase.createClient(url, key);
+      return sb;
+    }
+
+    // -----------------------------
+    // Auth
+    // -----------------------------
+    async function refreshAuthUI() {
+      if (!sb) return;
+      const { data: { session } } = await sb.auth.getSession();
+      const loggedIn = !!session?.user;
+      $("authLoggedOut").style.display = loggedIn ? "none" : "block";
+      $("authLoggedIn").style.display  = loggedIn ? "block" : "none";
+
+      if (loggedIn) {
+        $("userEmail").textContent = session.user.email || "(no email)";
+
+        // Fetch role from profiles (requires your RLS policy)
+        const { data: prof, error } = await sb
+          .from("profiles")
+          .select("role, display_name")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        $("userRole").textContent = error ? "unknown" : (prof?.role || "unknown");
+
+        await loadItems();
+      } else {
+        $("itemsList").innerHTML = "";
+        hideEditor();
+      }
+    }
+
+    async function signIn() {
+      try {
+        ensureClient();
+        msg($("authMsg"), "");
+        const email = $("email").value.trim();
+        const password = $("password").value;
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        msg($("authMsg"), "Signed in.");
+        await refreshAuthUI();
+      } catch (e) {
+        msg($("authMsg"), e.message || String(e), false);
+      }
+    }
+
+    async function signUp() {
+      try {
+        ensureClient();
+        msg($("authMsg"), "");
+        const email = $("email").value.trim();
+        const password = $("password").value;
+        const { error } = await sb.auth.signUp({ email, password });
+        if (error) throw error;
+        msg($("authMsg"), "Sign-up OK. If email confirmation is enabled, confirm your email before signing in.");
+      } catch (e) {
+        msg($("authMsg"), e.message || String(e), false);
+      }
+    }
+
+    async function signOut() {
+      try {
+        msg($("listMsg"), "");
+        await sb.auth.signOut();
+        await refreshAuthUI();
+      } catch (e) {
+        msg($("listMsg"), e.message || String(e), false);
+      }
+    }
+
+    // -----------------------------
+    // Items list + selection
+    // -----------------------------
+    async function loadItems() {
+      try {
+        msg($("listMsg"), "Loading...");
+        const { data, error } = await sb
+          .from("mpop_items")
+          .select("id, code, title, status, updated_at, version")
+          .order("code", { ascending: true });
+
+        if (error) throw error;
+
+        renderItems(data || []);
+        msg($("listMsg"), `Loaded ${data?.length || 0} items.`);
+      } catch (e) {
+        msg($("listMsg"), e.message || String(e), false);
+      }
+    }
+
+    function renderItems(items) {
+      const q = $("search").value.trim().toLowerCase();
+      const filtered = !q ? items : items.filter(x =>
+        (x.code || "").toLowerCase().includes(q) ||
+        (x.title || "").toLowerCase().includes(q)
+      );
+
+      const host = $("itemsList");
+      host.innerHTML = "";
+
+      for (const it of filtered) {
+        const b = document.createElement("button");
+        b.className = "itembtn";
+        b.textContent = `${it.code || "(no code)"} — ${it.title || ""} [${it.status}]`;
+        b.onclick = () => selectItem(it.id);
+        host.appendChild(b);
+      }
+    }
+
+    async function selectItem(id) {
+      try {
+        msg($("saveMsg"), "");
+        const { data, error } = await sb
+          .from("mpop_items")
+          .select("*")
+          .eq("id", id)
+          .single();
+        if (error) throw error;
+
+        currentItem = data;
+        showEditor(data);
+        await loadSounds();
+      } catch (e) {
+        msg($("saveMsg"), e.message || String(e), false);
+      }
+    }
+
+    function hideEditor() {
+      $("editorHint").style.display = "block";
+      $("editor").style.display = "none";
+      currentItem = null;
+    }
+
+    function showEditor(row) {
+      $("editorHint").style.display = "none";
+      $("editor").style.display = "block";
+
+      $("code").textContent = row.code || "";
+      $("status").textContent = row.status || "";
+      $("version").textContent = String(row.version ?? "");
+      $("updatedAt").textContent = row.updated_at || "";
+
+      $("title").value = row.title || "";
+      $("statusSelect").value = row.status || "draft";
+
+      $("story_text").value = row.story_text || "";
+      $("klankzuiver_text").value = row.klankzuiver_text || "";
+      $("klankzuiver_letters").value = row.klankzuiver_letters || "";
+      $("opdracht1_text").value = row.opdracht1_text || "";
+      $("opdracht2_text").value = row.opdracht2_text || "";
+      $("woord_text").value = row.woord_text || "";
+      $("beschrijving_text").value = row.beschrijving_text || "";
+      $("text11").value = row.text11 || "";
+      $("page_a_title_letters").value = row.page_a_title_letters || "";
+      $("page_a_text").value = row.page_a_text || "";
+      $("page_b_title_letters").value = row.page_b_title_letters || "";
+      $("page_b_text").value = row.page_b_text || "";
+      $("page_c_title_letters").value = row.page_c_title_letters || "";
+      $("page_c_text").value = row.page_c_text || "";
+      $("handleiding_text").value = row.handleiding_text || "";
+
+      // paths
+      $("story_audio_path").textContent = row.story_audio_path || "";
+      $("opdracht1_audio_path").textContent = row.opdracht1_audio_path || "";
+      $("opdracht2_audio_path").textContent = row.opdracht2_audio_path || "";
+      $("woord_audio_path").textContent = row.woord_audio_path || "";
+      $("beschrijving_audio_path").textContent = row.beschrijving_audio_path || "";
+      $("image1_path").textContent = row.image1_path || "";
+      $("image2_path").textContent = row.image2_path || "";
+
+      // links
+      $("story_audio_link").innerHTML = "";
+      $("opdracht1_audio_link").innerHTML = "";
+      $("opdracht2_audio_link").innerHTML = "";
+      $("woord_audio_link").innerHTML = "";
+      $("beschrijving_audio_link").innerHTML = "";
+      $("image1_link").innerHTML = "";
+      $("image2_link").innerHTML = "";
+    }
+
+    // -----------------------------
+    // Save (optimistic concurrency via version)
+    // -----------------------------
+    async function saveItem() {
+      if (!currentItem) return;
+      try {
+        msg($("saveMsg"), "Saving...");
+        const payload = {
+          title: $("title").value.trim(),
+          status: $("statusSelect").value,
+
+          story_text: $("story_text").value,
+          klankzuiver_text: $("klankzuiver_text").value,
+          klankzuiver_letters: $("klankzuiver_letters").value,
+
+          opdracht1_text: $("opdracht1_text").value,
+          opdracht2_text: $("opdracht2_text").value,
+
+          woord_text: $("woord_text").value,
+
+          beschrijving_text: $("beschrijving_text").value,
+
+          text11: $("text11").value,
+
+          page_a_title_letters: $("page_a_title_letters").value,
+          page_a_text: $("page_a_text").value,
+
+          page_b_title_letters: $("page_b_title_letters").value,
+          page_b_text: $("page_b_text").value,
+
+          page_c_title_letters: $("page_c_title_letters").value,
+          page_c_text: $("page_c_text").value,
+
+          handleiding_text: $("handleiding_text").value
+        };
+
+        // Only update if version matches what we loaded
+        const { data, error } = await sb
+          .from("mpop_items")
+          .update(payload)
+          .eq("id", currentItem.id)
+          .eq("version", currentItem.version)
+          .select("*")
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data) {
+          throw new Error("Conflict: the item was updated by someone else. Click Reload item and retry.");
+        }
+
+        currentItem = data;
+        showEditor(data);
+        msg($("saveMsg"), "Saved.");
+        await loadItems();
+      } catch (e) {
+        msg($("saveMsg"), e.message || String(e), false);
+      }
+    }
+
+    async function reloadItem() {
+      if (!currentItem) return;
+      await selectItem(currentItem.id);
+      msg($("saveMsg"), "Reloaded.");
+    }
+
+    // -----------------------------
+    // Storage helpers (upload + signed links)
+    // -----------------------------
+    function mustHaveCode() {
+      const code = (currentItem?.code || "").trim();
+      if (!code) throw new Error("This item has no code. Set code in the database (mpop_items.code).");
+      return code;
+    }
+
+    async function uploadToBucket(bucket, path, file) {
+      const { error } = await sb.storage.from(bucket).upload(path, file, { upsert: true });
+      if (error) throw error;
+      return path;
+    }
+
+    async function signedLink(bucket, path, expiresSeconds = 3600) {
+      const { data, error } = await sb.storage.from(bucket).createSignedUrl(path, expiresSeconds);
+      if (error) throw error;
+      return data.signedUrl;
+    }
+
+    async function uploadAndSetField({ bucket, fileInputId, dbField, defaultName }) {
+      if (!currentItem) return;
+      const code = mustHaveCode();
+      const file = $(fileInputId).files?.[0];
+      if (!file) throw new Error("Select a file first.");
+      const ext = (file.name.split(".").pop() || "").toLowerCase();
+      const safeExt = ext ? "." + ext : "";
+      const path = `${code}/${defaultName}${safeExt}`;
+
+      await uploadToBucket(bucket, path, file);
+
+      // Update only the path field; still protect with version
+      const payload = {};
+      payload[dbField] = path;
+
+      const { data, error } = await sb
+        .from("mpop_items")
+        .update(payload)
+        .eq("id", currentItem.id)
+        .eq("version", currentItem.version)
+        .select("*")
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error("Conflict while saving the file path. Reload item and retry.");
+
+      currentItem = data;
+      showEditor(data);
+      await loadItems();
+      return path;
+    }
+
+    async function linkForField({ bucket, dbField, outElId }) {
+      if (!currentItem) return;
+      const path = currentItem[dbField];
+      if (!path) throw new Error("No file path saved for this field yet.");
+      const url = await signedLink(bucket, path, 3600);
+      $(outElId).innerHTML = `<a href="${url}" target="_blank" rel="noreferrer">Open (valid 1 hour)</a>`;
+    }
+
+    // -----------------------------
+    // Sounds (mpop_sounds)
+    // -----------------------------
+    async function loadSounds() {
+      if (!currentItem) return;
+      const { data, error } = await sb
+        .from("mpop_sounds")
+        .select("id, label, audio_path, sort_order")
+        .eq("mpop_item_id", currentItem.id)
+        .order("sort_order", { ascending: true });
+
+      if (error) {
+        msg($("soundsMsg"), error.message, false);
+        return;
+      }
+
+      sounds = data || [];
+      renderSounds();
+      msg($("soundsMsg"), `Loaded ${sounds.length} sound(s).`);
+    }
+
+    function renderSounds() {
+      const host = $("soundsList");
+      host.innerHTML = "";
+
+      if (!sounds.length) {
+        const d = document.createElement("div");
+        d.className = "muted";
+        d.textContent = "No sounds yet.";
+        host.appendChild(d);
+        return;
+      }
+
+      for (const s of sounds) {
+        const wrap = document.createElement("div");
+        wrap.className = "card";
+        wrap.style.padding = "10px";
+        wrap.innerHTML = `
+          <div class="kpi">
+            <div class="pill">Label: <span class="ok mono">${escapeHtml(s.label || "")}</span></div>
+            <div class="pill">Order: <span class="ok mono">${escapeHtml(String(s.sort_order ?? 0))}</span></div>
+          </div>
+          <div class="tiny mono" style="margin-top:6px;">${escapeHtml(s.audio_path || "")}</div>
+          <div class="btnrow" style="margin-top:8px;">
+            <button data-id="${s.id}" class="btnSoundLink">Get signed link</button>
+          </div>
+          <div class="tiny" id="sound_link_${s.id}"></div>
+        `;
+        host.appendChild(wrap);
+      }
+
+      for (const btn of document.querySelectorAll(".btnSoundLink")) {
+        btn.onclick = async () => {
+          try {
+            const id = btn.getAttribute("data-id");
+            const sound = sounds.find(x => x.id === id);
+            if (!sound?.audio_path) throw new Error("No audio_path.");
+            const url = await signedLink("mpop-audio", sound.audio_path, 3600);
+            const el = document.getElementById("sound_link_" + id);
+            el.innerHTML = `<a href="${url}" target="_blank" rel="noreferrer">Open (valid 1 hour)</a>`;
+          } catch (e) {
+            msg($("soundsMsg"), e.message || String(e), false);
+          }
+        };
+      }
+    }
+
+    async function addSound() {
+      if (!currentItem) return;
+      try {
+        msg($("soundsMsg"), "Uploading sound...");
+        const code = mustHaveCode();
+        const label = $("sound_label").value.trim() || "sound";
+        const file = $("sound_file").files?.[0];
+        if (!file) throw new Error("Select an audio file.");
+
+        const ext = (file.name.split(".").pop() || "").toLowerCase();
+        const safeExt = ext ? "." + ext : "";
+
+        // Path: code/sounds/<label>-<timestamp>.ext
+        const stamp = new Date().toISOString().replaceAll(":","").replaceAll(".","").replaceAll("-","");
+        const safeLabel = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+        const path = `${code}/sounds/${safeLabel}-${stamp}${safeExt}`;
+
+        await uploadToBucket("mpop-audio", path, file);
+
+        // Insert sound row
+        const nextOrder = (sounds[sounds.length - 1]?.sort_order ?? -1) + 1;
+        const { error } = await sb
+          .from("mpop_sounds")
+          .insert({
+            mpop_item_id: currentItem.id,
+            label,
+            audio_path: path,
+            sort_order: nextOrder
+          });
+
+        if (error) throw error;
+
+        $("sound_label").value = "";
+        $("sound_file").value = "";
+        await loadSounds();
+        msg($("soundsMsg"), "Sound added.");
+      } catch (e) {
+        msg($("soundsMsg"), e.message || String(e), false);
+      }
+    }
+
+    // -----------------------------
+    // Wire up buttons
+    // -----------------------------
+    $("btnSignIn").onclick = signIn;
+    $("btnSignUp").onclick = signUp;
+
+    $("btnSignOut").onclick = signOut;
+    $("btnRefresh").onclick = () => loadItems();
+
+    $("search").addEventListener("input", async () => {
+      // re-render from last loaded list by reloading quickly:
+      // simplest: just reload items; if you prefer client-side filtering only, store items list.
+      await loadItems();
+    });
+
+    $("btnSave").onclick = saveItem;
+    $("btnReload").onclick = reloadItem;
+
+    // Upload buttons -> update db path fields
+    $("btnUploadStoryAudio").onclick = async () => {
+      try { await uploadAndSetField({ bucket:"mpop-audio", fileInputId:"story_audio_file", dbField:"story_audio_path", defaultName:"story" }); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+    $("btnUploadOpdracht1Audio").onclick = async () => {
+      try { await uploadAndSetField({ bucket:"mpop-audio", fileInputId:"opdracht1_audio_file", dbField:"opdracht1_audio_path", defaultName:"opdracht1" }); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+    $("btnUploadOpdracht2Audio").onclick = async () => {
+      try { await uploadAndSetField({ bucket:"mpop-audio", fileInputId:"opdracht2_audio_file", dbField:"opdracht2_audio_path", defaultName:"opdracht2" }); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+    $("btnUploadWoordAudio").onclick = async () => {
+      try { await uploadAndSetField({ bucket:"mpop-audio", fileInputId:"woord_audio_file", dbField:"woord_audio_path", defaultName:"woord" }); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+    $("btnUploadBeschrijvingAudio").onclick = async () => {
+      try { await uploadAndSetField({ bucket:"mpop-audio", fileInputId:"beschrijving_audio_file", dbField:"beschrijving_audio_path", defaultName:"beschrijving" }); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+
+    $("btnUploadImage1").onclick = async () => {
+      try { await uploadAndSetField({ bucket:"mpop-images", fileInputId:"image1_file", dbField:"image1_path", defaultName:"image1" }); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+    $("btnUploadImage2").onclick = async () => {
+      try { await uploadAndSetField({ bucket:"mpop-images", fileInputId:"image2_file", dbField:"image2_path", defaultName:"image2" }); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+
+    // Link buttons (signed URLs)
+    $("btnLinkStoryAudio").onclick = async () => {
+      try { await linkForField({ bucket:"mpop-audio", dbField:"story_audio_path", outElId:"story_audio_link" }); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+    $("btnLinkOpdracht1Audio").onclick = async () => {
+      try { await linkForField({ bucket:"mpop-audio", dbField:"opdracht1_audio_path", outElId:"opdracht1_audio_link" }); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+    $("btnLinkOpdracht2Audio").onclick = async () => {
+      try { await linkForField({ bucket:"mpop-audio", dbField:"opdracht2_audio_path", outElId:"opdracht2_audio_link" }); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+    $("btnLinkWoordAudio").onclick = async () => {
+      try { await linkForField({ bucket:"mpop-audio", dbField:"woord_audio_path", outElId:"woord_audio_link" }); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+    $("btnLinkBeschrijvingAudio").onclick = async () => {
+      try { await linkForField({ bucket:"mpop-audio", dbField:"beschrijving_audio_path", outElId:"beschrijving_audio_link" }); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+
+    $("btnLinkImage1").onclick = async () => {
+      try { await linkForField({ bucket:"mpop-images", dbField:"image1_path", outElId:"image1_link" }); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+    $("btnLinkImage2").onclick = async () => {
+      try { await linkForField({ bucket:"mpop-images", dbField:"image2_path", outElId:"image2_link" }); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+
+    // Sounds
+    $("btnAddSound").onclick = addSound;
+    $("btnRefreshSounds").onclick = loadSounds;
+
+    // -----------------------------
+    // Boot: restore from localStorage (optional convenience)
+    // -----------------------------
+    window.addEventListener("load", async () => {
+      // optional: remember url/key locally
+      const savedUrl = localStorage.getItem("mpop_sb_url");
+      const savedKey = localStorage.getItem("mpop_sb_anon");
+      if (savedUrl) $("sbUrl").value = savedUrl;
+      if (savedKey) $("sbAnon").value = savedKey;
+
+      // save on change
+      $("sbUrl").addEventListener("change", () => localStorage.setItem("mpop_sb_url", $("sbUrl").value.trim()));
+      $("sbAnon").addEventListener("change", () => localStorage.setItem("mpop_sb_anon", $("sbAnon").value.trim()));
+
+      // if user already has a session, refresh UI
+      try {
+        ensureClient();
+        sb.auth.onAuthStateChange(() => refreshAuthUI());
+        await refreshAuthUI();
+      } catch (_) {
+        // no client yet (missing url/key) - ignore
+      }
+    });
+  </script>
+</body>
+</html>
