@@ -145,6 +145,15 @@
               <button id="btnPlayStoryAudio" disabled>Play</button>
             </div>
 
+            <label>Beschrijving object</label>
+            <textarea id="beschrijving_object"></textarea>
+
+            <label>Audio object path</label>
+            <div class="inlineRow">
+              <input id="audio_object" placeholder="/sounds/nl/objects/object.mp3" />
+              <button id="btnPlayAudioObject" disabled>Play</button>
+            </div>
+
             <label>2a klankzuiver</label>
             <textarea id="klankzuiver_text"></textarea>
 
@@ -398,8 +407,8 @@
         msg($("listMsg"), "Loading...");
         const { data, error } = await sb
           .from("mpop_items")
-          .select("id, code, title, status, updated_at, version")
-          .order("code", { ascending: true });
+          .select("id, code, title, status, updated_at, version, sort_index")
+          .order("sort_index", { ascending: true });
 
         if (error) throw error;
 
@@ -466,6 +475,8 @@
       $("statusSelect").value = row.status || "draft";
 
       $("story_text").value = row.story_text || "";
+      $("beschrijving_object").value = row.beschrijving_object || "";
+      $("audio_object").value = row.audio_object || "";
       $("klankzuiver_text").value = row.klankzuiver_text || "";
       $("klankzuiver_letters").value = row.klankzuiver_letters || "";
       $("opdracht1_text").value = row.opdracht1_text || "";
@@ -491,6 +502,7 @@
       $("image2_path").textContent = row.image2_path || "";
 
       setPlayButton("btnPlayStoryAudio", $("story_audio_path").value);
+      setPlayButton("btnPlayAudioObject", $("audio_object").value);
       setPlayButton("btnPlayOpdracht1Audio", $("opdracht1_audio_path").value);
       setPlayButton("btnPlayOpdracht2Audio", $("opdracht2_audio_path").value);
       setPlayButton("btnPlayWoordAudio", $("woord_audio_path").value);
@@ -512,6 +524,8 @@
           status: $("statusSelect").value,
 
           story_text: $("story_text").value,
+          beschrijving_object: $("beschrijving_object").value.trim(),
+          audio_object: $("audio_object").value.trim(),
           klankzuiver_text: $("klankzuiver_text").value,
           klankzuiver_letters: $("klankzuiver_letters").value,
 
@@ -806,6 +820,10 @@
       try { toggleAudio($("btnPlayStoryAudio"), $("story_audio_path").value); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
+    $("btnPlayAudioObject").onclick = () => {
+      try { toggleAudio($("btnPlayAudioObject"), $("audio_object").value); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
     $("btnPlayOpdracht1Audio").onclick = () => {
       try { toggleAudio($("btnPlayOpdracht1Audio"), $("opdracht1_audio_path").value); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
@@ -824,6 +842,7 @@
     };
 
     wireAudioInput("story_audio_path", "btnPlayStoryAudio");
+    wireAudioInput("audio_object", "btnPlayAudioObject");
     wireAudioInput("opdracht1_audio_path", "btnPlayOpdracht1Audio");
     wireAudioInput("opdracht2_audio_path", "btnPlayOpdracht2Audio");
     wireAudioInput("woord_audio_path", "btnPlayWoordAudio");
