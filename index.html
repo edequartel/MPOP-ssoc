@@ -98,20 +98,6 @@
         <input id="search" placeholder="type code/title (e.g., bal-001)" />
 
         <div class="list" id="itemsList"></div>
-
-        <div class="hr"></div>
-
-        <h2 style="margin:0 0 8px; font-size:16px;">Export table as Markdown</h2>
-        <label>Table</label>
-        <select id="exportTable">
-          <option value="mpop_items">mpop_items</option>
-          <option value="mpop_sounds">mpop_sounds</option>
-        </select>
-        <div class="btnrow" style="margin-top:10px;">
-          <button id="btnExportMarkdown">Render + download Markdown</button>
-        </div>
-        <div id="exportMsg" class="tiny" style="margin-top:8px;"></div>
-        <textarea id="exportOutput" class="mono" readonly placeholder="Markdown output will appear here."></textarea>
       </div>
     </div>
 
@@ -435,68 +421,6 @@
         b.onclick = () => selectItem(it.id);
         host.appendChild(b);
       }
-    }
-
-    function escapeMarkdownCell(value) {
-      if (value === null || value === undefined) return "";
-      let s = typeof value === "string" ? value : JSON.stringify(value);
-      s = s.replace(/\r?\n/g, "<br>");
-      return s.replace(/\|/g, "\\|");
-    }
-
-    function toMarkdownTable(rows) {
-      if (!rows || !rows.length) return "_No rows._";
-      const columns = Array.from(
-        rows.reduce((set, row) => {
-          Object.keys(row || {}).forEach((k) => set.add(k));
-          return set;
-        }, new Set())
-      );
-
-      const header = `| ${columns.join(" | ")} |`;
-      const divider = `| ${columns.map(() => "---").join(" | ")} |`;
-      const body = rows.map((row) =>
-        `| ${columns.map((c) => escapeMarkdownCell(row?.[c])).join(" | ")} |`
-      );
-      return [header, divider, ...body].join("\n");
-    }
-
-    async function fetchAllRows(tableName) {
-      const pageSize = 1000;
-      let from = 0;
-      let all = [];
-
-      while (true) {
-        let query = sb.from(tableName).select("*").range(from, from + pageSize - 1);
-        if (tableName === "mpop_items") {
-          query = query.order("code", { ascending: true });
-        } else if (tableName === "mpop_sounds") {
-          query = query.order("mpop_item_id", { ascending: true })
-            .order("sort_order", { ascending: true });
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-
-        const rows = data || [];
-        all = all.concat(rows);
-        if (rows.length < pageSize) break;
-        from += pageSize;
-      }
-
-      return all;
-    }
-
-    function downloadText(filename, text) {
-      const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
     }
 
     async function selectItem(id) {
@@ -888,22 +812,6 @@
     // Sounds
     $("btnAddSound").onclick = addSound;
     $("btnRefreshSounds").onclick = loadSounds;
-
-    $("btnExportMarkdown").onclick = async () => {
-      try {
-        msg($("exportMsg"), "Rendering...");
-        ensureClient();
-        const tableName = $("exportTable").value;
-        const rows = await fetchAllRows(tableName);
-        const md = toMarkdownTable(rows);
-        $("exportOutput").value = md;
-        const stamp = new Date().toISOString().slice(0, 10);
-        downloadText(`${tableName}-${stamp}.md`, md);
-        msg($("exportMsg"), `Downloaded ${rows.length} row(s).`);
-      } catch (e) {
-        msg($("exportMsg"), e.message || String(e), false);
-      }
-    };
 
     // -----------------------------
     // Boot: restore from localStorage (optional convenience)
