@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MPOP++ Editor</title>
+  <title>mPOP SSoC Editor (Supabase)</title>
 
   <!-- Supabase JS via CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -45,7 +45,7 @@
 </head>
 
 <body>
-  <h1>MPOP++ Editor</h1>
+  <h1>mPOP SSoC Editor</h1>
   <div class="muted">
     Single-file HTML editor for your Supabase tables <span class="mono">mpop_items</span> and <span class="mono">mpop_sounds</span>.
     Uses Supabase Auth + RLS as the security boundary.
@@ -128,7 +128,7 @@
 
         <div class="split">
           <div>
-            <label>1a verhaal tekst (1 LB)</label>
+            <label>1a verhaal tekst</label>
             <textarea id="story_text"></textarea>
 
             <label>1b verhaal audio (upload to mpop-audio)</label>
@@ -293,6 +293,9 @@
     let sb = null;
     let currentItem = null; // full row from mpop_items
     let sounds = [];
+    let sbConfigKey = "";
+    let authRefreshRunning = false;
+    let authListenerBound = false;
 
     const $ = (id) => document.getElementById(id);
 
@@ -312,16 +315,27 @@
       if (!window.supabase || !window.supabase.createClient) {
         throw new Error("Supabase JS not loaded. Check the CDN script tag.");
       }
-      sb = window.supabase.createClient(url, key);
+      const nextKey = `${url}::${key}`;
+      if (!sb || sbConfigKey !== nextKey) {
+        sb = window.supabase.createClient(url, key);
+        sbConfigKey = nextKey;
+        authListenerBound = false;
+      }
       return sb;
     }
 
     // -----------------------------
     // Auth
     // -----------------------------
-    async function refreshAuthUI() {
-      if (!sb) return;
-      const { data: { session } } = await sb.auth.getSession();
+    async function refreshAuthUI(passedSession) {
+      if (!sb || authRefreshRunning) return;
+      authRefreshRunning = true;
+      let session = passedSession ?? null;
+      try {
+        if (!session) {
+          const { data } = await sb.auth.getSession();
+          session = data?.session ?? null;
+        }
       const loggedIn = !!session?.user;
       $("authLoggedOut").style.display = loggedIn ? "none" : "block";
       $("authLoggedIn").style.display  = loggedIn ? "block" : "none";
@@ -343,6 +357,9 @@
         $("itemsList").innerHTML = "";
         hideEditor();
       }
+      } finally {
+        authRefreshRunning = false;
+      }
     }
 
     async function signIn() {
@@ -351,10 +368,10 @@
         msg($("authMsg"), "");
         const email = $("email").value.trim();
         const password = $("password").value;
-        const { error } = await sb.auth.signInWithPassword({ email, password });
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw error;
         msg($("authMsg"), "Signed in.");
-        await refreshAuthUI();
+        await refreshAuthUI(data?.session ?? null);
       } catch (e) {
         msg($("authMsg"), e.message || String(e), false);
       }
@@ -830,7 +847,10 @@
       // if user already has a session, refresh UI
       try {
         ensureClient();
-        sb.auth.onAuthStateChange(() => refreshAuthUI());
+        if (!authListenerBound) {
+          sb.auth.onAuthStateChange((_event, session) => refreshAuthUI(session));
+          authListenerBound = true;
+        }
         await refreshAuthUI();
       } catch (_) {
         // no client yet (missing url/key) - ignore
