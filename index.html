@@ -403,10 +403,25 @@
             throw new Error("Local supabase-config.js missing url/anonKey.");
           }
         } else {
-          cfg = await fetch("/api/supabase-config").then((r) => {
-            if (!r.ok) throw new Error("Failed to load Supabase config.");
-            return r.json();
-          });
+          try {
+            cfg = await fetch("/api/supabase-config").then(async (r) => {
+              if (!r.ok) {
+                const body = await r.text().catch(() => "");
+                throw new Error(`Failed to load /api/supabase-config (${r.status}). ${body}`.trim());
+              }
+              return r.json();
+            });
+            if (!cfg?.url || !cfg?.anonKey) {
+              throw new Error("Supabase config missing url/anonKey.");
+            }
+          } catch (e) {
+            // Fallback to a local config file when /api isn't available.
+            const mod = await import("./supabase-config.js");
+            cfg = mod?.supabaseConfig || mod?.default || null;
+            if (!cfg?.url || !cfg?.anonKey) {
+              throw e;
+            }
+          }
         }
         const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
         return { client: createClient(cfg.url, cfg.anonKey), config: cfg, error: null };
