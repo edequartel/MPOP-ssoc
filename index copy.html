@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>mPOP SSoC Editor (Supabase)</title>
 
-  <!-- PDF export -->
+  <!-- Supabase JS via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
@@ -61,7 +62,11 @@
     <div class="card">
       <h2 style="margin:0 0 8px; font-size:16px;">1 Log in</h2>
 
-      <div class="tiny">Supabase config loaded from <span class="mono">/api/supabase-config</span>.</div>
+      <label>Supabase URL</label>
+      <input id="sbUrl" placeholder="https://xxxx.supabase.co" />
+
+      <label>Supabase anon key</label>
+      <textarea id="sbAnon" placeholder="Your publishable/anon key"></textarea>
 
       <div class="hr"></div>
 
@@ -389,32 +394,18 @@
     </div>
   </div>
 
-  <script type="module">
-    const supabaseInit = async () => {
-      try {
-        const cfg = await fetch("/api/supabase-config").then((r) => {
-          if (!r.ok) throw new Error("Failed to load Supabase config.");
-          return r.json();
-        });
-        const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
-        return { client: createClient(cfg.url, cfg.anonKey), error: null };
-      } catch (error) {
-        console.error("Supabase init failed:", error);
-        return { client: null, error };
-      }
-    };
+  <script>
     // -----------------------------
     // Supabase client + state
     // -----------------------------
     let sb = null;
     let currentItem = null; // full row from mpop_items
     let sounds = [];
+    let sbConfigKey = "";
     let authRefreshRunning = false;
     let authListenerBound = false;
     const audioPlayers = new Map();
     const AUDIO_ENDPOINT = "https://www.tastenbraille.com/braillestudio";
-    const { client: sbClient, error: sbInitError } = await supabaseInit();
-    sb = sbClient;
 
     const $ = (id) => document.getElementById(id);
 
@@ -489,11 +480,17 @@
     }
 
     function ensureClient() {
-      if (sbInitError) {
-        throw new Error(`Supabase init failed: ${sbInitError.message || sbInitError}`);
+      const url = $("sbUrl").value.trim();
+      const key = $("sbAnon").value.trim();
+      if (!url || !key) throw new Error("Please provide Supabase URL and anon key.");
+      if (!window.supabase || !window.supabase.createClient) {
+        throw new Error("Supabase JS not loaded. Check the CDN script tag.");
       }
-      if (!sb) {
-        throw new Error("Supabase client not ready.");
+      const nextKey = `${url}::${key}`;
+      if (!sb || sbConfigKey !== nextKey) {
+        sb = window.supabase.createClient(url, key);
+        sbConfigKey = nextKey;
+        authListenerBound = false;
       }
       return sb;
     }
@@ -1151,10 +1148,16 @@
     // Boot: restore from localStorage (optional convenience)
     // -----------------------------
     window.addEventListener("load", async () => {
-      if (sbInitError) {
-        msg($("authMsg"), `Supabase init failed: ${sbInitError.message || sbInitError}`, false);
-        return;
-      }
+      // optional: remember url/key locally
+      const savedUrl = localStorage.getItem("mpop_sb_url");
+      const savedKey = localStorage.getItem("mpop_sb_anon");
+      if (savedUrl) $("sbUrl").value = savedUrl;
+      if (savedKey) $("sbAnon").value = savedKey;
+
+      // save on change
+      $("sbUrl").addEventListener("change", () => localStorage.setItem("mpop_sb_url", $("sbUrl").value.trim()));
+      $("sbAnon").addEventListener("change", () => localStorage.setItem("mpop_sb_anon", $("sbAnon").value.trim()));
+
       // if user already has a session, refresh UI
       try {
         ensureClient();
