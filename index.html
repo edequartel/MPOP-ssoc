@@ -62,7 +62,6 @@
       <h2 style="margin:0 0 8px; font-size:16px;">1 Log in</h2>
 
       <div class="tiny">Supabase config loaded from <span class="mono">/api/supabase-config</span>.</div>
-      <div id="sbConfigDisplay" class="tiny mono" style="margin-top:6px; display:none;"></div>
 
       <div class="hr"></div>
 
@@ -442,13 +441,7 @@
     const AUDIO_ENDPOINT = "https://www.tastenbraille.com/braillestudio";
     const { client: sbClient, config: sbConfig, error: sbInitError } = await supabaseInit();
     sb = sbClient;
-    if (sbConfig) {
-      const cfgEl = $("sbConfigDisplay");
-      if (cfgEl) {
-        cfgEl.textContent = `url: ${sbConfig.url} | anonKey: ${sbConfig.anonKey}`;
-        cfgEl.style.display = "block";
-      }
-    }
+    // no UI display of config values
 
     function msg(el, text, ok=true) {
       el.innerHTML = text ? `<span class="${ok ? 'ok' : 'err'}">${escapeHtml(text)}</span>` : '';
@@ -920,8 +913,7 @@
     function updateImagePreview(inputId, imgId) {
       const img = $(imgId);
       const input = $(inputId);
-      const usePlaceholder = input.dataset.previewPlaceholder === "true";
-      const path = (input.value || "").trim() || (usePlaceholder ? (input.placeholder || "") : "");
+      const path = (input.value || "").trim();
       const url = buildImageUrl(path);
       if (!url) {
         img.style.display = "none";
