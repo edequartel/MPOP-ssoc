@@ -119,6 +119,9 @@
         </div>
         <div id="saveMsg" class="tiny" style="margin-top:10px;"></div>
 
+        <label>Auteur</label>
+        <input id="auteur" />
+
         <label>Titel</label>
         <input id="title" />
 
@@ -692,6 +695,7 @@
       $("version").textContent = String(row.version ?? "");
       $("updatedAt").textContent = row.updated_at || "";
 
+      $("auteur").value = row.auteur || "";
       $("title").value = row.title || "";
       $("statusSelect").value = row.status || "draft";
 
@@ -767,6 +771,7 @@
       try {
         msg($("saveMsg"), "Saving...");
         const payload = {
+          auteur: $("auteur").value.trim(),
           title: $("title").value.trim(),
           status: $("statusSelect").value,
 
