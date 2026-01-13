@@ -62,6 +62,7 @@
       <h2 style="margin:0 0 8px; font-size:16px;">1 Log in</h2>
 
       <div class="tiny">Supabase config loaded from <span class="mono">/api/supabase-config</span>.</div>
+      <div id="sbConfigDisplay" class="tiny mono" style="margin-top:6px; display:none;"></div>
 
       <div class="hr"></div>
 
@@ -390,17 +391,28 @@
   </div>
 
   <script type="module">
+    const $ = (id) => document.getElementById(id);
+
     const supabaseInit = async () => {
       try {
-        const cfg = await fetch("/api/supabase-config").then((r) => {
-          if (!r.ok) throw new Error("Failed to load Supabase config.");
-          return r.json();
-        });
+        let cfg = null;
+        if (location.protocol === "file:") {
+          const mod = await import("./supabase-config.js");
+          cfg = mod?.supabaseConfig || mod?.default || null;
+          if (!cfg?.url || !cfg?.anonKey) {
+            throw new Error("Local supabase-config.js missing url/anonKey.");
+          }
+        } else {
+          cfg = await fetch("/api/supabase-config").then((r) => {
+            if (!r.ok) throw new Error("Failed to load Supabase config.");
+            return r.json();
+          });
+        }
         const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
-        return { client: createClient(cfg.url, cfg.anonKey), error: null };
+        return { client: createClient(cfg.url, cfg.anonKey), config: cfg, error: null };
       } catch (error) {
         console.error("Supabase init failed:", error);
-        return { client: null, error };
+        return { client: null, config: null, error };
       }
     };
     // -----------------------------
@@ -413,10 +425,15 @@
     let authListenerBound = false;
     const audioPlayers = new Map();
     const AUDIO_ENDPOINT = "https://www.tastenbraille.com/braillestudio";
-    const { client: sbClient, error: sbInitError } = await supabaseInit();
+    const { client: sbClient, config: sbConfig, error: sbInitError } = await supabaseInit();
     sb = sbClient;
-
-    const $ = (id) => document.getElementById(id);
+    if (sbConfig) {
+      const cfgEl = $("sbConfigDisplay");
+      if (cfgEl) {
+        cfgEl.textContent = `url: ${sbConfig.url} | anonKey: ${sbConfig.anonKey}`;
+        cfgEl.style.display = "block";
+      }
+    }
 
     function msg(el, text, ok=true) {
       el.innerHTML = text ? `<span class="${ok ? 'ok' : 'err'}">${escapeHtml(text)}</span>` : '';
