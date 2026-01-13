@@ -44,6 +44,43 @@
     .hr { height:1px; background:var(--line); margin:10px 0; }
     .tiny { font-size:12px; color:var(--muted); }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .image-thumb {
+      width:120px;
+      height:auto;
+      border-radius:8px;
+      margin-top:8px;
+      border:1px solid var(--line);
+      display:none;
+      cursor:zoom-in;
+      background: rgba(255,255,255,.02);
+    }
+    #imageLightbox {
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      background: rgba(4,7,12,.8);
+      z-index:1000;
+    }
+    #imageLightbox img {
+      max-width:min(92vw, 1200px);
+      max-height:92vh;
+      border-radius:12px;
+      border:1px solid var(--line);
+      box-shadow:0 20px 60px rgba(0,0,0,.5);
+    }
+    #imageLightbox button {
+      position:absolute;
+      top:16px;
+      right:16px;
+      width:auto;
+      padding:8px 12px;
+      border-radius:999px;
+      background: rgba(255,255,255,.08);
+      border:1px solid var(--line);
+    }
   </style>
 </head>
 
@@ -162,7 +199,7 @@
           <div>
             <label>Afbeelding (path)</label>
             <input id="image1_path" placeholder="/resources/images/bal.png" data-preview-placeholder="true" />
-            <img id="image1_preview" alt="image preview" style="display:none; max-width:100%; border-radius:8px; margin-top:8px; border:1px solid var(--line);" />
+            <img id="image1_preview" class="image-thumb" alt="image preview" />
           </div>
           <div>
             <label>Klankzuiver</label>
@@ -232,7 +269,7 @@
           <div>
             <label>Afbeelding actief (path)</label>
             <input id="image2_path" placeholder="/resources/images/bal.png" data-preview-placeholder="true" />
-            <img id="image2_preview" alt="image preview" style="display:none; max-width:100%; border-radius:8px; margin-top:8px; border:1px solid var(--line);" />
+            <img id="image2_preview" class="image-thumb" alt="image preview" />
           </div>
 
           <div>
@@ -269,7 +306,7 @@
 
         <label>Afbeelding 3 (path)</label>
         <input id="image3_path" placeholder="/resources/images/beeld3.png" />
-        <img id="image3_preview" alt="image preview" style="display:none; max-width:50%; border-radius:8px; margin-top:8px; border:1px solid var(--line);" />
+        <img id="image3_preview" class="image-thumb" alt="image preview" />
 
         <div class="split">
           <div>
@@ -390,6 +427,11 @@
         <div class="hr"></div>
       </div>
     </div>
+  </div>
+
+  <div id="imageLightbox" aria-hidden="true">
+    <button id="imageLightboxClose" type="button">Close</button>
+    <img id="imageLightboxImg" alt="image preview large" />
   </div>
 
   <script type="module">
@@ -923,10 +965,38 @@
       if (!url) {
         img.style.display = "none";
         img.removeAttribute("src");
+        img.removeAttribute("data-full-url");
         return;
       }
       img.src = url;
+      img.dataset.fullUrl = url;
       img.style.display = "block";
+    }
+
+    function openImageLightbox(url, altText) {
+      const lightbox = $("imageLightbox");
+      const lightboxImg = $("imageLightboxImg");
+      if (!url) return;
+      lightboxImg.src = url;
+      lightboxImg.alt = altText || "image preview large";
+      lightbox.style.display = "flex";
+      lightbox.setAttribute("aria-hidden", "false");
+    }
+
+    function closeImageLightbox() {
+      const lightbox = $("imageLightbox");
+      const lightboxImg = $("imageLightboxImg");
+      lightbox.style.display = "none";
+      lightbox.setAttribute("aria-hidden", "true");
+      lightboxImg.removeAttribute("src");
+    }
+
+    function wireImagePreview(imgId) {
+      const img = $(imgId);
+      img.addEventListener("click", () => {
+        const url = img.dataset.fullUrl || img.getAttribute("src");
+        if (url) openImageLightbox(url, img.alt);
+      });
     }
 
     function setPlayButton(btnId, path) {
@@ -1165,9 +1235,21 @@
     wireAudioInput("opdracht6_audio_path", "btnPlayOpdracht6Audio");
     wireAudioInput("woord_audio_path", "btnPlayWoordAudio");
     wireAudioInput("beschrijving_audio_path", "btnPlayBeschrijvingAudio");
+    wireImagePreview("image1_preview");
+    wireImagePreview("image2_preview");
+    wireImagePreview("image3_preview");
     $("image1_path").addEventListener("input", () => updateImagePreview("image1_path", "image1_preview"));
     $("image2_path").addEventListener("input", () => updateImagePreview("image2_path", "image2_preview"));
     $("image3_path").addEventListener("input", () => updateImagePreview("image3_path", "image3_preview"));
+
+    $("imageLightbox").addEventListener("click", (e) => {
+      if (e.target.id === "imageLightbox" || e.target.id === "imageLightboxClose") {
+        closeImageLightbox();
+      }
+    });
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeImageLightbox();
+    });
 
     // Upload buttons -> update db path fields
 
