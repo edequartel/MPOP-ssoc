@@ -33,16 +33,17 @@ button:hover { background:#e9e9e9; }
 .pill { border:1px solid var(--line); border-radius:999px; padding:3px 8px; font-size:11px; color:var(--muted); }
 .ok { color:#000000; }
 .err { color:#000000; }
-.hr { height:1px; background:var(--line); margin:8px 0; }
+.hr { display:none; }
 .tiny { font-size:11px; color:var(--muted); }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+.pdf-value { white-space: pre-wrap; overflow-wrap: anywhere; }
 .mt-10 { margin-top:10px; }
 .mt-8 { margin-top:8px; }
 .hidden { display:none; }
 .pdf-page { break-before: page; page-break-before: always; }
 .pdf-page:first-of-type { break-before: auto; page-break-before: auto; }
-.pdf-page-break { break-before: page; page-break-before: always; page-break-inside: avoid; margin-top:0; padding-top:0; }
-h2.pdf-page-break { break-before: page; page-break-before: always; page-break-after: avoid; }
+.html2pdf__page-break { break-before: page !important; page-break-before: always !important; height:0; }
+.pdf-page-title { margin-top:0; }
 .kpi, .btnrow, .inlineRow, .pill { break-inside: avoid; page-break-inside: avoid; }
 .image-thumb {
   width:120px;

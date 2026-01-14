@@ -112,10 +112,11 @@
           </div>
 
           <div>
-            <label>Object beschrijving)</label>
+            <label>Object beschrijving</label>
             <textarea id="beschrijving_object"></textarea>
 
-            <label>audio</label>
+           <!-- <label>audio</label> -->
+            
             <div class="inlineRow">
               <input id="audio_object" placeholder="/sounds/nl/objects/object.mp3" />
               <button id="btnPlayAudioObject" disabled>Play</button>
@@ -844,6 +845,15 @@
       if (btnrow) btnrow.remove();
       const saveMsg = content.querySelector("#saveMsg");
       if (saveMsg) saveMsg.remove();
+      for (const el of content.querySelectorAll("*")) {
+        const text = (el.textContent || "").trim().toLowerCase();
+        if (text.startsWith("pagina")) {
+          const breaker = document.createElement("div");
+          breaker.className = "html2pdf__page-break";
+          el.classList.add("pdf-page-title");
+          el.parentNode?.insertBefore(breaker, el);
+        }
+      }
       for (const label of content.querySelectorAll("label")) {
         const text = (label.textContent || "").trim().toLowerCase();
         if (text === "audio" || text === "audio path (audio_path)") {
@@ -855,8 +865,19 @@
           btn.remove();
         }
       }
-      for (const img of content.querySelectorAll("img")) {
-        if (img.getAttribute("src")) img.style.display = "block";
+      for (const img of content.querySelectorAll("img")) img.remove();
+      for (const field of content.querySelectorAll("input, textarea, select")) {
+        let value = "";
+        if (field.tagName === "SELECT") {
+          const selected = field.options[field.selectedIndex];
+          value = selected ? selected.textContent || "" : "";
+        } else {
+          value = field.value || "";
+        }
+        const replacement = document.createElement("div");
+        replacement.className = "pdf-value";
+        replacement.textContent = value;
+        field.replaceWith(replacement);
       }
 
       const temp = document.createElement("div");
@@ -876,7 +897,8 @@
             margin: 10,
             filename,
             html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+            pagebreak: { mode: ["css", "legacy", "avoid-all"] }
           })
           .from(content);
 
@@ -884,11 +906,14 @@
         const totalPages = pdf.internal.getNumberOfPages();
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
-        pdf.setFontSize(10);
+        pdf.setFontSize(11);
         pdf.setTextColor(0);
         for (let i = 1; i <= totalPages; i++) {
           pdf.setPage(i);
+          pdf.text("Bartim\u00e9us Onderwijs", pageWidth / 2, 8, { align: "center" });
+          pdf.setFontSize(10);
           pdf.text(`Page ${i} / ${totalPages}`, pageWidth / 2, pageHeight - 6, { align: "center" });
+          pdf.setFontSize(11);
         }
         await worker.save();
       } catch (e) {
