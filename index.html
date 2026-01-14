@@ -8,80 +8,8 @@
   <!-- PDF export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <style>
-    :root { --bg:#0b0e14; --fg:#e9effa; --muted:#a9b6c8; --card:#121826; --line:rgba(255,255,255,.12); }
-    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--fg); margin:16px; }
-    h1 { font-size:20px; margin:0 0 10px; }
-    .row { display:grid; grid-template-columns: 360px 1fr; gap:12px; align-items:start; }
-    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
-    .muted { color:var(--muted); font-size:13px; line-height:1.4; }
-    label { display:block; font-size:13px; color:var(--muted); margin:10px 0 6px; }
-    input, textarea, select, button {
-      width:100%;
-      box-sizing:border-box;
-      border-radius:10px;
-      border:1px solid var(--line);
-      background: rgba(255,255,255,.04);
-      color:var(--fg);
-      padding:10px;
-      font-size:14px;
-    }
-    textarea { min-height:160px; resize:vertical; }
-    button { cursor:pointer; background: rgba(255,255,255,.08); }
-    button:hover { background: rgba(255,255,255,.12); }
-    .btnrow { display:flex; gap:8px; flex-wrap:wrap; }
-    .btnrow button { width:auto; padding:10px 12px; }
-    .inlineRow { display:flex; gap:8px; align-items:center; }
-    .inlineRow input { flex:1; }
-    .inlineRow button { width:auto; padding:8px 10px; }
-    .list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
-    .itembtn { text-align:left; }
-    .split { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
-    .kpi { display:flex; gap:10px; flex-wrap:wrap; }
-    .pill { border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-size:12px; color:var(--muted); }
-    .ok { color:#b7f7c1; }
-    .err { color:#ffb4b4; }
-    .hr { height:1px; background:var(--line); margin:10px 0; }
-    .tiny { font-size:12px; color:var(--muted); }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    .image-thumb {
-      width:120px;
-      height:auto;
-      border-radius:8px;
-      margin-top:8px;
-      border:1px solid var(--line);
-      display:none;
-      cursor:zoom-in;
-      background: rgba(255,255,255,.02);
-    }
-    #imageLightbox {
-      position:fixed;
-      inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:24px;
-      background: rgba(4,7,12,.8);
-      z-index:1000;
-    }
-    #imageLightbox img {
-      max-width:min(92vw, 1200px);
-      max-height:92vh;
-      border-radius:12px;
-      border:1px solid var(--line);
-      box-shadow:0 20px 60px rgba(0,0,0,.5);
-    }
-    #imageLightbox button {
-      position:absolute;
-      top:16px;
-      right:16px;
-      width:auto;
-      padding:8px 12px;
-      border-radius:999px;
-      background: rgba(255,255,255,.08);
-      border:1px solid var(--line);
-    }
-  </style>
+  <link id="appStyles" rel="stylesheet" href="styles.css" />
+  <link id="pdfStyles" rel="stylesheet" href="../pdf.css" disabled />
 </head>
 
 <body>
@@ -96,7 +24,7 @@
   <div class="row">
     <!-- LEFT: Auth + List -->
     <div class="card">
-      <h2 style="margin:0 0 8px; font-size:16px;">1 Log in</h2>
+      <h2 class="section-title">1 Log in</h2>
 
       <div class="tiny">Supabase config loaded from <span class="mono">/api/supabase-config</span>.</div>
 
@@ -109,52 +37,52 @@
         <label>Password</label>
         <input id="password" type="password" placeholder="••••••••" />
 
-        <div class="btnrow" style="margin-top:10px;">
+        <div class="btnrow mt-10">
           <button id="btnSignIn">Sign in</button>
           <button id="btnSignUp">Sign up</button>
         </div>
-        <div id="authMsg" class="tiny" style="margin-top:10px;"></div>
+        <div id="authMsg" class="tiny mt-10"></div>
       </div>
 
-      <div id="authLoggedIn" style="display:none;">
+      <div id="authLoggedIn" class="hidden">
         <div class="kpi">
           <div class="pill">Signed in: <span id="userEmail" class="ok"></span></div>
           <div class="pill">Role: <span id="userRole" class="ok"></span></div>
         </div>
-        <div class="btnrow" style="margin-top:10px;">
+        <div class="btnrow mt-10">
           <button id="btnRefresh">Ververs lijst</button>
           <button id="btnSignOut">Log uit</button>
         </div>
-        <div id="listMsg" class="tiny" style="margin-top:10px;"></div>
+        <div id="listMsg" class="tiny mt-10"></div>
 
         <div class="hr"></div>
 
-        <h2 style="margin:0 0 8px; font-size:16px;">2 Kies item</h2>
+        <h2 class="section-title">2 Kies item</h2>
         <label>Search</label>
         <input id="search" placeholder="type code/title (e.g., bal-001)" />
 
-        <div class="list" id="itemsList"></div>
+        <div class="list mt-8" id="itemsList"></div>
       </div>
     </div>
 
     <!-- RIGHT: Editor -->
     <div class="card">
-      <h2 style="margin:0 0 8px; font-size:16px;">3 Wijzig item</h2>
+      <h2 class="section-title">3 Wijzig item</h2>
       <div id="editorHint" class="muted">Log in en kies item om te wijzigen.</div>
 
-      <div id="editor" style="display:none;">
+      <div id="editor" class="hidden">
         <div class="kpi">
           <div class="pill">Code: <span id="code" class="ok mono"></span></div>
           <div class="pill">Status: <span id="status" class="ok mono"></span></div>
           <div class="pill">Version: <span id="version" class="ok mono"></span></div>
           <div class="pill">Updated: <span id="updatedAt" class="ok mono"></span></div>
         </div>
-        <div class="btnrow" style="margin-top:10px;">
+        <div class="btnrow mt-10">
           <button id="btnSave">Bewaar</button>
           <button id="btnReload">Reload item</button>
           <button id="btnExportPdf">Export PDF</button>
         </div>
-        <div id="saveMsg" class="tiny" style="margin-top:10px;"></div>
+        <div id="saveMsg" class="tiny mt-10"></div>
 
         <label>Auteur</label>
         <input id="auteur" />
@@ -170,7 +98,7 @@
         </select>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 1</h2>
+        <h2 class="section-title pdf-page-break">Pagina 1</h2>
 
         <div class="split">
           <div>
@@ -239,7 +167,7 @@
         <textarea id="remarks_1"></textarea>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 2</h2>
+        <h2 class="section-title pdf-page-break">Pagina 2</h2>
 
         <div class="split">
           <div>
@@ -262,8 +190,8 @@
           </div>
         </div>
 
-        <div class="list" id="soundsList" style="margin-top:10px;"></div>
-        <div id="soundsMsg" class="tiny" style="margin-top:8px;"></div>
+        <div class="list mt-10" id="soundsList"></div>
+        <div id="soundsMsg" class="tiny mt-8"></div>
 
         <div class="split">
           <div>
@@ -283,7 +211,7 @@
         <textarea id="remarks_2"></textarea>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 3</h2>
+        <h2 class="section-title pdf-page-break">Pagina 3</h2>
 
         <div class="split">
           <div>
@@ -328,7 +256,7 @@
         </div>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 4</h2>
+        <h2 class="section-title pdf-page-break">Pagina 4</h2>
 
         <div class="split">
           <div>
@@ -356,7 +284,7 @@
         <textarea id="remarks_3"></textarea>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 5</h2>
+        <h2 class="section-title pdf-page-break">Pagina 5</h2>
 
         <div class="split">
           <div>
@@ -384,7 +312,7 @@
         <textarea id="remarks_4"></textarea>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 6</h2>
+        <h2 class="section-title pdf-page-break">Pagina 6</h2>
 
         <div class="split">
           <div>
@@ -411,7 +339,7 @@
         <textarea id="remarks_5"></textarea>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 7</h2>
+        <h2 class="section-title pdf-page-break">Pagina 7</h2>
         <label>Handleiding</label>
         <textarea id="handleiding_text"></textarea>
 
@@ -419,7 +347,7 @@
         <textarea id="remarks_6"></textarea>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 8</h2>
+        <h2 class="section-title pdf-page-break">Pagina 8</h2>
 
         <label>Materialen</label>
         <textarea id="materialen"></textarea>
@@ -1125,7 +1053,7 @@
             <div class="pill">Label: <span class="ok mono">${escapeHtml(s.label || "")}</span></div>
             <div class="pill">Order: <span class="ok mono">${escapeHtml(String(s.sort_order ?? 0))}</span></div>
           </div>
-          <label style="margin-top:8px;">Audio path (audio_path)</label>
+          <label class="mt-8">Audio path (audio_path)</label>
           <div class="inlineRow">
             <input value="${escapeHtml(s.audio_path || "")}" readonly />
             <button data-id="${s.id}" class="btnSoundPlay" ${s.audio_path ? "" : "disabled"}>Play</button>
