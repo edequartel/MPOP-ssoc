@@ -5,47 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>mPOP SSoC Editor (Supabase)</title>
 
-  <!-- Supabase JS via CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- PDF export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <style>
-    :root { --bg:#0b0e14; --fg:#e9effa; --muted:#a9b6c8; --card:#121826; --line:rgba(255,255,255,.12); }
-    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--fg); margin:16px; }
-    h1 { font-size:20px; margin:0 0 10px; }
-    .row { display:grid; grid-template-columns: 360px 1fr; gap:12px; align-items:start; }
-    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
-    .muted { color:var(--muted); font-size:13px; line-height:1.4; }
-    label { display:block; font-size:13px; color:var(--muted); margin:10px 0 6px; }
-    input, textarea, select, button {
-      width:100%;
-      box-sizing:border-box;
-      border-radius:10px;
-      border:1px solid var(--line);
-      background: rgba(255,255,255,.04);
-      color:var(--fg);
-      padding:10px;
-      font-size:14px;
-    }
-    textarea { min-height:160px; resize:vertical; }
-    button { cursor:pointer; background: rgba(255,255,255,.08); }
-    button:hover { background: rgba(255,255,255,.12); }
-    .btnrow { display:flex; gap:8px; flex-wrap:wrap; }
-    .btnrow button { width:auto; padding:10px 12px; }
-    .inlineRow { display:flex; gap:8px; align-items:center; }
-    .inlineRow input { flex:1; }
-    .inlineRow button { width:auto; padding:8px 10px; }
-    .list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
-    .itembtn { text-align:left; }
-    .split { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
-    .kpi { display:flex; gap:10px; flex-wrap:wrap; }
-    .pill { border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-size:12px; color:var(--muted); }
-    .ok { color:#b7f7c1; }
-    .err { color:#ffb4b4; }
-    .hr { height:1px; background:var(--line); margin:10px 0; }
-    .tiny { font-size:12px; color:var(--muted); }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-  </style>
+  <link id="appStyles" rel="stylesheet" href="styles.css" />
+  <link id="pdfStyles" rel="stylesheet" href="pdf.css" disabled />
 </head>
 
 <body>
@@ -62,11 +26,7 @@
     <div class="card">
       <h2 style="margin:0 0 8px; font-size:16px;">1 Log in</h2>
 
-      <label>Supabase URL</label>
-      <input id="sbUrl" placeholder="https://xxxx.supabase.co" />
-
-      <label>Supabase anon key</label>
-      <textarea id="sbAnon" placeholder="Your publishable/anon key"></textarea>
+      <div class="tiny">Supabase config loaded from <span class="mono">/api/supabase-config</span>.</div>
 
       <div class="hr"></div>
 
@@ -124,6 +84,9 @@
         </div>
         <div id="saveMsg" class="tiny" style="margin-top:10px;"></div>
 
+        <label>Auteur</label>
+        <input id="auteur" />
+
         <label>Titel</label>
         <input id="title" />
 
@@ -135,7 +98,8 @@
         </select>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 1</h2>
+        <div class="pdf-page">
+        <h2 class="pdf-page-break" style="margin:0 0 8px; font-size:16px;">Pagina 1</h2>
 
         <div class="split">
           <div>
@@ -164,7 +128,7 @@
           <div>
             <label>Afbeelding (path)</label>
             <input id="image1_path" placeholder="/resources/images/bal.png" data-preview-placeholder="true" />
-            <img id="image1_preview" alt="image preview" style="display:none; max-width:100%; border-radius:8px; margin-top:8px; border:1px solid var(--line);" />
+            <img id="image1_preview" class="image-thumb" alt="image preview" />
           </div>
           <div>
             <label>Klankzuiver</label>
@@ -202,9 +166,11 @@
 
         <label>Opmerkingen</label>
         <textarea id="remarks_1"></textarea>
+        </div>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 2</h2>
+        <div class="pdf-page">
+        <h2 class="pdf-page-break" style="margin:0 0 8px; font-size:16px;">Pagina 2</h2>
 
         <div class="split">
           <div>
@@ -234,7 +200,7 @@
           <div>
             <label>Afbeelding actief (path)</label>
             <input id="image2_path" placeholder="/resources/images/bal.png" data-preview-placeholder="true" />
-            <img id="image2_preview" alt="image preview" style="display:none; max-width:100%; border-radius:8px; margin-top:8px; border:1px solid var(--line);" />
+            <img id="image2_preview" class="image-thumb" alt="image preview" />
           </div>
 
           <div>
@@ -246,9 +212,11 @@
 
         <label>Opmerkingen</label>
         <textarea id="remarks_2"></textarea>
+        </div>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 3</h2>
+        <div class="pdf-page">
+        <h2 class="pdf-page-break" style="margin:0 0 8px; font-size:16px;">Pagina 3</h2>
 
         <div class="split">
           <div>
@@ -271,7 +239,7 @@
 
         <label>Afbeelding 3 (path)</label>
         <input id="image3_path" placeholder="/resources/images/beeld3.png" />
-        <img id="image3_preview" alt="image preview" style="display:none; max-width:50%; border-radius:8px; margin-top:8px; border:1px solid var(--line);" />
+        <img id="image3_preview" class="image-thumb" alt="image preview" />
 
         <div class="split">
           <div>
@@ -292,8 +260,11 @@
           </div>
         </div>
 
+        </div>
+
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 4</h2>
+        <div class="pdf-page">
+        <h2 class="pdf-page-break" style="margin:0 0 8px; font-size:16px;">Pagina 4</h2>
 
         <div class="split">
           <div>
@@ -319,9 +290,11 @@
 
         <label>Opmerkingen)</label>
         <textarea id="remarks_3"></textarea>
+        </div>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 5</h2>
+        <div class="pdf-page">
+        <h2 class="pdf-page-break" style="margin:0 0 8px; font-size:16px;">Pagina 5</h2>
 
         <div class="split">
           <div>
@@ -347,9 +320,11 @@
 
         <label>Opmerkingen</label>
         <textarea id="remarks_4"></textarea>
+        </div>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 6</h2>
+        <div class="pdf-page">
+        <h2 class="pdf-page-break" style="margin:0 0 8px; font-size:16px;">Pagina 6</h2>
 
         <div class="split">
           <div>
@@ -374,40 +349,89 @@
 
         <label>Opmerkingen</label>
         <textarea id="remarks_5"></textarea>
+        </div>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 7</h2>
+        <div class="pdf-page">
+        <h2 class="pdf-page-break" style="margin:0 0 8px; font-size:16px;">Pagina 7</h2>
         <label>Handleiding</label>
         <textarea id="handleiding_text"></textarea>
 
         <label>Opmerkingen</label>
         <textarea id="remarks_6"></textarea>
+        </div>
 
         <div class="hr"></div>
-        <h2 style="margin:0 0 8px; font-size:16px;">Pagina 8</h2>
+        <div class="pdf-page">
+        <h2 class="pdf-page-break" style="margin:0 0 8px; font-size:16px;">Pagina 8</h2>
 
         <label>Materialen</label>
         <textarea id="materialen"></textarea>
 
         <div class="hr"></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <script>
+  <div id="imageLightbox" aria-hidden="true">
+    <button id="imageLightboxClose" type="button">Close</button>
+    <img id="imageLightboxImg" alt="image preview large" />
+  </div>
+
+  <script type="module">
+    const $ = (id) => document.getElementById(id);
+
+    const supabaseInit = async () => {
+      try {
+        let cfg = null;
+        if (location.protocol === "file:") {
+          const mod = await import("./supabase-config.js");
+          cfg = mod?.supabaseConfig || mod?.default || null;
+          if (!cfg?.url || !cfg?.anonKey) {
+            throw new Error("Local supabase-config.js missing url/anonKey.");
+          }
+        } else {
+          try {
+            cfg = await fetch("/api/supabase-config").then(async (r) => {
+              if (!r.ok) {
+                const body = await r.text().catch(() => "");
+                throw new Error(`Failed to load /api/supabase-config (${r.status}). ${body}`.trim());
+              }
+              return r.json();
+            });
+            if (!cfg?.url || !cfg?.anonKey) {
+              throw new Error("Supabase config missing url/anonKey.");
+            }
+          } catch (e) {
+            // Fallback to a local config file when /api isn't available.
+            const mod = await import("./supabase-config.js");
+            cfg = mod?.supabaseConfig || mod?.default || null;
+            if (!cfg?.url || !cfg?.anonKey) {
+              throw e;
+            }
+          }
+        }
+        const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
+        return { client: createClient(cfg.url, cfg.anonKey), config: cfg, error: null };
+      } catch (error) {
+        console.error("Supabase init failed:", error);
+        return { client: null, config: null, error };
+      }
+    };
     // -----------------------------
     // Supabase client + state
     // -----------------------------
     let sb = null;
     let currentItem = null; // full row from mpop_items
     let sounds = [];
-    let sbConfigKey = "";
     let authRefreshRunning = false;
     let authListenerBound = false;
     const audioPlayers = new Map();
     const AUDIO_ENDPOINT = "https://www.tastenbraille.com/braillestudio";
-
-    const $ = (id) => document.getElementById(id);
+    const { client: sbClient, config: sbConfig, error: sbInitError } = await supabaseInit();
+    sb = sbClient;
+    // no UI display of config values
 
     function msg(el, text, ok=true) {
       el.innerHTML = text ? `<span class="${ok ? 'ok' : 'err'}">${escapeHtml(text)}</span>` : '';
@@ -480,17 +504,11 @@
     }
 
     function ensureClient() {
-      const url = $("sbUrl").value.trim();
-      const key = $("sbAnon").value.trim();
-      if (!url || !key) throw new Error("Please provide Supabase URL and anon key.");
-      if (!window.supabase || !window.supabase.createClient) {
-        throw new Error("Supabase JS not loaded. Check the CDN script tag.");
+      if (sbInitError) {
+        throw new Error(`Supabase init failed: ${sbInitError.message || sbInitError}`);
       }
-      const nextKey = `${url}::${key}`;
-      if (!sb || sbConfigKey !== nextKey) {
-        sb = window.supabase.createClient(url, key);
-        sbConfigKey = nextKey;
-        authListenerBound = false;
+      if (!sb) {
+        throw new Error("Supabase client not ready.");
       }
       return sb;
     }
@@ -664,6 +682,7 @@
       $("version").textContent = String(row.version ?? "");
       $("updatedAt").textContent = row.updated_at || "";
 
+      $("auteur").value = row.auteur || "";
       $("title").value = row.title || "";
       $("statusSelect").value = row.status || "draft";
 
@@ -739,6 +758,7 @@
       try {
         msg($("saveMsg"), "Saving...");
         const payload = {
+          auteur: $("auteur").value.trim(),
           title: $("title").value.trim(),
           status: $("statusSelect").value,
 
@@ -833,12 +853,28 @@
 
       const filenameBase = ($("code").textContent || "mpop_item").trim().replace(/[^a-zA-Z0-9_-]+/g, "_");
       const filename = `${filenameBase}.pdf`;
+      const appStyles = document.getElementById("appStyles");
+      const pdfStyles = document.getElementById("pdfStyles");
       const editor = $("editor");
       const content = editor.cloneNode(true);
       const btnrow = content.querySelector(".btnrow");
       if (btnrow) btnrow.remove();
       const saveMsg = content.querySelector("#saveMsg");
       if (saveMsg) saveMsg.remove();
+      for (const label of content.querySelectorAll("label")) {
+        const text = (label.textContent || "").trim().toLowerCase();
+        if (text === "audio" || text === "audio path (audio_path)") {
+          label.remove();
+        }
+      }
+      for (const btn of content.querySelectorAll("button")) {
+        if (btn.id.startsWith("btnPlay") || btn.classList.contains("btnSoundPlay")) {
+          btn.remove();
+        }
+      }
+      for (const img of content.querySelectorAll("img")) {
+        if (img.getAttribute("src")) img.style.display = "block";
+      }
 
       const temp = document.createElement("div");
       temp.style.position = "fixed";
@@ -848,18 +884,33 @@
       document.body.appendChild(temp);
 
       try {
-        await window.html2pdf()
+        if (appStyles) appStyles.disabled = true;
+        if (pdfStyles) pdfStyles.disabled = false;
+        const worker = window.html2pdf()
           .set({
             margin: 10,
             filename,
-            html2canvas: { scale: 2 },
+            html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
           })
-          .from(content)
-          .save();
+          .from(content);
+
+        const pdf = await worker.toPdf().get("pdf");
+        const totalPages = pdf.internal.getNumberOfPages();
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        pdf.setFontSize(10);
+        pdf.setTextColor(60);
+        for (let i = 1; i <= totalPages; i++) {
+          pdf.setPage(i);
+          pdf.text(`Page ${i} / ${totalPages}`, pageWidth / 2, pageHeight - 6, { align: "center" });
+        }
+        await worker.save();
       } catch (e) {
         msg($("saveMsg"), e.message || String(e), false);
       } finally {
+        if (pdfStyles) pdfStyles.disabled = true;
+        if (appStyles) appStyles.disabled = false;
         temp.remove();
       }
     }
@@ -885,16 +936,43 @@
     function updateImagePreview(inputId, imgId) {
       const img = $(imgId);
       const input = $(inputId);
-      const usePlaceholder = input.dataset.previewPlaceholder === "true";
-      const path = (input.value || "").trim() || (usePlaceholder ? (input.placeholder || "") : "");
+      const path = (input.value || "").trim();
       const url = buildImageUrl(path);
       if (!url) {
         img.style.display = "none";
         img.removeAttribute("src");
+        img.removeAttribute("data-full-url");
         return;
       }
       img.src = url;
+      img.dataset.fullUrl = url;
       img.style.display = "block";
+    }
+
+    function openImageLightbox(url, altText) {
+      const lightbox = $("imageLightbox");
+      const lightboxImg = $("imageLightboxImg");
+      if (!url) return;
+      lightboxImg.src = url;
+      lightboxImg.alt = altText || "image preview large";
+      lightbox.style.display = "flex";
+      lightbox.setAttribute("aria-hidden", "false");
+    }
+
+    function closeImageLightbox() {
+      const lightbox = $("imageLightbox");
+      const lightboxImg = $("imageLightboxImg");
+      lightbox.style.display = "none";
+      lightbox.setAttribute("aria-hidden", "true");
+      lightboxImg.removeAttribute("src");
+    }
+
+    function wireImagePreview(imgId) {
+      const img = $(imgId);
+      img.addEventListener("click", () => {
+        const url = img.dataset.fullUrl || img.getAttribute("src");
+        if (url) openImageLightbox(url, img.alt);
+      });
     }
 
     function setPlayButton(btnId, path) {
@@ -1133,9 +1211,21 @@
     wireAudioInput("opdracht6_audio_path", "btnPlayOpdracht6Audio");
     wireAudioInput("woord_audio_path", "btnPlayWoordAudio");
     wireAudioInput("beschrijving_audio_path", "btnPlayBeschrijvingAudio");
+    wireImagePreview("image1_preview");
+    wireImagePreview("image2_preview");
+    wireImagePreview("image3_preview");
     $("image1_path").addEventListener("input", () => updateImagePreview("image1_path", "image1_preview"));
     $("image2_path").addEventListener("input", () => updateImagePreview("image2_path", "image2_preview"));
     $("image3_path").addEventListener("input", () => updateImagePreview("image3_path", "image3_preview"));
+
+    $("imageLightbox").addEventListener("click", (e) => {
+      if (e.target.id === "imageLightbox" || e.target.id === "imageLightboxClose") {
+        closeImageLightbox();
+      }
+    });
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeImageLightbox();
+    });
 
     // Upload buttons -> update db path fields
 
@@ -1148,16 +1238,10 @@
     // Boot: restore from localStorage (optional convenience)
     // -----------------------------
     window.addEventListener("load", async () => {
-      // optional: remember url/key locally
-      const savedUrl = localStorage.getItem("mpop_sb_url");
-      const savedKey = localStorage.getItem("mpop_sb_anon");
-      if (savedUrl) $("sbUrl").value = savedUrl;
-      if (savedKey) $("sbAnon").value = savedKey;
-
-      // save on change
-      $("sbUrl").addEventListener("change", () => localStorage.setItem("mpop_sb_url", $("sbUrl").value.trim()));
-      $("sbAnon").addEventListener("change", () => localStorage.setItem("mpop_sb_anon", $("sbAnon").value.trim()));
-
+      if (sbInitError) {
+        msg($("authMsg"), `Supabase init failed: ${sbInitError.message || sbInitError}`, false);
+        return;
+      }
       // if user already has a session, refresh UI
       try {
         ensureClient();
