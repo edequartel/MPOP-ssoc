@@ -5,11 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>MPOP++ editor - Bartimé</title>
 
-  <!-- PDF export -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
   <link id="appStyles" rel="stylesheet" href="styles.css" />
-  <link id="pdfStyles" rel="stylesheet" href="pdf.css" disabled />
 </head>
 
 <body>
@@ -80,7 +76,6 @@
         <div class="btnrow mt-10">
           <button id="btnSave">Bewaar</button>
           <button id="btnReload">Reload item</button>
-          <button id="btnExportPdf">Export PDF</button>
         </div>
         <div id="saveMsg" class="tiny mt-10"></div>
 
@@ -828,133 +823,6 @@
       msg($("saveMsg"), "Reloaded.");
     }
 
-    async function exportPdf() {
-      if (!currentItem) return;
-      if (!window.html2pdf) {
-        msg($("saveMsg"), "PDF export library not loaded.", false);
-        return;
-      }
-
-      const filenameBase = ($("code").textContent || "mpop_item").trim().replace(/[^a-zA-Z0-9_-]+/g, "_");
-      const filename = `${filenameBase}.pdf`;
-      const appStyles = document.getElementById("appStyles");
-      const pdfStyles = document.getElementById("pdfStyles");
-      const editor = $("editor");
-      const content = editor.cloneNode(true);
-      const btnrow = content.querySelector(".btnrow");
-      if (btnrow) btnrow.remove();
-      const saveMsg = content.querySelector("#saveMsg");
-      if (saveMsg) saveMsg.remove();
-      const headings = Array.from(content.querySelectorAll("h2"));
-      for (const h of headings) {
-        const t = (h.textContent || "").trim().toLowerCase();
-        if (t.startsWith("pagina 2")) {
-          const prev = h.previousElementSibling;
-          if (prev && prev.classList.contains("hr")) prev.remove();
-          let node = h;
-          while (node) {
-            const next = node.nextElementSibling;
-            node.remove();
-            if (next && next.tagName === "H2") {
-              const nextText = (next.textContent || "").trim().toLowerCase();
-              if (nextText.startsWith("pagina")) break;
-            }
-            node = next;
-          }
-          break;
-        }
-      }
-      for (const label of content.querySelectorAll("label")) {
-        const text = (label.textContent || "").trim();
-        const lower = text.toLowerCase();
-        if (lower.startsWith("audio") || lower === "audio path (audio_path)") {
-          label.remove();
-          continue;
-        }
-        let fieldId = "";
-        const direct = label.nextElementSibling;
-        const directField = direct && direct.matches("input, textarea, select")
-          ? direct
-          : (direct ? direct.querySelector("input, textarea, select") : null);
-        if (directField && directField.id) fieldId = directField.id;
-        if (fieldId) {
-          label.textContent = `${text} (${fieldId})`;
-        }
-      }
-      for (const el of content.querySelectorAll("h2")) {
-        const t = (el.textContent || "").trim().toLowerCase();
-        if (t.startsWith("pagina 1")) {
-          const breaker = document.createElement("div");
-          breaker.className = "html2pdf__page-break";
-          el.parentNode?.insertBefore(breaker, el);
-          break;
-        }
-      }
-      for (const btn of content.querySelectorAll("button")) {
-        if (btn.id.startsWith("btnPlay") || btn.classList.contains("btnSoundPlay")) {
-          btn.remove();
-        }
-      }
-      for (const img of content.querySelectorAll("img")) img.remove();
-      for (const field of content.querySelectorAll("input, textarea, select")) {
-        let value = "";
-        if (field.tagName === "SELECT") {
-          const selected = field.options[field.selectedIndex];
-          value = selected ? selected.textContent || "" : "";
-        } else {
-          value = field.value || "";
-        }
-        const replacement = document.createElement("div");
-        replacement.className = "pdf-value";
-        replacement.textContent = value;
-        field.replaceWith(replacement);
-      }
-
-      const temp = document.createElement("div");
-      temp.style.position = "fixed";
-      temp.style.left = "-10000px";
-      temp.style.top = "0";
-      temp.appendChild(content);
-      document.body.appendChild(temp);
-
-      try {
-        if (appStyles) appStyles.disabled = true;
-        if (pdfStyles) pdfStyles.disabled = false;
-        await new Promise((r) => requestAnimationFrame(r));
-        await new Promise((r) => requestAnimationFrame(r));
-        const worker = window.html2pdf()
-          .set({
-            margin: 10,
-            filename,
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-            pagebreak: { mode: ["avoid-all"] }
-          })
-          .from(content);
-
-        const pdf = await worker.toPdf().get("pdf");
-        const totalPages = pdf.internal.getNumberOfPages();
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        pdf.setFontSize(11);
-        pdf.setTextColor(0);
-        for (let i = 1; i <= totalPages; i++) {
-          pdf.setPage(i);
-          pdf.text("Bartim\u00e9us Onderwijs", pageWidth / 2, 8, { align: "center" });
-          pdf.setFontSize(10);
-          pdf.text(`Page ${i} / ${totalPages}`, pageWidth / 2, pageHeight - 6, { align: "center" });
-          pdf.setFontSize(11);
-        }
-        await worker.save();
-      } catch (e) {
-        msg($("saveMsg"), e.message || String(e), false);
-      } finally {
-        if (pdfStyles) pdfStyles.disabled = true;
-        if (appStyles) appStyles.disabled = false;
-        temp.remove();
-      }
-    }
-
     // -----------------------------
     // Audio playback (endpoint + path)
     // -----------------------------
@@ -1181,7 +1049,6 @@
 
     $("btnSave").onclick = saveItem;
     $("btnReload").onclick = reloadItem;
-    $("btnExportPdf").onclick = exportPdf;
 
     for (const el of document.querySelectorAll("#editor input, #editor textarea, #editor select")) {
       el.addEventListener("input", scheduleAutosave);
