@@ -845,19 +845,49 @@
       if (btnrow) btnrow.remove();
       const saveMsg = content.querySelector("#saveMsg");
       if (saveMsg) saveMsg.remove();
-      for (const el of content.querySelectorAll("*")) {
-        const text = (el.textContent || "").trim().toLowerCase();
-        if (text.startsWith("pagina")) {
-          const breaker = document.createElement("div");
-          breaker.className = "html2pdf__page-break";
-          el.classList.add("pdf-page-title");
-          el.parentNode?.insertBefore(breaker, el);
+      const headings = Array.from(content.querySelectorAll("h2"));
+      for (const h of headings) {
+        const t = (h.textContent || "").trim().toLowerCase();
+        if (t.startsWith("pagina 2")) {
+          const prev = h.previousElementSibling;
+          if (prev && prev.classList.contains("hr")) prev.remove();
+          let node = h;
+          while (node) {
+            const next = node.nextElementSibling;
+            node.remove();
+            if (next && next.tagName === "H2") {
+              const nextText = (next.textContent || "").trim().toLowerCase();
+              if (nextText.startsWith("pagina")) break;
+            }
+            node = next;
+          }
+          break;
         }
       }
       for (const label of content.querySelectorAll("label")) {
-        const text = (label.textContent || "").trim().toLowerCase();
-        if (text === "audio" || text === "audio path (audio_path)") {
+        const text = (label.textContent || "").trim();
+        const lower = text.toLowerCase();
+        if (lower.startsWith("audio") || lower === "audio path (audio_path)") {
           label.remove();
+          continue;
+        }
+        let fieldId = "";
+        const direct = label.nextElementSibling;
+        const directField = direct && direct.matches("input, textarea, select")
+          ? direct
+          : (direct ? direct.querySelector("input, textarea, select") : null);
+        if (directField && directField.id) fieldId = directField.id;
+        if (fieldId) {
+          label.textContent = `${text} (${fieldId})`;
+        }
+      }
+      for (const el of content.querySelectorAll("h2")) {
+        const t = (el.textContent || "").trim().toLowerCase();
+        if (t.startsWith("pagina 1")) {
+          const breaker = document.createElement("div");
+          breaker.className = "html2pdf__page-break";
+          el.parentNode?.insertBefore(breaker, el);
+          break;
         }
       }
       for (const btn of content.querySelectorAll("button")) {
@@ -898,7 +928,7 @@
             filename,
             html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-            pagebreak: { mode: ["css", "legacy", "avoid-all"] }
+            pagebreak: { mode: ["avoid-all"] }
           })
           .from(content);
 
