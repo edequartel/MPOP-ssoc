@@ -1,5 +1,6 @@
-:root { --bg:#ffffff; --fg:#000000; --muted:#333333; --card:#ffffff; --line:#d6d6d6; }
+:root { --bg:#ffffff; --fg:#000000; --muted:#000000; --card:#ffffff; --line:#d6d6d6; }
 body { font-family: "Helvetica Neue", Arial, sans-serif; background:var(--bg); color:var(--fg); margin:14px; line-height:1.35; }
+body, body * { color:#000000; }
 h1 { font-size:18px; margin:0 0 8px; }
 .section-title { margin:0 0 8px; font-size:14px; }
 .row { display:block; }

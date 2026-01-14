@@ -9,7 +9,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <link id="appStyles" rel="stylesheet" href="styles.css" />
-  <link id="pdfStyles" rel="stylesheet" href="../pdf.css" disabled />
+  <link id="pdfStyles" rel="stylesheet" href="pdf.css" disabled />
 </head>
 
 <body>
@@ -32,10 +32,10 @@
 
       <div id="authLoggedOut">
         <label>Email</label>
-        <input id="email" type="email" placeholder="name@school.nl" />
+        <input id="email" type="email" placeholder="name@school.nl" value="edequartel@bartimeus.nl" />
 
         <label>Password</label>
-        <input id="password" type="password" placeholder="••••••••" />
+        <input id="password" type="password" placeholder="••••••••" value="zeemeeuw2015" />
 
         <div class="btnrow mt-10">
           <button id="btnSignIn">Sign in</button>
@@ -836,12 +836,28 @@
 
       const filenameBase = ($("code").textContent || "mpop_item").trim().replace(/[^a-zA-Z0-9_-]+/g, "_");
       const filename = `${filenameBase}.pdf`;
+      const appStyles = document.getElementById("appStyles");
+      const pdfStyles = document.getElementById("pdfStyles");
       const editor = $("editor");
       const content = editor.cloneNode(true);
       const btnrow = content.querySelector(".btnrow");
       if (btnrow) btnrow.remove();
       const saveMsg = content.querySelector("#saveMsg");
       if (saveMsg) saveMsg.remove();
+      for (const label of content.querySelectorAll("label")) {
+        const text = (label.textContent || "").trim().toLowerCase();
+        if (text === "audio" || text === "audio path (audio_path)") {
+          label.remove();
+        }
+      }
+      for (const btn of content.querySelectorAll("button")) {
+        if (btn.id.startsWith("btnPlay") || btn.classList.contains("btnSoundPlay")) {
+          btn.remove();
+        }
+      }
+      for (const img of content.querySelectorAll("img")) {
+        if (img.getAttribute("src")) img.style.display = "block";
+      }
 
       const temp = document.createElement("div");
       temp.style.position = "fixed";
@@ -851,18 +867,35 @@
       document.body.appendChild(temp);
 
       try {
-        await window.html2pdf()
+        if (appStyles) appStyles.disabled = true;
+        if (pdfStyles) pdfStyles.disabled = false;
+        await new Promise((r) => requestAnimationFrame(r));
+        await new Promise((r) => requestAnimationFrame(r));
+        const worker = window.html2pdf()
           .set({
             margin: 10,
             filename,
-            html2canvas: { scale: 2 },
+            html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
           })
-          .from(content)
-          .save();
+          .from(content);
+
+        const pdf = await worker.toPdf().get("pdf");
+        const totalPages = pdf.internal.getNumberOfPages();
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        pdf.setFontSize(10);
+        pdf.setTextColor(0);
+        for (let i = 1; i <= totalPages; i++) {
+          pdf.setPage(i);
+          pdf.text(`Page ${i} / ${totalPages}`, pageWidth / 2, pageHeight - 6, { align: "center" });
+        }
+        await worker.save();
       } catch (e) {
         msg($("saveMsg"), e.message || String(e), false);
       } finally {
+        if (pdfStyles) pdfStyles.disabled = true;
+        if (appStyles) appStyles.disabled = false;
         temp.remove();
       }
     }
