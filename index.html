@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MPOP++ editor - Bartimé</title>
+  <title>MPOP++ editor - Bartiméus Onderwijs</title>
 
   <link id="appStyles" rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
-  <h1>MPOP++ editor</h1>
+  <h1>MPOP++ editor - Bartiméus Onderwijs</h1>
   <!--
   <div class="muted">
     Single-file HTML editor for your Supabase tables <span class="mono">mpop_items</span> and <span class="mono">mpop_sounds</span>.
@@ -23,9 +23,9 @@
     <!-- LEFT: Auth + List -->
     <div class="card">
       <h2 class="section-title">1 Log in</h2>
-
+<!--
       <div class="tiny">Supabase config loaded from <span class="mono">/api/supabase-config</span>.</div>
-
+    -->
       <div class="hr"></div>
 
       <div id="authLoggedOut">
@@ -939,6 +939,15 @@
         player.pause();
         btn.textContent = "Play";
         return;
+      }
+      for (const [otherUrl, otherPlayer] of audioPlayers.entries()) {
+        if (otherUrl !== url && !otherPlayer.paused) {
+          otherPlayer.pause();
+          otherPlayer.currentTime = 0;
+        }
+      }
+      for (const otherBtn of document.querySelectorAll("button[id^='btnPlay'], .btnSoundPlay")) {
+        if (otherBtn !== btn) otherBtn.textContent = "Play";
       }
       btn.textContent = "Pause";
       player.play();
