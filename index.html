@@ -365,8 +365,12 @@
     const supabaseInit = async () => {
       try {
         let cfg = null;
-        const mod = await import(CONFIG_URL);
-        cfg = mod?.supabaseConfig || mod?.default || null;
+        const res = await fetch(CONFIG_URL);
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`Failed to load supabase-config (${res.status}). ${body}`.trim());
+        }
+        cfg = await res.json();
         if (!cfg?.url || !cfg?.anonKey) {
           throw new Error("Supabase config missing url/anonKey.");
         }
