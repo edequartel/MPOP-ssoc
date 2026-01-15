@@ -76,8 +76,6 @@
           <div class="pill">Updated: <span id="updatedAt" class="ok mono"></span></div>
         </div>
         <div class="btnrow mt-10">
-          <button id="btnSave">Bewaar</button>
-          <button id="btnReload">Reload item</button>
         </div>
         <div id="saveMsg" class="tiny mt-10"></div>
 
@@ -408,6 +406,7 @@
     let sounds = [];
     let authRefreshRunning = false;
     let authListenerBound = false;
+    let isViewerRole = false;
     const audioPlayers = new Map();
     const AUDIO_ENDPOINT = "https://www.tastenbraille.com/braillestudio";
     const { client: sbClient, config: sbConfig, error: sbInitError } = await supabaseInit();
@@ -497,6 +496,19 @@
       $("page_c_text_braille").value = toBraille($("page_c_text").value);
     }
 
+    function setEditorReadonly(readonly) {
+      for (const el of document.querySelectorAll("#editor input, #editor textarea, #editor select, #editor button")) {
+        if (el.tagName === "BUTTON") {
+          const btnId = el.id || "";
+          if (btnId.startsWith("btnPlay") || el.classList.contains("btnSoundPlay")) {
+            el.disabled = false;
+            continue;
+          }
+        }
+        el.disabled = readonly;
+      }
+    }
+
     function ensureClient() {
       if (sbInitError) {
         throw new Error(`Supabase init failed: ${sbInitError.message || sbInitError}`);
@@ -533,12 +545,16 @@
           .eq("user_id", session.user.id)
           .maybeSingle();
 
-        $("userRole").textContent = error ? "unknown" : (prof?.role || "unknown");
+        const role = error ? "unknown" : (prof?.role || "unknown");
+        $("userRole").textContent = role;
+        isViewerRole = role === "viewer";
+        setEditorReadonly(isViewerRole);
 
         await loadItems();
       } else {
         $("itemsList").innerHTML = "";
         hideEditor();
+        isViewerRole = false;
       }
       } finally {
         authRefreshRunning = false;
@@ -653,6 +669,7 @@
     let autosaveRunning = false;
 
     function scheduleAutosave() {
+      if (isViewerRole) return;
       if (!currentItem) return;
       if (autosaveTimer) clearTimeout(autosaveTimer);
       autosaveTimer = setTimeout(async () => {
@@ -1062,8 +1079,6 @@
       await loadItems();
     });
 
-    $("btnSave").onclick = saveItem;
-    $("btnReload").onclick = reloadItem;
 
     for (const el of document.querySelectorAll("#editor input, #editor textarea, #editor select")) {
       el.addEventListener("input", scheduleAutosave);
