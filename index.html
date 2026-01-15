@@ -29,7 +29,6 @@
       <div class="hr"></div>
 
       <div id="authLoggedOut">
-        <div id="loginLog" class="tiny"></div>
         <label>Email</label>
         <input id="email" type="email" placeholder="name@school.nl" value="edequartel@bartimeus.nl" />
 
@@ -410,13 +409,6 @@
     function msg(el, text, ok=true) {
       el.innerHTML = text ? `<span class="${ok ? 'ok' : 'err'}">${escapeHtml(text)}</span>` : '';
     }
-    function logLogin(text, ok=true) {
-      const el = $("loginLog");
-      if (!el) return;
-      const safe = escapeHtml(text);
-      const line = `<div class="${ok ? "ok" : "err"}">${safe}</div>`;
-      el.innerHTML = line + el.innerHTML;
-    }
     function escapeHtml(s) {
       return (s ?? '').toString()
         .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
@@ -538,7 +530,6 @@
 
       if (loggedIn) {
         $("userEmail").textContent = session.user.email || "(no email)";
-        logLogin("Session found. Loading profile...", true);
 
         // Fetch role from profiles (requires your RLS policy)
         const { data: prof, error } = await sb
@@ -551,18 +542,12 @@
         $("userRole").textContent = role;
         isViewerRole = role === "viewer";
         setEditorReadonly(isViewerRole);
-        if (error) {
-          logLogin(`Profile fetch failed: ${error.message || error}`, false);
-        } else {
-          logLogin(`Role: ${role}`, true);
-        }
 
         await loadItems();
       } else {
         $("itemsList").innerHTML = "";
         hideEditor();
         isViewerRole = false;
-        logLogin("No active session.", false);
       }
       } finally {
         authRefreshRunning = false;
@@ -573,17 +558,14 @@
       try {
         ensureClient();
         msg($("authMsg"), "");
-        logLogin("Signing in...", true);
         const email = $("email").value.trim();
         const password = $("password").value;
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw error;
         msg($("authMsg"), "Signed in.");
-        logLogin("Sign-in OK.", true);
         await refreshAuthUI(data?.session ?? null);
       } catch (e) {
         msg($("authMsg"), e.message || String(e), false);
-        logLogin(`Sign-in failed: ${e.message || String(e)}`, false);
       }
     }
 
@@ -591,16 +573,13 @@
       try {
         ensureClient();
         msg($("authMsg"), "");
-        logLogin("Signing up...", true);
         const email = $("email").value.trim();
         const password = $("password").value;
         const { error } = await sb.auth.signUp({ email, password });
         if (error) throw error;
         msg($("authMsg"), "Sign-up OK. If email confirmation is enabled, confirm your email before signing in.");
-        logLogin("Sign-up OK. Check email if required.", true);
       } catch (e) {
         msg($("authMsg"), e.message || String(e), false);
-        logLogin(`Sign-up failed: ${e.message || String(e)}`, false);
       }
     }
 
