@@ -360,32 +360,27 @@
 
   <script type="module">
     const $ = (id) => document.getElementById(id);
-    const CONFIG_URL = "https://edequartel.github.io/api/supabase-config.js";
+    const CONFIG_URL_LOCAL = "./supabase-config.js";
+    const CONFIG_URL_REMOTE = "../api/supabase-config.js";
 
     const supabaseInit = async () => {
       try {
         let cfg = null;
         if (location.protocol === "file:") {
-          const mod = await import(CONFIG_URL);
+          const mod = await import(CONFIG_URL_LOCAL);
           cfg = mod?.supabaseConfig || mod?.default || null;
           if (!cfg?.url || !cfg?.anonKey) {
             throw new Error("Local supabase-config.js missing url/anonKey.");
           }
         } else {
           try {
-            cfg = await fetch("/api/supabase-config").then(async (r) => {
-              if (!r.ok) {
-                const body = await r.text().catch(() => "");
-                throw new Error(`Failed to load /api/supabase-config (${r.status}). ${body}`.trim());
-              }
-              return r.json();
-            });
+            const mod = await import(CONFIG_URL_REMOTE);
+            cfg = mod?.supabaseConfig || mod?.default || null;
             if (!cfg?.url || !cfg?.anonKey) {
-              throw new Error("Supabase config missing url/anonKey.");
+              throw new Error("Remote supabase-config.js missing url/anonKey.");
             }
           } catch (e) {
-            // Fallback to a local config file when /api isn't available.
-            const mod = await import(CONFIG_URL);
+            const mod = await import(CONFIG_URL_LOCAL);
             cfg = mod?.supabaseConfig || mod?.default || null;
             if (!cfg?.url || !cfg?.anonKey) {
               throw e;
