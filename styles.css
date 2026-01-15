@@ -19,6 +19,17 @@ input, textarea, select, button {
 textarea { min-height:160px; resize:vertical; }
 button { cursor:pointer; background: rgba(255,255,255,.08); }
 button:hover { background: rgba(255,255,255,.12); }
+.btn-like {
+  display:inline-block;
+  text-decoration:none;
+  cursor:pointer;
+  background: rgba(255,255,255,.08);
+  border:1px solid var(--line);
+  color:var(--fg);
+  border-radius:10px;
+  padding:10px;
+}
+.btn-like:hover { background: rgba(255,255,255,.12); }
 .btnrow { display:flex; gap:8px; flex-wrap:wrap; }
 .btnrow button { width:auto; padding:10px 12px; }
 .inlineRow { display:flex; gap:8px; align-items:center; }
