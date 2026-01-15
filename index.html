@@ -10,10 +10,12 @@
 
 <body>
   <h1>MPOP++ editor</h1>
+  <!--
   <div class="muted">
     Single-file HTML editor for your Supabase tables <span class="mono">mpop_items</span> and <span class="mono">mpop_sounds</span>.
     Uses Supabase Auth + RLS as the security boundary.
   </div>
+-->
 
   <div class="hr"></div>
 
@@ -27,6 +29,7 @@
       <div class="hr"></div>
 
       <div id="authLoggedOut">
+        <div id="configStatus" class="tiny"></div>
         <label>Email</label>
         <input id="email" type="email" placeholder="name@school.nl" value="edequartel@bartimeus.nl" />
 
@@ -41,6 +44,7 @@
       </div>
 
       <div id="authLoggedIn" class="hidden">
+        <div id="configStatusIn" class="tiny"></div>
         <div class="kpi">
           <div class="pill">Signed in: <span id="userEmail" class="ok"></span></div>
           <div class="pill">Role: <span id="userRole" class="ok"></span></div>
@@ -415,10 +419,35 @@
     function msg(el, text, ok=true) {
       el.innerHTML = text ? `<span class="${ok ? 'ok' : 'err'}">${escapeHtml(text)}</span>` : '';
     }
+    function setConfigStatus(text, ok=true) {
+      const statusOut = $("configStatus");
+      const statusIn = $("configStatusIn");
+      if (statusOut) msg(statusOut, text, ok);
+      if (statusIn) msg(statusIn, text, ok);
+    }
+    function reportStatusError(context, error) {
+      const detail = error?.message || String(error);
+      setConfigStatus(`Error (${context}): ${detail}`, false);
+    }
     function escapeHtml(s) {
       return (s ?? '').toString()
         .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
         .replaceAll('"','&quot;').replaceAll("'","&#039;");
+    }
+
+    if (sbConfig?.url) {
+      let host = "";
+      try {
+        host = new URL(sbConfig.url).host;
+      } catch (_) {
+        host = "unknown";
+      }
+      const anonStatus = sbConfig.anonKey ? "anon key loaded" : "anon key missing";
+      setConfigStatus(`Config: ok (${host}, ${anonStatus}).`, true);
+    } else if (sbInitError) {
+      setConfigStatus(`Config error: ${sbInitError.message || sbInitError}`, false);
+    } else {
+      setConfigStatus("Config error: missing url/anon key.", false);
     }
 
     const BRAILLE_LETTERS = {
@@ -586,6 +615,7 @@
         msg($("listMsg"), `Loaded ${data?.length || 0} items.`);
       } catch (e) {
         msg($("listMsg"), e.message || String(e), false);
+        reportStatusError("loadItems", e);
       }
     }
 
