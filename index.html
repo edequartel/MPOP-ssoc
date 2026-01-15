@@ -360,32 +360,15 @@
 
   <script type="module">
     const $ = (id) => document.getElementById(id);
-    const CONFIG_URL_LOCAL = "./supabase-config.js";
-    const CONFIG_URL_REMOTE = "./api/supabase-config.js";
+    const CONFIG_URL = "https://mpop-ssoc.vercel.app/api/supabase-config.js";
 
     const supabaseInit = async () => {
       try {
         let cfg = null;
-        if (location.protocol === "file:") {
-          const mod = await import(CONFIG_URL_LOCAL);
-          cfg = mod?.supabaseConfig || mod?.default || null;
-          if (!cfg?.url || !cfg?.anonKey) {
-            throw new Error("Local supabase-config.js missing url/anonKey.");
-          }
-        } else {
-          try {
-            const mod = await import(CONFIG_URL_REMOTE);
-            cfg = mod?.supabaseConfig || mod?.default || null;
-            if (!cfg?.url || !cfg?.anonKey) {
-              throw new Error("Remote supabase-config.js missing url/anonKey.");
-            }
-          } catch (e) {
-            const mod = await import(CONFIG_URL_LOCAL);
-            cfg = mod?.supabaseConfig || mod?.default || null;
-            if (!cfg?.url || !cfg?.anonKey) {
-              throw e;
-            }
-          }
+        const mod = await import(CONFIG_URL);
+        cfg = mod?.supabaseConfig || mod?.default || null;
+        if (!cfg?.url || !cfg?.anonKey) {
+          throw new Error("Supabase config missing url/anonKey.");
         }
         const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
         return { client: createClient(cfg.url, cfg.anonKey), config: cfg, error: null };
