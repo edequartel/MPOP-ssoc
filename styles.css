@@ -28,6 +28,7 @@ button:hover { background: rgba(255,255,255,.12); }
 .itembtn { text-align:left; }
 .split { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
 .kpi { display:flex; gap:10px; flex-wrap:wrap; }
+.kpi button { width:auto; padding:4px 10px; font-size:12px; }
 .pill { border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-size:12px; color:var(--muted); }
 .ok { color:#b7f7c1; }
 .err { color:#ffb4b4; }

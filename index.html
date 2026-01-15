@@ -592,7 +592,7 @@
       for (const el of document.querySelectorAll("#editor input, #editor textarea, #editor select, #editor button")) {
         if (el.tagName === "BUTTON") {
           const btnId = el.id || "";
-          if (btnId.startsWith("btnPlay") || el.classList.contains("btnSoundPlay")) {
+          if (btnId.startsWith("btnPlay") || el.classList.contains("btnSoundPlay") || btnId === "toggleFieldNames") {
             el.disabled = false;
             continue;
           }
@@ -601,21 +601,17 @@
       }
     }
 
-    function annotateFieldLabels() {
+    function initFieldNameToggle() {
       for (const label of document.querySelectorAll("label")) {
-        if (label.dataset.annotated === "true") continue;
-        const text = (label.textContent || "").trim();
         const direct = label.nextElementSibling;
         const field = direct && direct.matches("input, textarea, select")
           ? direct
           : (direct ? direct.querySelector("input, textarea, select") : null);
-        if (!field || !field.id) continue;
-        label.textContent = `${text} (${field.id})`;
-        label.dataset.annotated = "true";
+        if (field && field.id) {
+          label.dataset.fieldId = field.id;
+        }
       }
     }
-
-    annotateFieldLabels();
 
     function ensureClient() {
       if (sbInitError) {
@@ -1324,7 +1320,7 @@
     // Boot: restore from localStorage (optional convenience)
     // -----------------------------
     window.addEventListener("load", async () => {
-      annotateFieldLabels();
+      initFieldNameToggle();
       if (sbInitError) {
         msg($("authMsg"), `Supabase init failed: ${sbInitError.message || sbInitError}`, false);
         return;
