@@ -1,23 +1,21 @@
 # Template beschrijving
 
-Bij iedere activiteit kan een QR-code of een RFID-chip worden gebruikt om automatisch een audiofragment, opdracht of interactieve functie te starten.
+Bij iedere activiteit wordt een pen gebruikt om automatisch een audiofragment, opdracht of interactieve functie te starten.
 
-Alle audiobestanden worden centraal opgeslagen op een server, zodat ze altijd actueel en eenvoudig te beheren zijn.
+Alle audiobestanden worden centraal opgeslagen op een server (www.tastenbraille.com), zodat ze altijd actueel en eenvoudig te beheren zijn.
 
----
 
-## Algemeen
 
-### Paginanummering
+# 1 Algemeen
+
+### 1.1 Paginanummering
 Alle pagina’s worden in braille én zwartdruk genummerd.  
 De nummering staat altijd linksboven voor consistente herkenning.
 
-| Col | Col |
-| --- | --- |
-| A   | B   |
+# 2 Spel
 
 
-## Pagina 1 - Introductie
+## 2.1 Pagina 1 - introductie
 
 ### 1. Doelwoord in braille en zwartdruk
 Het woord dat centraal staat (bijv. bal) wordt in braille bovenaan weergegeven, met daaronder de zwartdrukversie.
@@ -49,7 +47,7 @@ Deze opdracht kan variëren in moeilijkheid of doel.
 
 
 
-## Pagina 2 - Actieve afbeelding - 2 Opdrachten
+## 2.2 Pagina 2 - actief - Twee Opdrachten
 Een schematische weergave waarin het woord, het object en bijbehorende geluiden samenkomen in een betekenisvolle activiteit.
 
 ### 8. Beschrijving van de afbeelding in context
@@ -67,7 +65,7 @@ Bijvoorbeeld een bal die lijkt te “bewegen” in een actieve omgeving met lijn
 
 
 
-## Pagina 3 - Vier opdrachten
+## 2.3 Pagina 3 - uitbreiding - Vier opdrachten
 
 ### 11. Opdracht 3
 
@@ -82,8 +80,10 @@ Andere invoelshoek met concept.
 ### 15. Opdracht 6
 
 
+# 3 Oefeningen
 
-## Pagina 4 - Braille oefeningen
+
+## 3.1 Pagina 4 - Braille oefeningen
 Een korte verwijzing naar eerder geleerde letters of woorden.  
 Dit kan eenvoudig worden gehouden met dubbele regelafstand of extra witruimte.
 
@@ -94,7 +94,7 @@ Elke pagina begint met het woord in braille en daarna de letters afzonderlijk.
 De pagina kan worden opgemaakt met extra regelafstand (interlinie) voor leerlingen die dat nodig hebben.
 
 
-## Pagina 5-9 
+## 3.2 Pagina 5-9 
 
 ### 18. Titel
 Elke pagina begint met het woord in braille en daarna de letters afzonderlijk.
@@ -107,10 +107,11 @@ Dezelfde opbouw als pagina 4, maar gebruikt voor herhaling of uitbreiding van de
 
 Doelstellingen en extra informatie.
 
+# 4 Afsluitend
 
-## Pagina 11 - Materialen
+## 4.1 Pagina 11 - Materialen
 
-### 17. Handleiding en materialen
+## 4.2. Handleiding en materialen
 
 Een overzicht van alle benodigde materialen:
 - Brailleboek  

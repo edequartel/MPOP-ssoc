@@ -4,10 +4,18 @@ Deze handleiding beschrijft hoe je de MPOP++ editor gebruikt om items te bekijke
 
 ## Users
 
-## Toegang en rollen
+### Toegang en rollen
 
 - **Editor**: kan alle velden aanpassen en gegevens opslaan.
 - **Viewer**: kan items bekijken en audio afspelen, maar kan niet bewerken.
+
+## Sign up
+
+1. Vul je email en wachtwoord in.
+2. Klik op **Sign up**.
+3. Er zal dan een bericht verschijnen in je e-mail box.
+4. Bevestig deze e-mail. Je gaat dan naar de website terug.
+5. Wil je editor rechten dan stuur je een mail naar edequartel@bartimeus.nl
 
 ## Inloggen
 
@@ -16,6 +24,8 @@ Deze handleiding beschrijft hoe je de MPOP++ editor gebruikt om items te bekijke
 3. Na succesvol inloggen verschijnt je rol en de lijst met items.
 
 # Items
+
+De items zijn de woorden waar de methode uit bestaat.
 
 ## Item zoeken en kiezen
 
@@ -26,24 +36,16 @@ Deze handleiding beschrijft hoe je de MPOP++ editor gebruikt om items te bekijke
 
 - Vul de tekstvelden in per pagina.
 - Braille velden worden automatisch bijgewerkt op basis van de lettervelden.
-- De **Updated** datum wordt in een leesbaar formaat getoond.
-
-## Pagina indeling
-
-- Pagina 1 t/m 11 staan als secties in het formulier.
-- Iedere pagina heeft eigen velden voor titel, tekst en opmerkingen.
-- Nieuwe paginas 7, 8 en 9 zijn toegevoegd met extra velden.
 
 ## Opmerkingen velden
 
 - Bij elke pagina kun je onderaan opmerkingen toevoegen.
 
-Zorg dat deze kolommen ook in de database aanwezig zijn.
 
 ## Audio afspelen
 
-- Gebruik de **Play** knoppen om audio te beluisteren.
-- Als je een andere audio start, stopt de vorige automatisch.
+- Gebruik de **play/pauze** knop om audio te beluisteren.
+
 
 ## Afbeeldingen
 
@@ -54,12 +56,12 @@ Zorg dat deze kolommen ook in de database aanwezig zijn.
 ## Opslaan en autosave
 
 - Wijzigingen worden automatisch opgeslagen na invoer.
-- Bij fouten verschijnt een melding in de interface.
+
 
 ## Handleiding en template
 
 - Klik op **Handleiding** om deze pagina te openen.
-- Klik op **Template** voor de PDF template.
+- Klik op **Template** voor toelichting op de PDF template.
 
 
 
