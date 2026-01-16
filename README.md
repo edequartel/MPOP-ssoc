@@ -1,6 +1,11 @@
-# Handleiding MPOP++ editor
-
 Deze handleiding beschrijft hoe je de MPOP++ editor gebruikt om items te bekijken en te bewerken.
+
+| Col A | Col B |
+|----|---|
+| 1     | test  |
+| 2     | more  |
+
+---
 
 ## Toegang en rollen
 
