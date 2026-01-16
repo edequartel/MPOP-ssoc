@@ -19,6 +19,7 @@ input, textarea, select, button {
   padding:10px;
   font-size:14px;
 }
+.extra-pad { padding:12px; }
 .checkbox { width:auto; }
 textarea { min-height:160px; resize:vertical; }
 button { cursor:pointer; background: rgba(255,255,255,.08); }
