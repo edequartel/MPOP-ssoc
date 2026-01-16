@@ -3,6 +3,7 @@ body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; background:va
 h1 { font-size:20px; margin:0 0 10px; }
 .section-title { margin:0 0 8px; font-size:16px; }
 .row { display:grid; grid-template-columns: 360px 1fr; gap:12px; align-items:start; }
+.column { display:flex; flex-direction:column; gap:12px; }
 .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
 .muted { color:var(--muted); font-size:13px; line-height:1.4; }
 label { display:block; font-size:13px; color:var(--muted); margin:10px 0 6px; }

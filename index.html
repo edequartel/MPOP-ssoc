@@ -20,46 +20,57 @@
   <div class="hr"></div>
 
   <div class="row">
-    <!-- LEFT: Auth + List -->
-    <div class="card">
-      <h2 class="section-title">1 Log in</h2>
+    <!-- LEFT COLUMN -->
+    <div class="column">
+      <div class="card">
+        <h2 class="section-title">1 Log in</h2>
 <!--
       <div class="tiny">Supabase config loaded from <span class="mono">/api/supabase-config</span>.</div>
     -->
-      <div class="hr"></div>
-
-      <div id="authLoggedOut">
-        <label>Email</label>
-        <input id="email" type="email" placeholder="name@school.nl" value="edequartel@bartimeus.nl" />
-
-        <label>Password</label>
-        <input id="password" type="password" placeholder="••••••••" value="zeemeeuw2015" />
-
-        <div class="btnrow mt-10">
-          <button id="btnSignIn">Sign in</button>
-          <button id="btnSignUp">Sign up</button>
-        </div>
-        <div id="authMsg" class="tiny mt-10"></div>
-      </div>
-
-      <div id="authLoggedIn" class="hidden">
-        <div class="kpi">
-          <div class="pill">Signed in: <span id="userEmail" class="ok"></span></div>
-          <div class="pill">Role: <span id="userRole" class="ok"></span></div>
-        </div>
-        <div class="btnrow mt-10">
-          <button id="btnRefresh">Ververs lijst</button>
-          <button id="btnSignOut">Log uit</button>
-        </div>
-        <div id="listMsg" class="tiny mt-10"></div>
-
         <div class="hr"></div>
 
-        <h2 class="section-title">2 Kies item</h2>
-        <label>Search</label>
-        <input id="search" placeholder="type code/title (e.g., bal-001)" />
+        <div id="authLoggedOut">
+          <label>Email</label>
+          <input id="email" type="email" placeholder="name@school.nl" value="edequartel@bartimeus.nl" />
 
-        <div class="list mt-8" id="itemsList"></div>
+          <label>Password</label>
+          <input id="password" type="password" placeholder="••••••••" value="zeemeeuw2015" />
+
+          <div class="btnrow mt-10">
+            <button id="btnSignIn">Sign in</button>
+            <button id="btnSignUp">Sign up</button>
+          </div>
+          <div id="authMsg" class="tiny mt-10"></div>
+        </div>
+
+        <div id="authLoggedIn" class="hidden">
+          <div class="kpi">
+            <div class="pill">Signed in: <span id="userEmail" class="ok"></span></div>
+            <div class="pill">Role: <span id="userRole" class="ok"></span></div>
+          </div>
+          <div class="btnrow mt-10">
+            <button id="btnRefresh">Ververs lijst</button>
+            <button id="btnSignOut">Log uit</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="itemsCard">
+        <h2 class="section-title">2 Kies item</h2>
+        <div id="itemsLoggedOut" class="muted">Log in om items te bekijken.</div>
+        <div id="itemsLoggedIn" class="hidden">
+          <label>Search</label>
+          <input id="search" placeholder="type code/title (e.g., bal-001)" />
+          <div id="listMsg" class="tiny mt-10"></div>
+          <div class="list mt-8" id="itemsList"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="btnrow">
+          <button type="button" class="btn-like" onclick="window.open('readme.html','_blank','noreferrer')">Handleiding</button>
+          <button type="button" class="btn-like" onclick="window.open('template.html','_blank','noreferrer')">Template</button>
+        </div>
       </div>
     </div>
 
@@ -439,12 +450,6 @@
       </div>
     </div>
 
-    <div class="card">
-      <div class="btnrow">
-        <button type="button" class="btn-like" onclick="window.open('readme.html','_blank','noreferrer')">Handleiding</button>
-        <button type="button" class="btn-like" onclick="window.open('../media/bal_template.pdf','_blank','noreferrer')">Template</button>
-      </div>
-    </div>
   </div>
 
   <div id="imageLightbox" aria-hidden="true">
@@ -645,6 +650,8 @@
       const loggedIn = !!session?.user;
       $("authLoggedOut").style.display = loggedIn ? "none" : "block";
       $("authLoggedIn").style.display  = loggedIn ? "block" : "none";
+      $("itemsLoggedOut").style.display = loggedIn ? "none" : "block";
+      $("itemsLoggedIn").style.display  = loggedIn ? "block" : "none";
 
       if (loggedIn) {
         $("userEmail").textContent = session.user.email || "(no email)";

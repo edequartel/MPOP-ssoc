@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Template beschrijving</title>
+  <style>
+    :root { --bg:#0b0e14; --fg:#e9effa; --muted:#a9b6c8; --card:#121826; --line:rgba(255,255,255,.12); }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--fg); margin:16px; }
+    h1 { font-size:20px; margin:0 0 10px; }
+    .topbar { display:flex; align-items:center; justify-content:flex-start; gap:10px; margin:0 0 10px; }
+    .home { font-size:12px; text-decoration:none; color:var(--fg); background: rgba(255,255,255,.08); border:1px solid var(--line); padding:6px 10px; border-radius:999px; }
+    .home:hover { background: rgba(255,255,255,.12); }
+    h2 { font-size:16px; margin:16px 0 8px; }
+    h3 { font-size:14px; margin:14px 0 6px; }
+    p, li { color:var(--muted); font-size:13px; line-height:1.5; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; margin-top:12px; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="home" href="index.html">Home</a>
+    <a class="home" href="../media/bal_template.pdf" target="_blank" rel="noreferrer">PDF template</a>
+    <h1>Template beschrijving</h1>
+  </div>
+  <div class="card">
+    <div id="mdContent">Loading…</div>
+  </div>
+  <script id="mdSource" type="text/plain">
+# Template beschrijving
+
+Bij iedere activiteit kan een QR-code of een RFID-chip worden gebruikt om automatisch een audiofragment, opdracht of interactieve functie te starten.
+
+Alle audiobestanden worden centraal opgeslagen op een server, zodat ze altijd actueel en eenvoudig te beheren zijn.
+
+
+## Algemeen
+
+### Paginanummering
+Alle pagina’s worden in braille én zwartdruk genummerd.  
+De nummering staat altijd linksboven voor consistente herkenning.
+
+## Pagina 1 - Introductie
+
+### 1. Verhaal
+Een AI-gegenereerd verhaal dat aansluit bij het thema of woord.  
+Dit verhaal kan worden afgespeeld via Braillestudio, het boek, of een gekoppeld apparaat.  
+De leerling krijgt hiermee context en motivatie.
+
+### 2a. Object beschrijving
+De te tekening op deze pagina wordt beschreven.
+
+### 2b. Klankzuivere uitspraak van het woord
+Hier wordt het doelwoord (bijv. bal) langzaam en zuiver uitgesproken zodat de leerling het goed kan horen en herkennen.
+
+
+### 7. Tactiele afbeelding (zwelpapier / embossed)
+Een voelbare afbeelding van het object, gemaakt met zwelpapier of embossed techniek.  
+De leerling kan zo het object tactiel leren herkennen.
+### 3. Opdracht 1
+Een eerste opdracht die bij het doelwoord hoort.  
+Voorbeeld: Zoek de bal.  
+De opdracht kan per woord of per niveau verschillen.
+
+### 4. Opdracht 2
+Een tweede opdracht gekoppeld aan hetzelfde woord.  
+Voorbeeld: Vind de bal.  
+Deze opdracht kan variëren in moeilijkheid of doel.
+
+### 6. Doelwoord in braille en zwartdruk
+Het woord dat centraal staat (bijv. bal) wordt in braille bovenaan weergegeven, met daaronder de zwartdrukversie.
+
+## Pagina 2 - Actieve afbeelding - 2 Opdrachten
+
+### 8. Beschrijving van de afbeelding in context
+Een realistische beschrijving van hoe het object in de echte wereld voorkomt.  
+Bijvoorbeeld: Een bal op een voetbalveld tijdens een wedstrijd.
+
+### 9. Geluid gekoppeld aan het woord of object
+Een passend geluid dat de betekenis ondersteunt.  
+Voorbeeld: juichen bij een doelpunt.  
+In Braillestudio kunnen verschillende varianten worden gebruikt voor afwisseling.
+
+### 10. Actieve tactiele afbeelding
+Een tweede tactiele afbeelding die gebruikt wordt binnen een interactieve opdracht of spel.  
+Bijvoorbeeld een bal die lijkt te “bewegen” in een actieve omgeving met lijnen, pijlen of extra vormen.
+
+<!--
+### 11. Conceptweergave van het woord en geluiden in een actieve omgeving
+Een schematische weergave waarin het woord, het object en bijbehorende geluiden samenkomen in een betekenisvolle activiteit.
+-->
+
+## Pagina 3 - Vier opdrachten
+
+### Opdracht 3
+
+### Opdracht 4
+
+### Opdracht 5
+
+### Opdracht 6
+
+## Pagina 4 - Braille oefeningen
+
+### 13. Regels met of zonder interlinie
+De pagina kan worden opgemaakt met extra regelafstand (interlinie) voor leerlingen die dat nodig hebben.
+
+### 14. Terugkoppeling naar eerdere letters of opdrachten
+Een korte verwijzing naar eerder geleerde letters of woorden.  
+Dit kan eenvoudig worden gehouden met dubbele regelafstand of extra witruimte.
+
+## Pagina 5-9 
+
+### 15. Woord en letters (herhaling of uitbreiding)
+Dezelfde opbouw als pagina 1, maar gebruikt voor herhaling of uitbreiding van de oefening.
+
+### 16. Regels met of zonder interlinie 
+Aangepaste regelafstand naar behoefte van de leerling.
+
+
+## Pagina 10 - Handleiding
+
+Doelstellingen en extra informatie.
+
+## Pagina 11 - Materialen
+
+### 17. Handleiding en materialen
+
+Een overzicht van alle benodigde materialen:
+- Brailleboek  
+- Zwelpapier of embossed afbeeldingen  
+- Audiofragmenten (server)  
+- QR-codes of RFID-chips  
+- Bijbehorende opdrachten  
+- BrailleStudio verwijzing
+- Hardware zoals tablet, brailleleesregel en luidspreker
+  </script>
+  <script>
+    const mdHost = document.getElementById("mdContent");
+    const mdSource = document.getElementById("mdSource");
+    const escapeHtml = (s) => (s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
+    const renderMarkdown = (md) => {
+      const lines = md.replace(/\r\n/g, "\n").split("\n");
+      let html = "";
+      let inList = false;
+      let inCode = false;
+      for (const line of lines) {
+        if (line.trim().startsWith("```")) {
+          if (!inCode) {
+            html += "<pre><code>";
+            inCode = true;
+          } else {
+            html += "</code></pre>";
+            inCode = false;
+          }
+          continue;
+        }
+        if (inCode) {
+          html += `${escapeHtml(line)}\n`;
+          continue;
+        }
+        const h3 = line.match(/^###\s+(.*)$/);
+        if (h3) {
+          if (inList) { html += "</ul>"; inList = false; }
+          html += `<h3>${escapeHtml(h3[1])}</h3>`;
+          continue;
+        }
+        const h2 = line.match(/^##\s+(.*)$/);
+        if (h2) {
+          if (inList) { html += "</ul>"; inList = false; }
+          html += `<h2>${escapeHtml(h2[1])}</h2>`;
+          continue;
+        }
+        const h1 = line.match(/^#\s+(.*)$/);
+        if (h1) {
+          if (inList) { html += "</ul>"; inList = false; }
+          html += `<h1>${escapeHtml(h1[1])}</h1>`;
+          continue;
+        }
+        const li = line.match(/^\s*[-*]\s+(.*)$/);
+        if (li) {
+          if (!inList) { html += "<ul>"; inList = true; }
+          html += `<li>${escapeHtml(li[1])}</li>`;
+          continue;
+        }
+        if (inList) { html += "</ul>"; inList = false; }
+        if (line.trim()) {
+          html += `<p>${escapeHtml(line)}</p>`;
+        }
+      }
+      if (inList) html += "</ul>";
+      if (inCode) html += "</code></pre>";
+      return html;
+    };
+    mdHost.innerHTML = renderMarkdown(mdSource.textContent || "");
+  </script>
+</body>
+</html>

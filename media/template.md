@@ -1,0 +1,109 @@
+# Template beschrijving
+
+Bij iedere activiteit kan een QR-code of een RFID-chip worden gebruikt om automatisch een audiofragment, opdracht of interactieve functie te starten.
+
+Alle audiobestanden worden centraal opgeslagen op een server, zodat ze altijd actueel en eenvoudig te beheren zijn.
+
+
+## Algemeen
+
+### Paginanummering
+Alle pagina’s worden in braille én zwartdruk genummerd.  
+De nummering staat altijd linksboven voor consistente herkenning.
+
+## Pagina 1 - Introductie
+
+### 1. Verhaal
+Een AI-gegenereerd verhaal dat aansluit bij het thema of woord.  
+Dit verhaal kan worden afgespeeld via Braillestudio, het boek, of een gekoppeld apparaat.  
+De leerling krijgt hiermee context en motivatie.
+
+### 2a. Object beschrijving
+De te tekening op deze pagina wordt beschreven.
+
+### 2b. Klankzuivere uitspraak van het woord
+Hier wordt het doelwoord (bijv. bal) langzaam en zuiver uitgesproken zodat de leerling het goed kan horen en herkennen.
+
+
+### 7. Tactiele afbeelding (zwelpapier / embossed)
+Een voelbare afbeelding van het object, gemaakt met zwelpapier of embossed techniek.  
+De leerling kan zo het object tactiel leren herkennen.
+
+### 3. Opdracht 1
+Een eerste opdracht die bij het doelwoord hoort.  
+Voorbeeld: Zoek de bal.  
+De opdracht kan per woord of per niveau verschillen.
+
+### 4. Opdracht 2
+Een tweede opdracht gekoppeld aan hetzelfde woord.  
+Voorbeeld: Vind de bal.  
+Deze opdracht kan variëren in moeilijkheid of doel.
+
+### 6. Doelwoord in braille en zwartdruk
+Het woord dat centraal staat (bijv. bal) wordt in braille bovenaan weergegeven, met daaronder de zwartdrukversie.
+
+## Pagina 2 - Actieve afbeelding - 2 Opdrachten
+
+### 8. Beschrijving van de afbeelding in context
+Een realistische beschrijving van hoe het object in de echte wereld voorkomt.  
+Bijvoorbeeld: Een bal op een voetbalveld tijdens een wedstrijd.
+
+### 9. Geluid gekoppeld aan het woord of object
+Een passend geluid dat de betekenis ondersteunt.  
+Voorbeeld: juichen bij een doelpunt.  
+In Braillestudio kunnen verschillende varianten worden gebruikt voor afwisseling.
+
+### 10. Actieve tactiele afbeelding
+Een tweede tactiele afbeelding die gebruikt wordt binnen een interactieve opdracht of spel.  
+Bijvoorbeeld een bal die lijkt te “bewegen” in een actieve omgeving met lijnen, pijlen of extra vormen.
+
+<!--
+### 11. Conceptweergave van het woord en geluiden in een actieve omgeving
+Een schematische weergave waarin het woord, het object en bijbehorende geluiden samenkomen in een betekenisvolle activiteit.
+-->
+
+## Pagina 3 - Vier opdrachten
+
+### Opdracht 3
+
+### Opdracht 4
+
+### Opdracht 5
+
+### Opdracht 6
+
+## Pagina 4 - Braille oefeningen
+
+### 13. Regels met of zonder interlinie
+De pagina kan worden opgemaakt met extra regelafstand (interlinie) voor leerlingen die dat nodig hebben.
+
+### 14. Terugkoppeling naar eerdere letters of opdrachten
+Een korte verwijzing naar eerder geleerde letters of woorden.  
+Dit kan eenvoudig worden gehouden met dubbele regelafstand of extra witruimte.
+
+## Pagina 5-9 
+
+### 15. Woord en letters (herhaling of uitbreiding)
+Dezelfde opbouw als pagina 1, maar gebruikt voor herhaling of uitbreiding van de oefening.
+
+### 16. Regels met of zonder interlinie 
+Aangepaste regelafstand naar behoefte van de leerling.
+
+
+## Pagina 10 - Handleiding
+
+Doelstellingen en extra informatie.
+
+## Pagina 11 - Materialen
+
+### 17. Handleiding en materialen
+
+Een overzicht van alle benodigde materialen:
+- Brailleboek  
+- Zwelpapier of embossed afbeeldingen  
+- Audiofragmenten (server)  
+- QR-codes of RFID-chips  
+- Bijbehorende opdrachten  
+- BrailleStudio verwijzing
+- Hardware zoals tablet, brailleleesregel en luidspreker
+
