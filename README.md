@@ -1,11 +1,6 @@
 Deze handleiding beschrijft hoe je de MPOP++ editor gebruikt om items te bekijken en te bewerken.
 
-| Col A | Col B |
-|----|---|
-| 1     | test  |
-| 2     | more  |
-
----
+## Users
 
 ## Toegang en rollen
 
@@ -17,6 +12,8 @@ Deze handleiding beschrijft hoe je de MPOP++ editor gebruikt om items te bekijke
 1. Vul je email en wachtwoord in.
 2. Klik op **Sign in**.
 3. Na succesvol inloggen verschijnt je rol en de lijst met items.
+
+# Items
 
 ## Item zoeken en kiezen
 
@@ -37,14 +34,7 @@ Deze handleiding beschrijft hoe je de MPOP++ editor gebruikt om items te bekijke
 
 ## Opmerkingen velden
 
-- Pagina 3 bevat **remarks_3**.
-- Pagina 4 bevat **remarks_4**.
-- Pagina 5 bevat **remarks_5**.
-- Pagina 6 bevat **remarks_6**.
-- Pagina 7 bevat **remarks_7**.
-- Pagina 8 bevat **remarks_8**.
-- Pagina 9 bevat **remarks_9**.
-- Pagina 10 bevat **remarks_10**.
+- Bij elke pagina kun je onderaan opmerkingen toevoegen.
 
 Zorg dat deze kolommen ook in de database aanwezig zijn.
 
@@ -69,15 +59,5 @@ Zorg dat deze kolommen ook in de database aanwezig zijn.
 - Klik op **Handleiding** om deze pagina te openen.
 - Klik op **Template** voor de PDF template.
 
-## Problemen oplossen
 
-- **Supabase init failed**: controleer of de config bereikbaar is via de API.
-- **Stack depth limit exceeded**: controleer RLS policies op recursieve queries.
-- **Geen items zichtbaar**: controleer je rol en RLS policies.
 
-## Bestandslocaties
-
-- `index.html`: hoofdapplicatie.
-- `readme.html`: toont deze handleiding.
-- `readme.md`: bron voor de handleiding (deze file).
-- `api/supabase-config.js`: levert Supabase config.
