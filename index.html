@@ -59,8 +59,6 @@
         <h2 class="section-title">2 Kies item</h2>
         <div id="itemsLoggedOut" class="muted">Log in om items te bekijken.</div>
         <div id="itemsLoggedIn" class="hidden">
-          <label>Search</label>
-          <input id="search" placeholder="type code/title (e.g., bal-001)" />
           <div id="listMsg" class="tiny mt-10"></div>
           <div class="list mt-8" id="itemsList"></div>
         </div>
@@ -99,6 +97,7 @@
         <label>Status</label>
         <select id="statusSelect">
           <option value="draft">draft</option>
+          <option value="started">started</option>
           <option value="in_review">in_review</option>
           <option value="approved">approved</option>
         </select>
@@ -798,11 +797,7 @@
     }
 
     function renderItems(items) {
-      const q = $("search").value.trim().toLowerCase();
-      const filtered = !q ? items : items.filter(x =>
-        (x.code || "").toLowerCase().includes(q) ||
-        (x.title || "").toLowerCase().includes(q)
-      );
+      const filtered = items;
 
       const host = $("itemsList");
       host.innerHTML = "";
@@ -812,7 +807,13 @@
         b.className = "itembtn";
         const title = it.title || "(no title)";
         const status = it.status || "no status";
-        b.textContent = `${title} (${status})`;
+        const label = document.createElement("span");
+        label.className = "item-label";
+        label.textContent = title;
+        const dot = document.createElement("span");
+        dot.className = "status-dot";
+        dot.dataset.status = status || "";
+        b.append(label, dot);
         b.onclick = () => selectItem(it.id);
         host.appendChild(b);
       }
@@ -1297,11 +1298,14 @@
     $("btnSignOut").onclick = signOut;
     $("btnRefresh").onclick = () => loadItems();
 
-    $("search").addEventListener("input", async () => {
-      // re-render from last loaded list by reloading quickly:
-      // simplest: just reload items; if you prefer client-side filtering only, store items list.
-      await loadItems();
-    });
+    const searchInput = $("search");
+    if (searchInput) {
+      searchInput.addEventListener("input", async () => {
+        // re-render from last loaded list by reloading quickly:
+        // simplest: just reload items; if you prefer client-side filtering only, store items list.
+        await loadItems();
+      });
+    }
 
 
     for (const el of document.querySelectorAll("#editor input, #editor textarea, #editor select")) {
