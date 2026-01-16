@@ -4,6 +4,7 @@ Bij iedere activiteit kan een QR-code of een RFID-chip worden gebruikt om automa
 
 Alle audiobestanden worden centraal opgeslagen op een server, zodat ze altijd actueel en eenvoudig te beheren zijn.
 
+---
 
 ## Algemeen
 
@@ -11,6 +12,9 @@ Alle audiobestanden worden centraal opgeslagen op een server, zodat ze altijd ac
 Alle pagina’s worden in braille én zwartdruk genummerd.  
 De nummering staat altijd linksboven voor consistente herkenning.
 
+| Col | Col |
+| --- | --- |
+| A   | B   |
 
 
 ## Pagina 1 - Introductie
