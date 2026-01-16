@@ -7,6 +7,8 @@ h1 { font-size:20px; margin:0 0 10px; }
 .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
 .muted { color:var(--muted); font-size:13px; line-height:1.4; }
 label { display:block; font-size:13px; color:var(--muted); margin:10px 0 6px; }
+.checkbox-row { display:flex; align-items:center; gap:8px; margin:10px 0 6px; }
+.checkbox-row span { color:var(--muted); font-size:13px; }
 input, textarea, select, button {
   width:100%;
   box-sizing:border-box;
@@ -17,6 +19,7 @@ input, textarea, select, button {
   padding:10px;
   font-size:14px;
 }
+.checkbox { width:auto; }
 textarea { min-height:160px; resize:vertical; }
 button { cursor:pointer; background: rgba(255,255,255,.08); }
 button:hover { background: rgba(255,255,255,.12); }

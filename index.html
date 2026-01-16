@@ -270,6 +270,16 @@
 
         <div class="split">
           <div>
+            <label class="checkbox-row">
+              <input id="page_4_interlinie_on" type="checkbox" class="checkbox" />
+              <span>Interline on</span>
+            </label>
+          </div>
+          <div></div>
+        </div>
+
+        <div class="split">
+          <div>
             <label>Titel</label>
             <input id="page_a_title_letters" />
           </div>
@@ -295,6 +305,16 @@
 
         <div class="hr"></div>
         <h2 class="section-title pdf-page-break">Pagina 5</h2>
+
+        <div class="split">
+          <div>
+            <label class="checkbox-row">
+              <input id="page_5_interlinie_on" type="checkbox" class="checkbox" />
+              <span>Interline on</span>
+            </label>
+          </div>
+          <div></div>
+        </div>
 
         <div class="split">
           <div>
@@ -326,6 +346,16 @@
 
         <div class="split">
           <div>
+            <label class="checkbox-row">
+              <input id="page_6_interlinie_on" type="checkbox" class="checkbox" />
+              <span>Interline on</span>
+            </label>
+          </div>
+          <div></div>
+        </div>
+
+        <div class="split">
+          <div>
             <label>Titel</label>
             <input id="page_c_title_letters" />
           </div>
@@ -350,6 +380,16 @@
 
         <div class="hr"></div>
         <h2 class="section-title pdf-page-break">Pagina 7</h2>
+
+        <div class="split">
+          <div>
+            <label class="checkbox-row">
+              <input id="page_7_interlinie_on" type="checkbox" class="checkbox" />
+              <span>Interline on</span>
+            </label>
+          </div>
+          <div></div>
+        </div>
 
         <div class="split">
           <div>
@@ -381,6 +421,16 @@
 
         <div class="split">
           <div>
+            <label class="checkbox-row">
+              <input id="page_8_interlinie_on" type="checkbox" class="checkbox" />
+              <span>Interline on</span>
+            </label>
+          </div>
+          <div></div>
+        </div>
+
+        <div class="split">
+          <div>
             <label>Titel</label>
             <input id="page_e_title_letters" />
           </div>
@@ -406,6 +456,16 @@
 
         <div class="hr"></div>
         <h2 class="section-title pdf-page-break">Pagina 9</h2>
+
+        <div class="split">
+          <div>
+            <label class="checkbox-row">
+              <input id="page_9_interlinie_on" type="checkbox" class="checkbox" />
+              <span>Interline on</span>
+            </label>
+          </div>
+          <div></div>
+        </div>
 
         <div class="split">
           <div>
@@ -834,27 +894,33 @@
       $("page_a_title_letters").value = row.page_a_title_letters || "";
       $("page_a_text").value = row.page_a_text || "";
       updatePageABraille();
+      $("page_4_interlinie_on").checked = !!row.page_4_interlinie_on;
       $("remarks_3").value = row.remarks_3 || "";
       $("remarks_4").value = row.remarks_4 || "";
       $("page_b_title_letters").value = row.page_b_title_letters || "";
       $("page_b_text").value = row.page_b_text || "";
       updatePageBBraille();
+      $("page_5_interlinie_on").checked = !!row.page_5_interlinie_on;
       $("remarks_5").value = row.remarks_5 || "";
       $("page_c_title_letters").value = row.page_c_title_letters || "";
       $("page_c_text").value = row.page_c_text || "";
       updatePageCBraille();
+      $("page_6_interlinie_on").checked = !!row.page_6_interlinie_on;
       $("remarks_6").value = row.remarks_6 || "";
       $("page_d_title_letters").value = row.page_d_title_letters || "";
       $("page_d_text").value = row.page_d_text || "";
       updatePageDBraille();
+      $("page_7_interlinie_on").checked = !!row.page_7_interlinie_on;
       $("remarks_7").value = row.remarks_7 || "";
       $("page_e_title_letters").value = row.page_e_title_letters || "";
       $("page_e_text").value = row.page_e_text || "";
       updatePageEBraille();
+      $("page_8_interlinie_on").checked = !!row.page_8_interlinie_on;
       $("remarks_8").value = row.remarks_8 || "";
       $("page_g_title_letters").value = row.page_g_title_letters || "";
       $("page_g_text").value = row.page_g_text || "";
       updatePageGBraille();
+      $("page_9_interlinie_on").checked = !!row.page_9_interlinie_on;
       $("remarks_9").value = row.remarks_9 || "";
       $("handleiding_text").value = row.handleiding_text || "";
       $("remarks_10").value = row.remarks_10 || "";
@@ -940,27 +1006,33 @@
 
           page_a_title_letters: $("page_a_title_letters").value,
           page_a_text: $("page_a_text").value,
+          page_4_interlinie_on: $("page_4_interlinie_on").checked,
           remarks_3: $("remarks_3").value,
           remarks_4: $("remarks_4").value,
 
           page_b_title_letters: $("page_b_title_letters").value,
           page_b_text: $("page_b_text").value,
+          page_5_interlinie_on: $("page_5_interlinie_on").checked,
           remarks_5: $("remarks_5").value,
 
           page_c_title_letters: $("page_c_title_letters").value,
           page_c_text: $("page_c_text").value,
+          page_6_interlinie_on: $("page_6_interlinie_on").checked,
           remarks_6: $("remarks_6").value,
 
           page_d_title_letters: $("page_d_title_letters").value,
           page_d_text: $("page_d_text").value,
+          page_7_interlinie_on: $("page_7_interlinie_on").checked,
           remarks_7: $("remarks_7").value,
 
           page_e_title_letters: $("page_e_title_letters").value,
           page_e_text: $("page_e_text").value,
+          page_8_interlinie_on: $("page_8_interlinie_on").checked,
           remarks_8: $("remarks_8").value,
 
           page_g_title_letters: $("page_g_title_letters").value,
           page_g_text: $("page_g_text").value,
+          page_9_interlinie_on: $("page_9_interlinie_on").checked,
           remarks_9: $("remarks_9").value,
 
           handleiding_text: $("handleiding_text").value,
