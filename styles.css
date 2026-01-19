@@ -1,4 +1,4 @@
-:root { --bg:#0b0e14; --fg:#e9effa; --muted:#a9b6c8; --card:#121826; --line:rgba(255,255,255,.12); }
+:root { --bg:#0b0e14; --fg:#e9effa; --muted:#a9b6c8; --card:#121826; --line:rgba(255,255,255,.12); --wg1-bg:rgba(88, 214, 141, .18); --wg1-border:rgba(88, 214, 141, .45); --wg2-bg:rgba(242, 161, 74, .18); --wg2-border:rgba(242, 161, 74, .45); }
 body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--fg); margin:16px; }
 h1 { font-size:20px; margin:0 0 10px; }
 .section-title { margin:0 0 8px; font-size:16px; }
@@ -42,6 +42,10 @@ button:hover { background: rgba(255,255,255,.12); }
 .inlineRow button { width:auto; padding:8px 10px; }
 .list { display:flex; flex-direction:column; gap:8px; }
 .itembtn { display:flex; align-items:center; justify-content:space-between; gap:10px; text-align:left; }
+.itembtn[data-woord-groep="1"] { background:var(--wg1-bg); border-color:var(--wg1-border); }
+.itembtn[data-woord-groep="1"]:hover { background:rgba(88, 214, 141, .26); }
+.itembtn[data-woord-groep="2"] { background:var(--wg2-bg); border-color:var(--wg2-border); }
+.itembtn[data-woord-groep="2"]:hover { background:rgba(242, 161, 74, .26); }
 .item-label { flex:1; }
 .status-dot { width:10px; height:10px; border-radius:50%; flex:0 0 auto; display:inline-block; background:#9aa3b2; }
 .status-dot[data-status="draft"] { background:#ffffff; }

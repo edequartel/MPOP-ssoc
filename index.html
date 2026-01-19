@@ -784,7 +784,7 @@
         msg($("listMsg"), "Loading...");
         const { data, error } = await sb
           .from("mpop_items")
-          .select("id, code, title, status, updated_at, version, sort_index")
+          .select("id, code, title, status, updated_at, version, sort_index, woord_groep")
           .order("sort_index", { ascending: true });
 
         if (error) throw error;
@@ -813,6 +813,9 @@
         const dot = document.createElement("span");
         dot.className = "status-dot";
         dot.dataset.status = status || "";
+        if (it.woord_groep !== null && it.woord_groep !== undefined) {
+          b.dataset.woordGroep = String(it.woord_groep);
+        }
         b.append(label, dot);
         b.onclick = () => selectItem(it.id);
         host.appendChild(b);
