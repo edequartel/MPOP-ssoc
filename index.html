@@ -1322,7 +1322,14 @@
           throw new Error(`PDF request failed (${r.status}). ${body}`.trim());
         }
         const blob = await r.blob();
-        window.open(URL.createObjectURL(blob), "_blank", "noreferrer");
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `mpop-${currentItem.id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
       } catch (e) {
         msg($("saveMsg"), e.message || String(e), false);
       }
