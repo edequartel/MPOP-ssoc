@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { PDFDocument, StandardFonts } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 export const config = { runtime: "nodejs" };
 
@@ -36,7 +36,24 @@ export default async function handler(req, res) {
   const page = pdfDoc.addPage([595, 842]);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-  page.drawText(item.title ?? "MPOP item", { x: 48, y: 800, size: 16, font });
+  const titleText = item.title ?? "MPOP item";
+  const titleSize = 16;
+  const titleX = 48;
+  const titleY = 800;
+  const titlePaddingX = 10;
+  const titlePaddingY = 6;
+  const titleWidth = font.widthOfTextAtSize(titleText, titleSize);
+  const titleHeight = titleSize;
+  page.drawRectangle({
+    x: titleX - titlePaddingX,
+    y: titleY - titlePaddingY,
+    width: titleWidth + titlePaddingX * 2,
+    height: titleHeight + titlePaddingY * 2,
+    borderColor: rgb(0, 0, 0),
+    borderWidth: 1,
+    borderRadius: 6
+  });
+  page.drawText(titleText, { x: titleX, y: titleY, size: titleSize, font });
   page.drawText(item.story_text ?? "", { x: 48, y: 760, size: 10, font, maxWidth: 500 });
   page.drawText(item.remarks_1 ?? "", { x: 48, y: 680, size: 10, font, maxWidth: 500 });
 
