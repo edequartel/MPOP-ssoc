@@ -50,8 +50,8 @@ export default async function handler(req, res) {
     width: titleWidth + titlePaddingX * 2,
     height: titleHeight + titlePaddingY * 2,
     borderColor: rgb(0, 0, 0),
-    borderWidth: 1,
-    borderRadius: 6
+    borderWidth: 2,
+    borderRadius: 12
   });
   page.drawText(titleText, { x: titleX, y: titleY, size: titleSize, font });
   page.drawText(item.story_text ?? "", { x: 48, y: 760, size: 10, font, maxWidth: 500 });
