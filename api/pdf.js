@@ -3,17 +3,31 @@ import { PDFDocument, StandardFonts } from "pdf-lib";
 
 export const config = { runtime: "nodejs" };
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY
-);
-
 export default async function handler(req, res) {
   const idRaw = req.query.id;
   const id = Array.isArray(idRaw) ? idRaw[0] : idRaw;
   if (!id || typeof id !== "string") {
     return res.status(400).json({ error: "Missing id" });
   }
+  if (id === "undefined" || id === "null") {
+    return res.status(400).json({ error: "Missing id" });
+  }
+
+  const authHeader = req.headers?.authorization || "";
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+  const supabaseKey = serviceKey || anonKey;
+  if (!process.env.SUPABASE_URL || !supabaseKey) {
+    return res.status(500).json({ error: "Supabase env not configured" });
+  }
+
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    supabaseKey,
+    authHeader
+      ? { global: { headers: { Authorization: authHeader } } }
+      : undefined
+  );
 
   const { data: item, error } = await supabase
     .from("mpop_items")
