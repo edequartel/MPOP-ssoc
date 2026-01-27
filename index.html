@@ -842,6 +842,10 @@
         updatePdfButton();
         await loadSounds();
       } catch (e) {
+        console.error("saveItem failed", e, {
+          id: currentItem?.id,
+          version: currentItem?.version
+        });
         msg($("saveMsg"), e.message || String(e), false);
       }
     }
