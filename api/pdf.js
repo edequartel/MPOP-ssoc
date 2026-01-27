@@ -59,8 +59,7 @@ export default async function handler(req, res) {
 
   const pdfBytes = await pdfDoc.save();
 
-  const safeTitle = String(titleText).replace(/["\\]/g, "").trim();
   res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `inline; filename="mpop-${safeTitle}.pdf"`);
+  res.setHeader("Content-Disposition", `inline; filename="mpop-${id}.pdf"`);
   res.send(Buffer.from(pdfBytes));
 }
