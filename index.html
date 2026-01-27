@@ -82,7 +82,7 @@
           <div class="pill">Code: <span id="code" class="ok mono"></span></div>
           <div class="pill">Status: <span id="status" class="ok mono"></span></div>
           <div class="pill">Version: <span id="version" class="ok mono"></span></div>
-          <div class="pill">Updated: <span id="updatedAt" class="ok mono"></span></div>
+          <div class="pill">Updated: <span id="updatedAt" class="ok mono"></span> <button id="btnPdf" type="button" disabled>Generate PDF</button></div>
         </div>
         <div class="btnrow mt-10">
         </div>
@@ -834,6 +834,7 @@
 
         currentItem = data;
         showEditor(data);
+        updatePdfButton();
         await loadSounds();
       } catch (e) {
         msg($("saveMsg"), e.message || String(e), false);
@@ -844,6 +845,7 @@
       $("editorHint").style.display = "block";
       $("editor").style.display = "none";
       currentItem = null;
+      updatePdfButton();
     }
 
     let autosaveTimer = null;
@@ -959,6 +961,28 @@
       updateImagePreview("image2_path", "image2_preview");
       updateImagePreview("image3_path", "image3_preview");
 
+    }
+
+    function updatePdfButton() {
+      $("btnPdf").disabled = !currentItem?.id;
+    }
+
+    async function flushAutosaveForPdf() {
+      if (autosaveTimer) {
+        clearTimeout(autosaveTimer);
+        autosaveTimer = null;
+      }
+      if (isViewerRole || !currentItem) return;
+      if (autosaveRunning) {
+        await new Promise((resolve) => {
+          const tick = () => {
+            if (!autosaveRunning) return resolve();
+            setTimeout(tick, 100);
+          };
+          tick();
+        });
+      }
+      await saveItem();
     }
 
     // -----------------------------
@@ -1300,6 +1324,27 @@
 
     $("btnSignOut").onclick = signOut;
     $("btnRefresh").onclick = () => loadItems();
+    $("btnPdf").onclick = async () => {
+      try {
+        if (!currentItem?.id) return;
+        await flushAutosaveForPdf();
+        const { data } = await sb.auth.getSession();
+        const token = data?.session?.access_token;
+        const r = await fetch(`/api/pdf?id=${encodeURIComponent(currentItem.id)}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!r.ok) {
+          const body = await r.text().catch(() => "");
+          throw new Error(`PDF failed (${r.status}). ${body}`.trim());
+        }
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      } catch (e) {
+        msg($("saveMsg"), e.message || String(e), false);
+      }
+    };
 
     const searchInput = $("search");
     if (searchInput) {

@@ -1,0 +1,29 @@
+{
+  "name": "mpop-ssoc",
+  "version": "1.0.0",
+  "description": "Deze handleiding beschrijft hoe je de MPOP++ editor gebruikt om items te bekijken en te bewerken.",
+  "main": "supabase-config.js",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.93.1",
+    "iceberg-js": "^0.8.1",
+    "pako": "^1.0.11",
+    "pdf-lib": "^1.17.1",
+    "tslib": "^2.8.1",
+    "undici-types": "^7.16.0",
+    "ws": "^8.19.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edequartel/MPOP-ssoc.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/edequartel/MPOP-ssoc/issues"
+  },
+  "homepage": "https://github.com/edequartel/MPOP-ssoc#readme"
+}
