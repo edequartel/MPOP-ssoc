@@ -9,16 +9,20 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  const id = req.query.id;
-  if (!id) return res.status(400).json({ error: "Missing id" });
+  const idRaw = req.query.id;
+  const id = Array.isArray(idRaw) ? idRaw[0] : idRaw;
+  if (!id || typeof id !== "string") {
+    return res.status(400).json({ error: "Missing id" });
+  }
 
   const { data: item, error } = await supabase
     .from("mpop_items")
     .select("id,title,story_text,remarks_1")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
   if (error) return res.status(500).json({ error: error.message });
+  if (!item) return res.status(404).json({ error: "Item not found" });
 
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([595, 842]);
