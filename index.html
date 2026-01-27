@@ -85,7 +85,6 @@
           <div class="pill">Updated: <span id="updatedAt" class="ok mono"></span></div>
         </div>
         <div class="btnrow mt-10">
-          <button id="btnPdf" type="button" disabled>Generate PDF</button>
         </div>
         <div id="saveMsg" class="tiny mt-10"></div>
 
@@ -659,15 +658,11 @@
       $("page_g_text_braille").value = toBraille($("page_g_text").value);
     }
 
-    function updatePdfButton() {
-      $("btnPdf").disabled = !currentItem?.id;
-    }
-
     function setEditorReadonly(readonly) {
       for (const el of document.querySelectorAll("#editor input, #editor textarea, #editor select, #editor button")) {
         if (el.tagName === "BUTTON") {
           const btnId = el.id || "";
-          if (btnId.startsWith("btnPlay") || el.classList.contains("btnSoundPlay") || btnId === "toggleFieldNames" || btnId === "btnPdf") {
+          if (btnId.startsWith("btnPlay") || el.classList.contains("btnSoundPlay") || btnId === "toggleFieldNames") {
             el.disabled = false;
             continue;
           }
@@ -839,13 +834,8 @@
 
         currentItem = data;
         showEditor(data);
-        updatePdfButton();
         await loadSounds();
       } catch (e) {
-        console.error("saveItem failed", e, {
-          id: currentItem?.id,
-          version: currentItem?.version
-        });
         msg($("saveMsg"), e.message || String(e), false);
       }
     }
@@ -854,7 +844,6 @@
       $("editorHint").style.display = "block";
       $("editor").style.display = "none";
       currentItem = null;
-      updatePdfButton();
     }
 
     let autosaveTimer = null;
@@ -1311,33 +1300,6 @@
 
     $("btnSignOut").onclick = signOut;
     $("btnRefresh").onclick = () => loadItems();
-    $("btnPdf").onclick = async () => {
-      try {
-        if (!currentItem?.id) return;
-        ensureClient();
-        const { data } = await sb.auth.getSession();
-        const token = data?.session?.access_token;
-        if (!token) throw new Error("You must be signed in to generate a PDF.");
-        const r = await fetch(`/api/pdf?id=${encodeURIComponent(currentItem.id)}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!r.ok) {
-          const body = await r.text().catch(() => "");
-          throw new Error(`PDF request failed (${r.status}). ${body}`.trim());
-        }
-        const blob = await r.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `mpop-${currentItem.id}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      } catch (e) {
-        msg($("saveMsg"), e.message || String(e), false);
-      }
-    };
 
     const searchInput = $("search");
     if (searchInput) {
