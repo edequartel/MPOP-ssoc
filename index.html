@@ -1343,7 +1343,18 @@
         }
         const blob = await r.blob();
         const url = URL.createObjectURL(blob);
-        window.open(url, "_blank");
+        const a = document.createElement("a");
+        a.href = url;
+        const rawTitle = (currentItem?.title || "").trim();
+        const safeTitle = rawTitle
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        const fileId = safeTitle || String(currentItem?.id || "mpop");
+        a.download = `mpop-${fileId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
       } catch (e) {
         msg($("saveMsg"), e.message || String(e), false);
