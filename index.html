@@ -358,6 +358,158 @@
         <textarea id="remarks_pg_b"></textarea>
 
         <div class="hr"></div>
+        <h2 class="section-title pdf-page-break">Braille Pagina 3</h2>
+
+        <div class="split">
+          <div>
+            <label class="checkbox-row">
+              <input id="page_c_interlinie_on" type="checkbox" class="checkbox" />
+              <span>Interline on</span>
+            </label>
+          </div>
+          <div></div>
+        </div>
+
+        <div class="split">
+          <div>
+            <label>Titel</label>
+            <input id="page_c_title_letters" />
+          </div>
+          <div>
+            <label>Titel (braille)</label>
+            <input id="page_c_title_braille" readonly />
+          </div>
+        </div>
+
+        <div class="split">
+          <div>
+            <label>Tekst</label>
+            <textarea id="page_c_text"></textarea>
+          </div>
+          <div>
+            <label>Tekst (braille)</label>
+            <textarea id="page_c_text_braille" readonly></textarea>
+          </div>
+        </div>
+
+        <label>Opmerkingen</label>
+        <textarea id="remarks_pg_c"></textarea>
+
+        <div class="hr"></div>
+        <h2 class="section-title pdf-page-break">Braille Pagina 4</h2>
+
+        <div class="split">
+          <div>
+            <label class="checkbox-row">
+              <input id="page_d_interlinie_on" type="checkbox" class="checkbox" />
+              <span>Interline on</span>
+            </label>
+          </div>
+          <div></div>
+        </div>
+
+        <div class="split">
+          <div>
+            <label>Titel</label>
+            <input id="page_d_title_letters" />
+          </div>
+          <div>
+            <label>Titel (braille)</label>
+            <input id="page_d_title_braille" readonly />
+          </div>
+        </div>
+
+        <div class="split">
+          <div>
+            <label>Tekst</label>
+            <textarea id="page_d_text"></textarea>
+          </div>
+          <div>
+            <label>Tekst (braille)</label>
+            <textarea id="page_d_text_braille" readonly></textarea>
+          </div>
+        </div>
+
+        <label>Opmerkingen</label>
+        <textarea id="remarks_pg_d"></textarea>
+
+        <div class="hr"></div>
+        <h2 class="section-title pdf-page-break">Braille Pagina 5</h2>
+
+        <div class="split">
+          <div>
+            <label class="checkbox-row">
+              <input id="page_e_interlinie_on" type="checkbox" class="checkbox" />
+              <span>Interline on</span>
+            </label>
+          </div>
+          <div></div>
+        </div>
+
+        <div class="split">
+          <div>
+            <label>Titel</label>
+            <input id="page_e_title_letters" />
+          </div>
+          <div>
+            <label>Titel (braille)</label>
+            <input id="page_e_title_braille" readonly />
+          </div>
+        </div>
+
+        <div class="split">
+          <div>
+            <label>Tekst</label>
+            <textarea id="page_e_text"></textarea>
+          </div>
+          <div>
+            <label>Tekst (braille)</label>
+            <textarea id="page_e_text_braille" readonly></textarea>
+          </div>
+        </div>
+
+        <label>Opmerkingen</label>
+        <textarea id="remarks_pg_e"></textarea>
+
+        <div class="hr"></div>
+        <h2 class="section-title pdf-page-break">Braille Pagina 6</h2>
+
+        <div class="split">
+          <div>
+            <label class="checkbox-row">
+              <input id="page_f_interlinie_on" type="checkbox" class="checkbox" />
+              <span>Interline on</span>
+            </label>
+          </div>
+          <div></div>
+        </div>
+
+        <div class="split">
+          <div>
+            <label>Titel</label>
+            <input id="page_f_title_letters" />
+          </div>
+          <div>
+            <label>Titel (braille)</label>
+            <input id="page_f_title_braille" readonly />
+          </div>
+        </div>
+
+        <div class="split">
+          <div>
+            <label>Tekst</label>
+            <textarea id="page_f_text"></textarea>
+          </div>
+          <div>
+            <label>Tekst (braille)</label>
+            <textarea id="page_f_text_braille" readonly></textarea>
+          </div>
+        </div>
+
+        <label>Opmerkingen</label>
+        <textarea id="remarks_pg_f"></textarea>
+
+        <div class="hr"></div>
       </div>
     </div>
   </div>
@@ -499,6 +651,26 @@
     function updatePageABraille() {
       setVal("page_a_title_braille", toBraille(val("page_a_title_letters")));
       setVal("page_a_text_braille", toBraille(val("page_a_text")));
+    }
+
+    function updatePageCBraille() {
+      setVal("page_c_title_braille", toBraille(val("page_c_title_letters")));
+      setVal("page_c_text_braille", toBraille(val("page_c_text")));
+    }
+
+    function updatePageDBraille() {
+      setVal("page_d_title_braille", toBraille(val("page_d_title_letters")));
+      setVal("page_d_text_braille", toBraille(val("page_d_text")));
+    }
+
+    function updatePageEBraille() {
+      setVal("page_e_title_braille", toBraille(val("page_e_title_letters")));
+      setVal("page_e_text_braille", toBraille(val("page_e_text")));
+    }
+
+    function updatePageFBraille() {
+      setVal("page_f_title_braille", toBraille(val("page_f_title_letters")));
+      setVal("page_f_text_braille", toBraille(val("page_f_text")));
     }
 
     function setEditorReadonly(readonly) {
@@ -758,6 +930,30 @@
       $("page_b_interlinie_on").checked = !!row.page_b_interlinie_on;
       setVal("remarks_pg_b", row.remarks_pg_b || "");
 
+      setVal("page_c_title_letters", row.page_c_title_letters || "");
+      setVal("page_c_text", row.page_c_text || "");
+      updatePageCBraille();
+      $("page_c_interlinie_on").checked = !!row.page_c_interlinie_on;
+      setVal("remarks_pg_c", row.remarks_pg_c || "");
+
+      setVal("page_d_title_letters", row.page_d_title_letters || "");
+      setVal("page_d_text", row.page_d_text || "");
+      updatePageDBraille();
+      $("page_d_interlinie_on").checked = !!row.page_d_interlinie_on;
+      setVal("remarks_pg_d", row.remarks_pg_d || "");
+
+      setVal("page_e_title_letters", row.page_e_title_letters || "");
+      setVal("page_e_text", row.page_e_text || "");
+      updatePageEBraille();
+      $("page_e_interlinie_on").checked = !!row.page_e_interlinie_on;
+      setVal("remarks_pg_e", row.remarks_pg_e || "");
+
+      setVal("page_f_title_letters", row.page_f_title_letters || "");
+      setVal("page_f_text", row.page_f_text || "");
+      updatePageFBraille();
+      $("page_f_interlinie_on").checked = !!row.page_f_interlinie_on;
+      setVal("remarks_pg_f", row.remarks_pg_f || "");
+
       setVal("handleiding_text", row.handleiding_text || "");
       setVal("remarks_handleiding", row.remarks_handleiding || "");
 
@@ -870,6 +1066,26 @@
           page_b_text: val("page_b_text"),
           page_b_interlinie_on: $("page_b_interlinie_on").checked,
           remarks_pg_b: val("remarks_pg_b"),
+
+          page_c_title_letters: val("page_c_title_letters"),
+          page_c_text: val("page_c_text"),
+          page_c_interlinie_on: $("page_c_interlinie_on").checked,
+          remarks_pg_c: val("remarks_pg_c"),
+
+          page_d_title_letters: val("page_d_title_letters"),
+          page_d_text: val("page_d_text"),
+          page_d_interlinie_on: $("page_d_interlinie_on").checked,
+          remarks_pg_d: val("remarks_pg_d"),
+
+          page_e_title_letters: val("page_e_title_letters"),
+          page_e_text: val("page_e_text"),
+          page_e_interlinie_on: $("page_e_interlinie_on").checked,
+          remarks_pg_e: val("remarks_pg_e"),
+
+          page_f_title_letters: val("page_f_title_letters"),
+          page_f_text: val("page_f_text"),
+          page_f_interlinie_on: $("page_f_interlinie_on").checked,
+          remarks_pg_f: val("remarks_pg_f"),
 
           handleiding_text: val("handleiding_text"),
           remarks_handleiding: val("remarks_handleiding"),
@@ -1185,6 +1401,14 @@
     $("page_b_text").addEventListener("input", updatePageBBraille);
     $("page_a_title_letters").addEventListener("input", updatePageABraille);
     $("page_a_text").addEventListener("input", updatePageABraille);
+    $("page_c_title_letters").addEventListener("input", updatePageCBraille);
+    $("page_c_text").addEventListener("input", updatePageCBraille);
+    $("page_d_title_letters").addEventListener("input", updatePageDBraille);
+    $("page_d_text").addEventListener("input", updatePageDBraille);
+    $("page_e_title_letters").addEventListener("input", updatePageEBraille);
+    $("page_e_text").addEventListener("input", updatePageEBraille);
+    $("page_f_title_letters").addEventListener("input", updatePageFBraille);
+    $("page_f_text").addEventListener("input", updatePageFBraille);
 
     $("btnPlayStoryAudio").onclick = () => {
       try { toggleAudio($("btnPlayStoryAudio"), val("story_audio_path")); }
