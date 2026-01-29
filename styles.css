@@ -65,7 +65,7 @@ button:hover { background: rgba(255,255,255,.12); }
 .hr { height:1px; background:var(--line); margin:10px 0; }
 .tiny { font-size:12px; color:var(--muted); }
 .msg-placeholder { min-height: 18px; display:block; }
-.inline-label { display:flex; align-items:center; gap:10px; width:100%; }
+.inline-label { display:flex; align-items:center; gap:10px; width:100%; padding:6px 0; }
 .inline-label label { margin:0; flex:0 0 180px; text-align:left; }
 .inline-label input { flex:1 1 auto; min-width:0; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
