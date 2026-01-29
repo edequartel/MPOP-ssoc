@@ -5,6 +5,8 @@ h1 { font-size:20px; margin:0 0 10px; }
 .row { display:grid; grid-template-columns: 360px 1fr; gap:12px; align-items:start; }
 .column { display:flex; flex-direction:column; gap:12px; }
 .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
+.logo-card { padding:0; }
+.logo-card img { width:100%; height:auto; display:block; border-radius:14px; cursor:zoom-in; }
 .muted { color:var(--muted); font-size:13px; line-height:1.4; }
 label { display:block; font-size:13px; color:var(--muted); margin:10px 0 6px; }
 .checkbox-row { display:flex; align-items:center; gap:8px; margin:10px 0 6px; }
@@ -37,6 +39,8 @@ button:hover { background: rgba(255,255,255,.12); }
 .btn-like:hover { background: rgba(255,255,255,.12); }
 .btnrow { display:flex; gap:8px; flex-wrap:wrap; }
 .btnrow button { width:auto; padding:10px 12px; }
+.link-list { display:flex; flex-direction:column; gap:10px; }
+.link-list .btn-like { display:block; width:100%; box-sizing:border-box; padding:12px 14px; }
 .inlineRow { display:flex; gap:8px; align-items:center; }
 .inlineRow input { flex:1; }
 .inlineRow button { width:auto; padding:8px 10px; }

@@ -22,6 +22,14 @@
   <div class="row">
     <!-- LEFT: Auth + List -->
     <div class="column">
+      <div class="card logo-card">
+        <img
+          id="logoImage"
+          src="https://www.tastenbraille.com/braillestudio/resources/mpop/logo.png"
+          data-full-url="https://www.tastenbraille.com/braillestudio/resources/mpop/kinderen.png"
+          alt="MPOP logo"
+        />
+      </div>
       <div class="card">
         <h2 class="section-title">1 Log in</h2>
 <!--
@@ -68,6 +76,7 @@
         <div class="btnrow">
           <button type="button" class="btn-like" onclick="window.open('readme.html','_blank','noreferrer')">Handleiding</button>
           <button type="button" class="btn-like" onclick="window.open('template.html','_blank','noreferrer')">Template</button>
+          <button type="button" class="btn-like" onclick="window.open('mpop.html','_blank','noreferrer')">MPOP</button>
         </div>
       </div>
     </div>
@@ -1460,6 +1469,7 @@
     wireImagePreview("image1_preview");
     wireImagePreview("image2_preview");
     wireImagePreview("image3_preview");
+    wireImagePreview("logoImage");
     $("image1_path").addEventListener("input", () => updateImagePreview("image1_path", "image1_preview"));
     $("image2_path").addEventListener("input", () => updateImagePreview("image2_path", "image2_preview"));
     $("image3_path").addEventListener("input", () => updateImagePreview("image3_path", "image3_preview"));
