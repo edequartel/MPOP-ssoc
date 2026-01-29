@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
   const { data: item, error } = await supabase
     .from("mpop_items")
-    .select("id,title,story_text,remarks_1")
+    .select("id,title,story_text,remarks_pg_c")
     .eq("id", id)
     .maybeSingle();
 

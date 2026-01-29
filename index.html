@@ -531,6 +531,8 @@
     };
     const CONFIG_URL_LOCAL = "./supabase-config.js";
     const CONFIG_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/supabase-config.js";
+    const PDF_URL_LOCAL = "/api/pdf";
+    const PDF_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdf";
 
     const supabaseInit = async () => {
       try {
@@ -1355,9 +1357,15 @@
         await flushAutosaveForPdf();
         const { data } = await sb.auth.getSession();
         const token = data?.session?.access_token;
-        const r = await fetch(`/api/pdf?id=${encodeURIComponent(currentItem.id)}`, {
+        const qs = `?id=${encodeURIComponent(currentItem.id)}`;
+        let r = await fetch(`${PDF_URL_LOCAL}${qs}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        if (r.status === 404) {
+          r = await fetch(`${PDF_URL_REMOTE}${qs}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        }
         if (!r.ok) {
           const body = await r.text().catch(() => "");
           throw new Error(`PDF failed (${r.status}). ${body}`.trim());
