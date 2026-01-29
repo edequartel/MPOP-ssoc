@@ -174,13 +174,22 @@
           </div>
         </div>
 
+        <label>Opmerkingen</label>
+        <textarea id="remarks_1"></textarea>
+
         <div class="hr"></div>
         <h2 class="section-title pdf-page-break">Pagina 3</h2>
 
-        <div class="hr"></div>
-        <h2 class="section-title pdf-page-break">Pagina 4</h2>
-
         <div class="split">
+          <div>
+            <label>Geluid</label>
+            <input id="woord_text" />
+
+            <div class="inlineRow">
+              <input id="woord_audio_path" class="extra-pad" placeholder="/sounds/general/sound.mp3" />
+              <button id="btnPlayWoordAudio" disabled>Play</button>
+            </div>
+          </div>
           <div>
             <label>Opdracht 1</label>
             <textarea id="opdracht1_text"></textarea>
@@ -190,23 +199,16 @@
               <button id="btnPlayOpdracht1Audio" disabled>Play</button>
             </div>
           </div>
-
-          <div>
-            <label>Opdracht 2</label>
-            <textarea id="opdracht2_text"></textarea>
-
-            <div class="inlineRow">
-              <input id="opdracht2_audio_path" placeholder="/sounds/nl/opdracht/opdracht2.mp3" />
-              <button id="btnPlayOpdracht2Audio" disabled>Play</button>
-            </div>
-          </div>
         </div>
 
-        <label>Opmerkingen</label>
-        <textarea id="remarks_1"></textarea>
-
-        <div class="hr"></div>
-        <h2 class="section-title pdf-page-break">Pagina 5</h2>
+        <div class="split">
+          <div>
+            <label>Afbeelding actief (path)</label>
+            <input id="image2_path" placeholder="/resources/images/bal.png" data-preview-placeholder="true" />
+            <img id="image2_preview" class="image-thumb" alt="image preview" />
+          </div>
+          <div></div>
+        </div>
 
         <div class="split">
           <div>
@@ -219,38 +221,21 @@
             </div>
           </div>
           <div>
-            <label>Geluid</label>
-            <input id="woord_text" />
+            <label>Opdracht 2</label>
+            <textarea id="opdracht2_text"></textarea>
 
             <div class="inlineRow">
-              <input id="woord_audio_path" class="extra-pad" placeholder="/sounds/general/sound.mp3" />
-              <button id="btnPlayWoordAudio" disabled>Play</button>
+              <input id="opdracht2_audio_path" placeholder="/sounds/nl/opdracht/opdracht2.mp3" />
+              <button id="btnPlayOpdracht2Audio" disabled>Play</button>
             </div>
           </div>
         </div>
-
-        <div class="list mt-10" id="soundsList"></div>
-        <div id="soundsMsg" class="tiny mt-8"></div>
-
-        <div class="split">
-          <div>
-            <label>Afbeelding actief (path)</label>
-            <input id="image2_path" placeholder="/resources/images/bal.png" data-preview-placeholder="true" />
-            <img id="image2_preview" class="image-thumb" alt="image preview" />
-          </div>
-
-          <div>
-          </div>
-        </div>
-
-        <label>Tekst (optioneel)</label>
-        <textarea id="page_2_tekst"></textarea>
 
         <label>Opmerkingen</label>
         <textarea id="remarks_2"></textarea>
 
         <div class="hr"></div>
-        <h2 class="section-title pdf-page-break">Pagina 6</h2>
+        <h2 class="section-title pdf-page-break">Pagina 4</h2>
 
         <div class="split">
           <div>
@@ -298,6 +283,21 @@
         <textarea id="remarks_3"></textarea>
 
         <div class="hr"></div>
+        <h2 class="section-title pdf-page-break">Pagina 5</h2>
+
+        <div class="list mt-10" id="soundsList"></div>
+        <div id="soundsMsg" class="tiny mt-8"></div>
+
+        <label>Tekst (optioneel)</label>
+        <textarea id="page_2_tekst"></textarea>
+
+        <label>Opmerkingen</label>
+        <textarea id="remarks_4"></textarea>
+
+        <div class="hr"></div>
+        <h2 class="section-title pdf-page-break">Pagina 6</h2>
+
+        <div class="hr"></div>
         <h2 class="section-title pdf-page-break">Pagina 7</h2>
 
         <div class="split">
@@ -333,7 +333,7 @@
         </div>
 
         <label>Opmerkingen</label>
-        <textarea id="remarks_4"></textarea>
+        <textarea id="remarks_6"></textarea>
 
         <div class="hr"></div>
         <h2 class="section-title pdf-page-break">Pagina 8</h2>
@@ -371,7 +371,7 @@
         </div>
 
         <label>Opmerkingen</label>
-        <textarea id="remarks_5"></textarea>
+        <textarea id="remarks_7"></textarea>
 
         <div class="hr"></div>
         <h2 class="section-title pdf-page-break">Pagina 9</h2>
@@ -408,7 +408,7 @@
         </div>
 
         <label>Opmerkingen</label>
-        <textarea id="remarks_6"></textarea>
+        <textarea id="remarks_8"></textarea>
 
         <div class="hr"></div>
         <h2 class="section-title pdf-page-break">Pagina 10</h2>
@@ -446,7 +446,7 @@
         </div>
 
         <label>Opmerkingen</label>
-        <textarea id="remarks_7"></textarea>
+        <textarea id="remarks_9"></textarea>
 
         <div class="hr"></div>
         <h2 class="section-title pdf-page-break">Pagina 11</h2>
@@ -483,9 +483,6 @@
           </div>
         </div>
 
-        <label>Opmerkingen</label>
-        <textarea id="remarks_8"></textarea>
-
         <div class="hr"></div>
         <h2 class="section-title pdf-page-break">Pagina 12</h2>
 
@@ -520,9 +517,6 @@
             <textarea id="page_g_text_braille" readonly></textarea>
           </div>
         </div>
-
-        <label>Opmerkingen</label>
-        <textarea id="remarks_9"></textarea>
 
         <div class="hr"></div>
         <h2 class="section-title pdf-page-break">Pagina 13</h2>

@@ -16,8 +16,11 @@ De nummering staat altijd linksboven voor consistente herkenning.
 
 Drie pagina's met activiteiten.
 
+## Pagina 1 - handleiding en opmerkingen
 
-## Pagina 1 - introductie
+Maak hier je didactische aantekeningen en opmerking over dit item.
+
+## Pagina 2 - introductie
 
 ### 1. Doelwoord in braille en zwartdruk
 Het woord dat centraal staat (bijv. bal) wordt in braille bovenaan weergegeven, met daaronder de zwartdrukversie.
@@ -38,11 +41,11 @@ De leerling kan zo het object tactiel leren herkennen.
 De tekening op deze pagina wordt beschreven.
 
 
-### 6. Open
+### 6. Open (nog geen invulling)
 
 
 
-## Pagina 2 - actief - Twee Opdrachten
+## Pagina 3 - actief 
 Een schematische weergave waarin het woord, het object en bijbehorende geluiden samenkomen in een betekenisvolle activiteit.
 
 
@@ -51,8 +54,7 @@ Een passend geluid dat de betekenis ondersteunt.
 Voorbeeld: juichen bij een doelpunt.  
 In Braillestudio kunnen verschillende varianten worden gebruikt voor afwisseling.
 
-### 8. Lied
-AI gegenereerd lied dat betrekking heeft op woord.
+### 8. Opdracht 1
 
 ### 9. Actieve tactiele afbeelding
 Een tweede tactiele afbeelding die gebruikt wordt binnen een actieve omgeving.  
@@ -63,7 +65,7 @@ De tekening op deze pagina wordt beschreven.
 ### 11. Opdracht 2
 
 
-## Pagina 3 - uitbreiding - Vier opdrachten
+## Pagina 4 - uitbreiding - Vier opdrachten
 
 ### 12. Opdracht 3
 
@@ -76,13 +78,13 @@ Andere invoelshoek met concept.
 ### 15. Object beschrijving
 De tekening op deze pagina wordt beschreven.
 
-### 16. Opdracht 6
+### 16. Opdracht 5
 
 
 # 3 Oefeningen
 
 
-## Pagina 4 - Braille oefeningen
+## Pagina 5 - Braille oefeningen
 Een korte verwijzing naar eerder geleerde letters of woorden.  
 Dit kan eenvoudig worden gehouden met dubbele regelafstand of extra witruimte.
 
@@ -93,15 +95,11 @@ Elke pagina begint met het woord in braille en daarna de letters afzonderlijk.
 De pagina kan worden opgemaakt met extra regelafstand (interlinie) voor leerlingen die dat nodig hebben.
 
 
-## Pagina 5-9 
+## Pagina 6-10
 Dezelfde opbouw als pagina 4, maar gebruikt voor herhaling of uitbreiding van de oefening.
 
 
-# 4 Handleiding
-
-Doelstellingen, didactiek en extra informatie.
-
-# 5 Afsluitend
+# 4 Afsluitend
 
 ## Materialen
 Een overzicht van alle benodigde materialen:
