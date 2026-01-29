@@ -12,15 +12,22 @@ Alle audiobestanden worden centraal opgeslagen op een server (www.tastenbraille.
 Alle pagina’s worden in braille én zwartdruk genummerd.  
 De nummering staat altijd linksboven voor consistente herkenning.
 
-# 2 Spel/Activiteiten
+
+# Inleiding
+
+## Handleiding 
+Uitleg over het woord en didactische aanvulling.
+
+## Opmerkingen
+Opmerking bij woord. Hier zet je opmerkingen bij wanneer er iets verandert moet worden. Opmerking en onder elkaar met je initiaal er voor.
+
+# 1 Spel/Activiteiten
 
 Drie pagina's met activiteiten.
 
-## Pagina 1 - handleiding en opmerkingen
+## Pagina 1 - introductie
 
-Maak hier je didactische aantekeningen en opmerking over dit item.
-
-## Pagina 2 - introductie
+Onder elke pagina kun je opmerkingen plaatsen.
 
 ### 1. Doelwoord in braille en zwartdruk
 Het woord dat centraal staat (bijv. bal) wordt in braille bovenaan weergegeven, met daaronder de zwartdrukversie.
@@ -45,13 +52,14 @@ De tekening op deze pagina wordt beschreven.
 
 
 
-## Pagina 3 - actief 
+## Pagina 2 - actief - twee opdrachten
 Een schematische weergave waarin het woord, het object en bijbehorende geluiden samenkomen in een betekenisvolle activiteit.
 
 
 ### 7. Geluid gekoppeld aan het woord of object
 Een passend geluid dat de betekenis ondersteunt.  
 Voorbeeld: juichen bij een doelpunt.  
+Dit kan ook eenb leid of een rijmpje zijn.
 In Braillestudio kunnen verschillende varianten worden gebruikt voor afwisseling.
 
 ### 8. Opdracht 1
@@ -65,7 +73,7 @@ De tekening op deze pagina wordt beschreven.
 ### 11. Opdracht 2
 
 
-## Pagina 4 - uitbreiding - Vier opdrachten
+## Pagina 3 - uitbreiding - vier opdrachten
 
 ### 12. Opdracht 3
 
@@ -81,10 +89,10 @@ De tekening op deze pagina wordt beschreven.
 ### 16. Opdracht 5
 
 
-# 3 Oefeningen
+# 3 Braille
 
 
-## Pagina 5 - Braille oefeningen
+## Braille pagina 1/6 - Braille oefeningen
 Een korte verwijzing naar eerder geleerde letters of woorden.  
 Dit kan eenvoudig worden gehouden met dubbele regelafstand of extra witruimte.
 
@@ -94,9 +102,6 @@ Elke pagina begint met het woord in braille en daarna de letters afzonderlijk.
 ### 18. Regels met of zonder interlinie
 De pagina kan worden opgemaakt met extra regelafstand (interlinie) voor leerlingen die dat nodig hebben.
 
-
-## Pagina 6-10
-Dezelfde opbouw als pagina 4, maar gebruikt voor herhaling of uitbreiding van de oefening.
 
 
 # 4 Afsluitend

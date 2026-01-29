@@ -216,7 +216,7 @@
             <textarea id="object2_description"></textarea>
 
             <div class="inlineRow">
-              <input id="object2_audio_path" placeholder="/sounds/nl/beschrijving/beschrijving.mp3" />
+              <input id="object2_audio_path" placeholder="/sounds/nl/objects/beschrijving.mp3" />
               <button id="btnPlayAudioObject2" disabled>Play</button>
             </div>
           </div>
@@ -282,7 +282,34 @@
         <label>Opmerkingen</label>
         <textarea id="remarks_3"></textarea>
 
-        <h2 class="section-title pdf-page-break">Braille Pagina 1</h2>
+        <div class="hr"></div>
+        <h2 class="section-title pdf-page-break">Braille algemeen</h2>
+
+        <label>Opmerkingen</label>
+        <textarea id="remarks_braille_algemeen"></textarea>
+
+        <div class="inline-label">
+          <label>&mdash; Lange klanken</label>
+          <input id="lange_klanken" />
+        </div>
+
+        <div class="inline-label">
+          <label>- Klinkers</label>
+          <input id="klinkers" />
+        </div>
+
+        <div class="inline-label">
+          <label>&gt; Medeklinkers</label>
+          <input id="medeklinkers" />
+        </div>
+
+        <div class="inline-label">
+          <label>|| Tweetekenklanken</label>
+          <input id="tweetekenklanken" />
+        </div>
+
+        <div class="hr"></div>
+        <h2 class="section-title pdf-page-break">Braille pagina 1</h2>
 
         <div class="split">
           <div>
@@ -320,7 +347,7 @@
         <textarea id="remarks_pg_a"></textarea>
 
         <div class="hr"></div>
-        <h2 class="section-title pdf-page-break">Braille Pagina 2</h2>
+        <h2 class="section-title pdf-page-break">Braille pagina 2</h2>
 
         <div class="split">
           <div>
@@ -358,7 +385,7 @@
         <textarea id="remarks_pg_b"></textarea>
 
         <div class="hr"></div>
-        <h2 class="section-title pdf-page-break">Braille Pagina 3</h2>
+        <h2 class="section-title pdf-page-break">Braille pagina 3</h2>
 
         <div class="split">
           <div>
@@ -396,7 +423,7 @@
         <textarea id="remarks_pg_c"></textarea>
 
         <div class="hr"></div>
-        <h2 class="section-title pdf-page-break">Braille Pagina 4</h2>
+        <h2 class="section-title pdf-page-break">Braille pagina 4</h2>
 
         <div class="split">
           <div>
@@ -434,7 +461,7 @@
         <textarea id="remarks_pg_d"></textarea>
 
         <div class="hr"></div>
-        <h2 class="section-title pdf-page-break">Braille Pagina 5</h2>
+        <h2 class="section-title pdf-page-break">Braille pagina 5</h2>
 
         <div class="split">
           <div>
@@ -472,7 +499,7 @@
         <textarea id="remarks_pg_e"></textarea>
 
         <div class="hr"></div>
-        <h2 class="section-title pdf-page-break">Braille Pagina 6</h2>
+        <h2 class="section-title pdf-page-break">Braille pagina 6</h2>
 
         <div class="split">
           <div>
@@ -533,6 +560,7 @@
     const CONFIG_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/supabase-config.js";
     const PDF_URL_LOCAL = "/api/pdf";
     const PDF_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdf";
+    const SHOW_FIELD_NAMES = false;
 
     const supabaseInit = async () => {
       try {
@@ -689,6 +717,7 @@
     }
 
     function initFieldNameToggle() {
+      if (!SHOW_FIELD_NAMES) return;
       for (const label of document.querySelectorAll("label")) {
         const direct = label.nextElementSibling;
         const field = (label.matches("input, textarea, select") ? label : null)
@@ -932,6 +961,12 @@
       $("page_b_interlinie_on").checked = !!row.page_b_interlinie_on;
       setVal("remarks_pg_b", row.remarks_pg_b || "");
 
+      setVal("remarks_braille_algemeen", row.remarks_braille_algemeen || "");
+      setVal("lange_klanken", row.lange_klanken || "");
+      setVal("klinkers", row.klinkers || "");
+      setVal("medeklinkers", row.medeklinkers || "");
+      setVal("tweetekenklanken", row.tweetekenklanken || "");
+
       setVal("page_c_title_letters", row.page_c_title_letters || "");
       setVal("page_c_text", row.page_c_text || "");
       updatePageCBraille();
@@ -1069,6 +1104,12 @@
           page_b_interlinie_on: $("page_b_interlinie_on").checked,
           remarks_pg_b: val("remarks_pg_b"),
 
+          remarks_braille_algemeen: val("remarks_braille_algemeen"),
+          lange_klanken: val("lange_klanken"),
+          klinkers: val("klinkers"),
+          medeklinkers: val("medeklinkers"),
+          tweetekenklanken: val("tweetekenklanken"),
+
           page_c_title_letters: val("page_c_title_letters"),
           page_c_text: val("page_c_text"),
           page_c_interlinie_on: $("page_c_interlinie_on").checked,
@@ -1154,6 +1195,11 @@
       }
       img.src = url;
       img.dataset.fullUrl = url;
+      img.onerror = () => {
+        img.style.display = "none";
+        img.removeAttribute("src");
+        img.removeAttribute("data-full-url");
+      };
       img.style.display = "block";
     }
 
