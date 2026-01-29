@@ -118,6 +118,12 @@
         <div class="hr"></div>
         <h2 class="section-title pdf-page-break">Pagina 1</h2>
 
+        <label>Handleiding</label>
+        <textarea id="handleiding_text"></textarea>
+
+        <label>Opmerkingen</label>
+        <textarea id="remarks_handleiding"></textarea>
+
         <div class="hr"></div>
         <h2 class="section-title pdf-page-break">Pagina 2</h2>
 
@@ -154,12 +160,12 @@
         <div class="split">
           <div>
             <label>Object beschrijving</label>
-            <textarea id="beschrijving_object"></textarea>
+            <textarea id="object1_description"></textarea>
 
            <!-- <label>audio</label> -->
             
             <div class="inlineRow">
-              <input id="audio_object" placeholder="/sounds/nl/objects/object.mp3" />
+              <input id="object1_audio_path" placeholder="/sounds/nl/objects/object.mp3" />
               <button id="btnPlayAudioObject" disabled>Play</button>
             </div>
           </div>
@@ -177,7 +183,7 @@
         <div class="split">
           <div>
             <label>Geluid</label>
-            <input id="woord_text" />
+            <textarea id="woord_text"></textarea>
 
             <div class="inlineRow">
               <input id="woord_audio_path" class="extra-pad" placeholder="/sounds/general/sound.mp3" />
@@ -207,10 +213,10 @@
         <div class="split">
           <div>
             <label>Berschrijving afbeelding</label>
-            <textarea id="beschrijving_text"></textarea>
+            <textarea id="object2_description"></textarea>
 
             <div class="inlineRow">
-              <input id="beschrijving_audio_path" placeholder="/sounds/nl/beschrijving/beschrijving.mp3" />
+              <input id="object2_audio_path" placeholder="/sounds/nl/beschrijving/beschrijving.mp3" />
               <button id="btnPlayBeschrijvingAudio" disabled>Play</button>
             </div>
           </div>
@@ -256,19 +262,19 @@
 
         <div class="split">
           <div>
-            <label>Opdracht 6</label>
-            <textarea id="opdracht5_text"></textarea>
+            <label>Object3</label>
+            <textarea id="object3_description"></textarea>
             <div class="inlineRow">
-              <input id="opdracht5_audio_path" placeholder="/sounds/nl/opdracht/opdracht6.mp3" />
-              <button id="btnPlayOpdracht5Audio" disabled>Play</button>
+              <input id="object3_audio_path" placeholder="/sounds/nl/object3.mp3" />
+              <button id="btnPlayObject3Audio" disabled>Play</button>
             </div>
           </div>
           <div>
             <label>Opdracht 5</label>
-            <textarea id="opdracht6_text"></textarea>
+            <textarea id="opdracht5_text"></textarea>
             <div class="inlineRow">
-              <input id="opdracht6_audio_path" placeholder="/sounds/nl/opdracht/opdracht5.mp3" />
-              <button id="btnPlayOpdracht6Audio" disabled>Play</button>
+              <input id="opdracht5_audio_path" placeholder="/sounds/nl/opdracht/opdracht5.mp3" />
+              <button id="btnPlayOpdracht5Audio" disabled>Play</button>
             </div>
           </div>
         </div>
@@ -524,9 +530,10 @@
     function initFieldNameToggle() {
       for (const label of document.querySelectorAll("label")) {
         const direct = label.nextElementSibling;
-        const field = direct && direct.matches("input, textarea, select")
-          ? direct
-          : (direct ? direct.querySelector("input, textarea, select") : null);
+        const field = (label.matches("input, textarea, select") ? label : null)
+          || label.querySelector("input, textarea, select")
+          || (direct && direct.matches("input, textarea, select") ? direct : null)
+          || (direct ? direct.querySelector("input, textarea, select") : null);
         if (field && field.id) {
           label.dataset.fieldId = field.id;
           const target = label.querySelector("span") || label;
@@ -537,6 +544,7 @@
         }
       }
     }
+    document.addEventListener("DOMContentLoaded", initFieldNameToggle);
 
     function ensureClient() {
       if (sbInitError) {
@@ -736,19 +744,19 @@
       setVal("statusSelect", row.status || "draft");
 
       setVal("story_text", row.story_text || "");
-      setVal("beschrijving_object", row.beschrijving_object || "");
-      setVal("audio_object", row.audio_object || "");
+      setVal("object1_description", row.object1_description || "");
+      setVal("object1_audio_path", row.object1_audio_path || "");
       setVal("klankzuiver_text", row.klankzuiver_text || "");
       setVal("klankzuiver_letters", row.klankzuiver_audio_path || "");
       setVal("opdracht1_text", row.opdracht1_text || "");
       setVal("opdracht2_text", row.opdracht2_text || "");
       setVal("opdracht3_text", row.opdracht3_text || "");
       setVal("opdracht4_text", row.opdracht4_text || "");
-      setVal("opdracht5_text", row.opdracht6_text || "");
-      setVal("opdracht6_text", row.opdracht5_text || "");
+      setVal("opdracht5_text", row.opdracht5_text || "");
+      setVal("object3_description", row.object3_description || "");
       setVal("image3_path", row.image3_path || "");
       setVal("woord_text", row.woord_text || "");
-      setVal("beschrijving_text", row.beschrijving_text || "");
+      setVal("object2_description", row.object2_description || "");
       setVal("remarks_1", row.remarks_1 || "");
       setVal("page_2_tekst", row.page_2_tekst || "");
       setVal("remarks_2", row.remarks_2 || "");
@@ -764,30 +772,33 @@
       $("page_5_interlinie_on").checked = !!row.page_5_interlinie_on;
       setVal("remarks_5", row.remarks_5 || "");
 
+      setVal("handleiding_text", row.handleiding_text || "");
+      setVal("remarks_handleiding", row.remarks_handleiding || "");
+
       // paths
       setVal("story_audio_path", row.story_audio_path || "");
       setVal("opdracht1_audio_path", row.opdracht1_audio_path || "");
       setVal("opdracht2_audio_path", row.opdracht2_audio_path || "");
       setVal("opdracht3_audio_path", row.opdracht3_audio_path || "");
       setVal("opdracht4_audio_path", row.opdracht4_audio_path || "");
-      setVal("opdracht5_audio_path", row.opdracht6_audio_path || "");
-      setVal("opdracht6_audio_path", row.opdracht5_audio_path || "");
+      setVal("object3_audio_path", row.object3_audio_path || "");
+      setVal("opdracht5_audio_path", row.opdracht5_audio_path || "");
       setVal("woord_audio_path", row.woord_audio_path || "");
-      setVal("beschrijving_audio_path", row.beschrijving_audio_path || "");
+      setVal("object2_audio_path", row.object2_audio_path || "");
       setVal("image1_path", row.image1_path || "");
       setVal("image2_path", row.image2_path || "");
       setVal("image3_path", row.image3_path || "");
 
       setPlayButton("btnPlayStoryAudio", val("story_audio_path"));
-      setPlayButton("btnPlayAudioObject", val("audio_object"));
+      setPlayButton("btnPlayAudioObject", val("object1_audio_path"));
       setPlayButton("btnPlayOpdracht1Audio", val("opdracht1_audio_path"));
       setPlayButton("btnPlayOpdracht2Audio", val("opdracht2_audio_path"));
       setPlayButton("btnPlayOpdracht3Audio", val("opdracht3_audio_path"));
       setPlayButton("btnPlayOpdracht4Audio", val("opdracht4_audio_path"));
-      setPlayButton("btnPlayOpdracht5Audio", val("opdracht6_audio_path"));
-      setPlayButton("btnPlayOpdracht6Audio", val("opdracht5_audio_path"));
+      setPlayButton("btnPlayObject3Audio", val("object3_audio_path"));
+      setPlayButton("btnPlayOpdracht5Audio", val("opdracht5_audio_path"));
       setPlayButton("btnPlayWoordAudio", val("woord_audio_path"));
-      setPlayButton("btnPlayBeschrijvingAudio", val("beschrijving_audio_path"));
+      setPlayButton("btnPlayBeschrijvingAudio", val("object2_audio_path"));
       setPlayButton("btnPlayKlankzuiverAudio", val("klankzuiver_letters"));
       updateImagePreview("image1_path", "image1_preview");
       updateImagePreview("image2_path", "image2_preview");
@@ -830,8 +841,8 @@
           status: val("statusSelect"),
 
           story_text: val("story_text"),
-          beschrijving_object: val("beschrijving_object").trim(),
-          audio_object: val("audio_object").trim(),
+          object1_description: val("object1_description").trim(),
+          object1_audio_path: val("object1_audio_path").trim(),
           klankzuiver_text: val("klankzuiver_text"),
           klankzuiver_audio_path: val("klankzuiver_letters").trim(),
 
@@ -839,22 +850,22 @@
           opdracht2_text: val("opdracht2_text"),
           opdracht3_text: val("opdracht3_text"),
           opdracht4_text: val("opdracht4_text"),
-          opdracht5_text: val("opdracht6_text"),
-          opdracht6_text: val("opdracht5_text"),
+          opdracht5_text: val("opdracht5_text"),
+          object3_description: val("object3_description"),
 
           woord_text: val("woord_text"),
 
-          beschrijving_text: val("beschrijving_text"),
+          object2_description: val("object2_description"),
 
           story_audio_path: val("story_audio_path").trim(),
           opdracht1_audio_path: val("opdracht1_audio_path").trim(),
           opdracht2_audio_path: val("opdracht2_audio_path").trim(),
           opdracht3_audio_path: val("opdracht3_audio_path").trim(),
           opdracht4_audio_path: val("opdracht4_audio_path").trim(),
-          opdracht5_audio_path: val("opdracht6_audio_path").trim(),
-          opdracht6_audio_path: val("opdracht5_audio_path").trim(),
+          object3_audio_path: val("object3_audio_path").trim(),
+          opdracht5_audio_path: val("opdracht5_audio_path").trim(),
           woord_audio_path: val("woord_audio_path").trim(),
-          beschrijving_audio_path: val("beschrijving_audio_path").trim(),
+          object2_audio_path: val("object2_audio_path").trim(),
           image1_path: val("image1_path").trim(),
           image2_path: val("image2_path").trim(),
           image3_path: val("image3_path").trim(),
@@ -874,6 +885,9 @@
           page_b_text: val("page_b_text"),
           page_5_interlinie_on: $("page_5_interlinie_on").checked,
           remarks_5: val("remarks_5"),
+
+          handleiding_text: val("handleiding_text"),
+          remarks_handleiding: val("remarks_handleiding"),
         };
 
         // Only update if version matches what we loaded
@@ -1190,7 +1204,7 @@
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
     $("btnPlayAudioObject").onclick = () => {
-      try { toggleAudio($("btnPlayAudioObject"), val("audio_object")); }
+      try { toggleAudio($("btnPlayAudioObject"), val("object1_audio_path")); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
     $("btnPlayKlankzuiverAudio").onclick = () => {
@@ -1213,12 +1227,12 @@
       try { toggleAudio($("btnPlayOpdracht4Audio"), val("opdracht4_audio_path")); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
-    $("btnPlayOpdracht5Audio").onclick = () => {
-      try { toggleAudio($("btnPlayOpdracht5Audio"), val("opdracht6_audio_path")); }
+    $("btnPlayObject3Audio").onclick = () => {
+      try { toggleAudio($("btnPlayObject3Audio"), val("object3_audio_path")); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
-    $("btnPlayOpdracht6Audio").onclick = () => {
-      try { toggleAudio($("btnPlayOpdracht6Audio"), val("opdracht5_audio_path")); }
+    $("btnPlayOpdracht5Audio").onclick = () => {
+      try { toggleAudio($("btnPlayOpdracht5Audio"), val("opdracht5_audio_path")); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
     $("btnPlayWoordAudio").onclick = () => {
@@ -1226,21 +1240,21 @@
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
     $("btnPlayBeschrijvingAudio").onclick = () => {
-      try { toggleAudio($("btnPlayBeschrijvingAudio"), val("beschrijving_audio_path")); }
+      try { toggleAudio($("btnPlayBeschrijvingAudio"), val("object2_audio_path")); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
 
     wireAudioInput("story_audio_path", "btnPlayStoryAudio");
-    wireAudioInput("audio_object", "btnPlayAudioObject");
+    wireAudioInput("object1_audio_path", "btnPlayAudioObject");
     wireAudioInput("klankzuiver_letters", "btnPlayKlankzuiverAudio");
     wireAudioInput("opdracht1_audio_path", "btnPlayOpdracht1Audio");
     wireAudioInput("opdracht2_audio_path", "btnPlayOpdracht2Audio");
     wireAudioInput("opdracht3_audio_path", "btnPlayOpdracht3Audio");
     wireAudioInput("opdracht4_audio_path", "btnPlayOpdracht4Audio");
-    wireAudioInput("opdracht6_audio_path", "btnPlayOpdracht5Audio");
-    wireAudioInput("opdracht5_audio_path", "btnPlayOpdracht6Audio");
+    wireAudioInput("object3_audio_path", "btnPlayObject3Audio");
+    wireAudioInput("opdracht5_audio_path", "btnPlayOpdracht5Audio");
     wireAudioInput("woord_audio_path", "btnPlayWoordAudio");
-    wireAudioInput("beschrijving_audio_path", "btnPlayBeschrijvingAudio");
+    wireAudioInput("object2_audio_path", "btnPlayBeschrijvingAudio");
     wireImagePreview("image1_preview");
     wireImagePreview("image2_preview");
     wireImagePreview("image3_preview");
