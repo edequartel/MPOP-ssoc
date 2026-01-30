@@ -104,8 +104,10 @@ export default async function handler(req, res) {
     y -= 4;
   };
 
-  drawSectionTitle("Braille pagina's");
-  for (const p of pages || []) {
+  const pageList = pages || [];
+  for (let i = 0; i < pageList.length; i += 1) {
+    if (i > 0) newPage();
+    const p = pageList[i];
     const pageNo = Number(p.page_no);
     drawLine(`Braille pagina ${pageNo}`, 11, fontBold);
     drawField("Interline on", p.interlinie_on ? "true" : "false");
