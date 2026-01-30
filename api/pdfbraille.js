@@ -104,65 +104,13 @@ export default async function handler(req, res) {
     y -= 4;
   };
 
-  const BRAILLE_LETTERS = {
-    a: "⠁", b: "⠃", c: "⠉", d: "⠙", e: "⠑",
-    f: "⠋", g: "⠛", h: "⠓", i: "⠊", j: "⠚",
-    k: "⠅", l: "⠇", m: "⠍", n: "⠝", o: "⠕",
-    p: "⠏", q: "⠟", r: "⠗", s: "⠎", t: "⠞",
-    u: "⠥", v: "⠧", w: "⠺", x: "⠭", y: "⠽",
-    z: "⠵", "ä": "⠜", "ö": "⠪", "ü": "⠳", "ë": "⠫",
-    "ï": "⠻", "à": "⠷", "á": "⠷", "è": "⠮", "é": "⠮",
-    "â": "⠡", "ê": "⠣", "î": "⠩", "ô": "⠹", "û": "⠱"
-  };
-  const BRAILLE_DIGITS = {
-    "0": "⠚", "1": "⠁", "2": "⠃", "3": "⠉", "4": "⠙",
-    "5": "⠑", "6": "⠋", "7": "⠛", "8": "⠓", "9": "⠊"
-  };
-  const BRAILLE_PUNCT = {
-    ".": "⠲", ",": "⠂", ";": "⠆", ":": "⠒", "?": "⠦", "!": "⠖",
-    "-": "⠤", "'": "⠄", "\"": "⠶", "(": "⠷", ")": "⠾", "/": "⠌"
-  };
-  const toBraille = (text) => {
-    const s = (text ?? "").toString();
-    let out = "";
-    let inNumber = false;
-    for (const ch of s) {
-      if (ch >= "0" && ch <= "9") {
-        if (!inNumber) {
-          out += "⠼";
-          inNumber = true;
-        }
-        out += BRAILLE_DIGITS[ch] || ch;
-        continue;
-      }
-      if (inNumber) inNumber = false;
-      if (ch === " " || ch === "\n" || ch === "\t") {
-        out += ch;
-        continue;
-      }
-      const lower = ch.toLowerCase();
-      if (BRAILLE_LETTERS[lower]) {
-        out += BRAILLE_LETTERS[lower];
-        continue;
-      }
-      if (BRAILLE_PUNCT[ch]) {
-        out += BRAILLE_PUNCT[ch];
-        continue;
-      }
-      out += ch;
-    }
-    return out;
-  };
-
   drawSectionTitle("Braille pagina's");
   for (const p of pages || []) {
     const pageNo = Number(p.page_no);
     drawLine(`Braille pagina ${pageNo}`, 11, fontBold);
     drawField("Interline on", p.interlinie_on ? "true" : "false");
     drawField("Titel (letters)", p.title_letters || "");
-    drawField("Titel (braille)", toBraille(p.title_letters || ""));
     drawField("Tekst (letters)", p.text || "");
-    drawField("Tekst (braille)", toBraille(p.text || ""));
     drawField("Opmerkingen", p.remarks || "");
     y -= 4;
   }
