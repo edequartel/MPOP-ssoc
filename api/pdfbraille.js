@@ -116,7 +116,7 @@ export default async function handler(req, res) {
     const pageNo = Number(p.page_no);
     drawTopRight(String(pageNo));
     drawWrapped(p.title_letters || "");
-    y -= 4;
+    y -= LINE_HEIGHT * 5;
     drawWrapped(p.text || "");
     y -= 4;
     drawWrapped(p.remarks || "");
