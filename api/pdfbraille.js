@@ -78,30 +78,35 @@ export default async function handler(req, res) {
       drawLine("", size, usedFont, MARGIN + indent);
       return;
     }
-    const words = raw.split(/\s+/);
-    let line = "";
-    for (const word of words) {
-      const test = line ? `${line} ${word}` : word;
-      const w = usedFont.widthOfTextAtSize(test, size);
-      if (w <= maxWidth) {
-        line = test;
-      } else {
-        drawLine(line, size, usedFont, MARGIN + indent);
-        line = word;
+    const lines = raw.split(/\r?\n/);
+    for (let idx = 0; idx < lines.length; idx += 1) {
+      const lineText = lines[idx];
+      if (!lineText) {
+        drawLine("", size, usedFont, MARGIN + indent);
+        continue;
       }
+      const words = lineText.split(/\s+/);
+      let line = "";
+      for (const word of words) {
+        const test = line ? `${line} ${word}` : word;
+        const w = usedFont.widthOfTextAtSize(test, size);
+        if (w <= maxWidth) {
+          line = test;
+        } else {
+          drawLine(line, size, usedFont, MARGIN + indent);
+          line = word;
+        }
+      }
+      if (line) drawLine(line, size, usedFont, MARGIN + indent);
     }
-    if (line) drawLine(line, size, usedFont, MARGIN + indent);
   };
 
-  const drawSectionTitle = (text) => {
-    ensureSpace(2);
-    drawLine(text, 12, fontBold);
-  };
-
-  const drawField = (label, value) => {
-    drawLine(label, 10, fontBold);
-    drawWrapped(value ?? "", 10, font, 12);
-    y -= 4;
+  const drawTopRight = (text, size = 10, usedFont = fontBold) => {
+    const content = text ?? "";
+    const w = usedFont.widthOfTextAtSize(content, size);
+    const x = PAGE_W - MARGIN - w;
+    const yTop = PAGE_H - MARGIN;
+    page.drawText(content, { x, y: yTop, size, font: usedFont });
   };
 
   const pageList = pages || [];
@@ -109,11 +114,14 @@ export default async function handler(req, res) {
     if (i > 0) newPage();
     const p = pageList[i];
     const pageNo = Number(p.page_no);
-    drawLine(`Braille pagina ${pageNo}`, 11, fontBold);
-    drawField("Interline on", p.interlinie_on ? "true" : "false");
-    drawField("Titel (letters)", p.title_letters || "");
-    drawField("Tekst (letters)", p.text || "");
-    drawField("Opmerkingen", p.remarks || "");
+    drawTopRight(String(pageNo));
+    drawWrapped(p.interlinie_on ? "true" : "false");
+    y -= 4;
+    drawWrapped(p.title_letters || "");
+    y -= 4;
+    drawWrapped(p.text || "");
+    y -= 4;
+    drawWrapped(p.remarks || "");
     y -= 4;
   }
 
