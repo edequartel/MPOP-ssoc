@@ -57,6 +57,7 @@ button:hover { background: rgba(255,255,255,.12); }
 .status-dot[data-status="in_review"] { background:#8f6ae0; }
 .status-dot[data-status="approved"] { background:#58d68d; }
 .split { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+.header-right { display:flex; justify-content:flex-end; align-items:center; gap:8px; }
 .kpi { display:flex; gap:10px; flex-wrap:wrap; }
 .kpi button { width:auto; padding:4px 10px; font-size:12px; }
 .btn-small { width:auto; padding:6px 8px; font-size:12px; }
