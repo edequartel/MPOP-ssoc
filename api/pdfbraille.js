@@ -47,8 +47,8 @@ export default async function handler(req, res) {
   if (pagesError) return res.status(500).json({ error: pagesError.message });
 
   const pdfDoc = await PDFDocument.create();
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const font = await pdfDoc.embedFont(StandardFonts.Courier);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.CourierBold);
   const PAGE_W = 595;
   const PAGE_H = 842;
   const MARGIN = 48;
@@ -115,8 +115,6 @@ export default async function handler(req, res) {
     const p = pageList[i];
     const pageNo = Number(p.page_no);
     drawTopRight(String(pageNo));
-    drawWrapped(p.interlinie_on ? "true" : "false");
-    y -= 4;
     drawWrapped(p.title_letters || "");
     y -= 4;
     drawWrapped(p.text || "");
