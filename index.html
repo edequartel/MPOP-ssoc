@@ -285,6 +285,10 @@
         <div class="hr"></div>
         <h2 class="section-title pdf-page-break">Braille algemeen</h2>
 
+        <div class="btnrow mt-10">
+          <button id="btnAddBraillePage" type="button">+ Braille pagina toevoegen</button>
+        </div>
+
         <label>Opmerkingen</label>
         <textarea id="remarks_braille_algemeen"></textarea>
 
@@ -595,6 +599,7 @@
     // -----------------------------
     let sb = null;
     let currentItem = null; // full row from mpop_items
+    let currentPagesByNo = new Map(); // page_no -> page row from mpop_pages
     let sounds = [];
     let authRefreshRunning = false;
     let authListenerBound = false;
@@ -747,6 +752,123 @@
     }
 
     // -----------------------------
+    // Pages (mpop_pages)
+    // -----------------------------
+    async function loadPagesForItem(itemId) {
+      currentPagesByNo.clear();
+      if (!itemId) return;
+
+      const { data, error } = await sb
+        .from("mpop_pages")
+        .select("page_no, title_letters, text, remarks, interlinie_on")
+        .eq("mpop_item_id", itemId)
+        .order("page_no", { ascending: true });
+
+      if (error) {
+        console.error("loadPagesForItem error:", error);
+        throw error;
+      }
+
+      console.log("Loaded mpop_pages:", data);
+
+      for (const p of data || []) {
+        currentPagesByNo.set(Number(p.page_no), p);
+      }
+    }
+
+    function applyPagesToStaticFields() {
+      // Map page_no 1..6 to the existing static A..F inputs
+      const map = [
+        { no: 1, suf: "a" },
+        { no: 2, suf: "b" },
+        { no: 3, suf: "c" },
+        { no: 4, suf: "d" },
+        { no: 5, suf: "e" },
+        { no: 6, suf: "f" },
+      ];
+
+      for (const m of map) {
+        const p = currentPagesByNo.get(m.no) || {};
+        setVal(`page_${m.suf}_title_letters`, p.title_letters || "");
+        setVal(`page_${m.suf}_text`, p.text || "");
+        setVal(`remarks_pg_${m.suf}`, p.remarks || "");
+        const cb = $(`page_${m.suf}_interlinie_on`);
+        if (cb) cb.checked = !!p.interlinie_on;
+      }
+
+      // refresh braille previews for the static UI
+      if ($("page_a_title_braille")) updatePageABraille();
+      if ($("page_b_title_braille")) updatePageBBraille();
+      if ($("page_c_title_braille")) updatePageCBraille();
+      if ($("page_d_title_braille")) updatePageDBraille();
+      if ($("page_e_title_braille")) updatePageEBraille();
+      if ($("page_f_title_braille")) updatePageFBraille();
+    }
+
+    function getNextPageNoStatic(maxPages = 6) {
+      let max = 0;
+      for (const k of currentPagesByNo.keys()) {
+        const n = Number(k) || 0;
+        if (n > max) max = n;
+      }
+      const next = max + 1;
+      return next <= maxPages ? next : null;
+    }
+
+    async function addEmptyBraillePageStatic() {
+      if (!currentItem?.id) return;
+      const nextNo = getNextPageNoStatic(6);
+      if (!nextNo) {
+        msg($("saveMsg"), "Je hebt al 6 braillepagina’s. Voor meer pagina’s moeten we de UI dynamisch maken.", false);
+        return;
+      }
+
+      msg($("saveMsg"), `Braille pagina ${nextNo} toevoegen...`);
+      suppressAutosaveUntil = Date.now() + 5000;
+      console.log("Inserting mpop_pages row", { mpop_item_id: currentItem.id, page_no: nextNo });
+
+      const row = {
+        mpop_item_id: currentItem.id,
+        page_no: nextNo,
+        title_letters: "",
+        text: "",
+        remarks: "",
+        interlinie_on: false,
+      };
+
+      const { data, error } = await sb
+        .from("mpop_pages")
+        .insert(row)
+        .select("mpop_item_id,page_no")
+        .maybeSingle();
+
+      if (error) {
+        // Show the real reason (usually RLS / permission denied / unique constraint)
+        throw new Error(`Insert mpop_pages failed: ${error.message || JSON.stringify(error)}`);
+      }
+
+      console.log("Inserted mpop_pages row:", data);
+
+      const { data: verifyRows, error: verifyErr } = await sb
+      .from("mpop_pages")
+      .select("page_no")
+      .eq("mpop_item_id", currentItem.id)
+      .order("page_no", { ascending: true });
+
+      console.log("Verify mpop_pages rows:", verifyRows, "err:", verifyErr);
+
+      if (verifyErr) {
+        msg($("saveMsg"), `Inserted but verify select failed: ${verifyErr.message || String(verifyErr)}`, false);
+      }
+
+      await loadPagesForItem(currentItem.id);
+      applyPagesToStaticFields();
+
+      const totalPages = Array.isArray(verifyRows) ? verifyRows.length : currentPagesByNo.size;
+      msg($("saveMsg"), `Inserted page ${nextNo} into mpop_pages. Total pages now: ${totalPages}.`);
+    }
+
+    // -----------------------------
     // Auth
     // -----------------------------
     async function refreshAuthUI(passedSession) {
@@ -886,6 +1008,8 @@
         if (error) throw error;
 
         currentItem = data;
+        await loadPagesForItem(id);
+        console.log("Pages loaded for item", id, Array.from(currentPagesByNo.values()));
         showEditor(data);
         updatePdfButton();
         await loadSounds();
@@ -903,12 +1027,14 @@
 
     let autosaveTimer = null;
     let autosaveRunning = false;
+    let suppressAutosaveUntil = 0; // epoch ms: prevent autosave overwriting saveMsg during explicit actions
 
-    function scheduleAutosave() {
-      if (isViewerRole) return;
-      if (!currentItem) return;
-      if (autosaveTimer) clearTimeout(autosaveTimer);
-      autosaveTimer = setTimeout(async () => {
+function scheduleAutosave() {
+  if (isViewerRole) return;
+  if (!currentItem) return;
+  if (Date.now() < suppressAutosaveUntil) return;
+  if (autosaveTimer) clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(async () => {
         if (autosaveRunning || !currentItem) return;
         autosaveRunning = true;
         try {
@@ -949,48 +1075,13 @@
       setVal("object2_description", row.object2_description || "");
       setVal("remarks_1", row.remarks_1 || "");
       setVal("remarks_2", row.remarks_2 || "");
-      setVal("page_a_title_letters", row.page_a_title_letters || "");
-      setVal("page_a_text", row.page_a_text || "");
-      updatePageABraille();
-      $("page_a_interlinie_on").checked = !!row.page_a_interlinie_on;
+      applyPagesToStaticFields();
       setVal("remarks_3", row.remarks_3 || "");
-      setVal("remarks_pg_a", row.remarks_pg_a || "");
-      setVal("page_b_title_letters", row.page_b_title_letters || "");
-      setVal("page_b_text", row.page_b_text || "");
-      updatePageBBraille();
-      $("page_b_interlinie_on").checked = !!row.page_b_interlinie_on;
-      setVal("remarks_pg_b", row.remarks_pg_b || "");
-
       setVal("remarks_braille_algemeen", row.remarks_braille_algemeen || "");
       setVal("lange_klanken", row.lange_klanken || "");
       setVal("klinkers", row.klinkers || "");
       setVal("medeklinkers", row.medeklinkers || "");
       setVal("tweetekenklanken", row.tweetekenklanken || "");
-
-      setVal("page_c_title_letters", row.page_c_title_letters || "");
-      setVal("page_c_text", row.page_c_text || "");
-      updatePageCBraille();
-      $("page_c_interlinie_on").checked = !!row.page_c_interlinie_on;
-      setVal("remarks_pg_c", row.remarks_pg_c || "");
-
-      setVal("page_d_title_letters", row.page_d_title_letters || "");
-      setVal("page_d_text", row.page_d_text || "");
-      updatePageDBraille();
-      $("page_d_interlinie_on").checked = !!row.page_d_interlinie_on;
-      setVal("remarks_pg_d", row.remarks_pg_d || "");
-
-      setVal("page_e_title_letters", row.page_e_title_letters || "");
-      setVal("page_e_text", row.page_e_text || "");
-      updatePageEBraille();
-      $("page_e_interlinie_on").checked = !!row.page_e_interlinie_on;
-      setVal("remarks_pg_e", row.remarks_pg_e || "");
-
-      setVal("page_f_title_letters", row.page_f_title_letters || "");
-      setVal("page_f_text", row.page_f_text || "");
-      updatePageFBraille();
-      $("page_f_interlinie_on").checked = !!row.page_f_interlinie_on;
-      setVal("remarks_pg_f", row.remarks_pg_f || "");
-
       setVal("handleiding_text", row.handleiding_text || "");
       setVal("remarks_handleiding", row.remarks_handleiding || "");
 
@@ -1435,6 +1526,26 @@
         msg($("saveMsg"), e.message || String(e), false);
       }
     };
+
+    // Add braille page (static A..F UI)
+    const btnAddBraillePage = $("btnAddBraillePage");
+    if (btnAddBraillePage) {
+      btnAddBraillePage.onclick = async (ev) => {
+        try {
+          ev?.preventDefault?.();
+          ev?.stopPropagation?.();
+          suppressAutosaveUntil = Date.now() + 5000;
+
+          msg($("saveMsg"), "Add page clicked (starting insert)...");
+          console.log("Add page clicked", { item: currentItem?.id });
+
+          await addEmptyBraillePageStatic();
+        } catch (e) {
+          console.error("btnAddBraillePage error:", e);
+          msg($("saveMsg"), e.message || String(e), false);
+        }
+      };
+    }
 
     const searchInput = $("search");
     if (searchInput) {

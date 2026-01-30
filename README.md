@@ -27,11 +27,6 @@ Deze handleiding beschrijft hoe je de MPOP++ editor gebruikt om items te bekijke
 
 De items zijn de woorden waar de methode uit bestaat.
 
-## Item zoeken en kiezen
-
-- Gebruik het zoekveld om te filteren op code of titel.
-- Klik op een item om de gegevens te openen.
-
 ## Velden invullen
 
 - Vul de tekstvelden in per pagina.
