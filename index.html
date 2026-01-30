@@ -99,6 +99,7 @@
 
         <div class="btnrow mt-10">
           <button id="btnPdf" type="button" disabled>Generate PDF</button>
+          <button id="btnPdfBraille" type="button" disabled>Generate Braille PDF</button>
         </div>
 
         <label>Auteur</label>
@@ -339,6 +340,8 @@
     const CONFIG_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/supabase-config.js";
     const PDF_URL_LOCAL = "/api/pdf";
     const PDF_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdf";
+    const PDF_BRAILLE_URL_LOCAL = "/api/pdfbraille";
+    const PDF_BRAILLE_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdfbraille";
     const SHOW_FIELD_NAMES = false;
 
     const supabaseInit = async () => {
@@ -977,6 +980,7 @@ function scheduleAutosave() {
 
     function updatePdfButton() {
       $("btnPdf").disabled = !currentItem?.id;
+      $("btnPdfBraille").disabled = !currentItem?.id;
     }
 
     async function flushAutosaveForPdf() {
@@ -1349,6 +1353,44 @@ function scheduleAutosave() {
           .replace(/^-+|-+$/g, "");
         const fileId = safeTitle || String(currentItem?.id || "mpop");
         a.download = `mpop-${fileId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      } catch (e) {
+        msg($("saveMsg"), e.message || String(e), false);
+      }
+    };
+    $("btnPdfBraille").onclick = async () => {
+      try {
+        if (!currentItem?.id) return;
+        await flushAutosaveForPdf();
+        const { data } = await sb.auth.getSession();
+        const token = data?.session?.access_token;
+        const qs = `?id=${encodeURIComponent(currentItem.id)}`;
+        let r = await fetch(`${PDF_BRAILLE_URL_LOCAL}${qs}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (r.status === 404) {
+          r = await fetch(`${PDF_BRAILLE_URL_REMOTE}${qs}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        }
+        if (!r.ok) {
+          const body = await r.text().catch(() => "");
+          throw new Error(`Braille PDF failed (${r.status}). ${body}`.trim());
+        }
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const rawTitle = (currentItem?.title || "").trim();
+        const safeTitle = rawTitle
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        const fileId = safeTitle || String(currentItem?.id || "mpop");
+        a.download = `mpop-${fileId}-braille.pdf`;
         document.body.appendChild(a);
         a.click();
         a.remove();

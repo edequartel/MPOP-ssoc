@@ -1,0 +1,175 @@
+import { createClient } from "@supabase/supabase-js";
+import { PDFDocument, StandardFonts } from "pdf-lib";
+
+export const config = { runtime: "nodejs" };
+
+export default async function handler(req, res) {
+  const idRaw = req.query.id;
+  const id = Array.isArray(idRaw) ? idRaw[0] : idRaw;
+  if (!id || typeof id !== "string") {
+    return res.status(400).json({ error: "Missing id" });
+  }
+  if (id === "undefined" || id === "null") {
+    return res.status(400).json({ error: "Missing id" });
+  }
+
+  const authHeader = req.headers?.authorization || "";
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+  const supabaseKey = serviceKey || anonKey;
+  if (!process.env.SUPABASE_URL || !supabaseKey) {
+    return res.status(500).json({ error: "Supabase env not configured" });
+  }
+
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    supabaseKey,
+    authHeader
+      ? { global: { headers: { Authorization: authHeader } } }
+      : undefined
+  );
+
+  const { data: item, error } = await supabase
+    .from("mpop_items")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) return res.status(500).json({ error: error.message });
+  if (!item) return res.status(404).json({ error: "Item not found" });
+
+  const { data: pages, error: pagesError } = await supabase
+    .from("mpop_pages")
+    .select("page_no,title_letters,text,remarks,interlinie_on")
+    .eq("mpop_item_id", id)
+    .order("page_no", { ascending: true });
+
+  if (pagesError) return res.status(500).json({ error: pagesError.message });
+
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const PAGE_W = 595;
+  const PAGE_H = 842;
+  const MARGIN = 48;
+  const LINE_HEIGHT = 14;
+  let page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+  let y = PAGE_H - MARGIN;
+
+  const newPage = () => {
+    page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+    y = PAGE_H - MARGIN;
+  };
+
+  const ensureSpace = (lines = 1) => {
+    if (y - lines * LINE_HEIGHT < MARGIN) newPage();
+  };
+
+  const drawLine = (text, size = 10, usedFont = font, x = MARGIN) => {
+    ensureSpace(1);
+    page.drawText(text ?? "", { x, y, size, font: usedFont });
+    y -= LINE_HEIGHT;
+  };
+
+  const drawWrapped = (text, size = 10, usedFont = font, indent = 0) => {
+    const raw = (text ?? "").toString();
+    const maxWidth = PAGE_W - MARGIN * 2 - indent;
+    if (!raw) {
+      drawLine("", size, usedFont, MARGIN + indent);
+      return;
+    }
+    const words = raw.split(/\s+/);
+    let line = "";
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      const w = usedFont.widthOfTextAtSize(test, size);
+      if (w <= maxWidth) {
+        line = test;
+      } else {
+        drawLine(line, size, usedFont, MARGIN + indent);
+        line = word;
+      }
+    }
+    if (line) drawLine(line, size, usedFont, MARGIN + indent);
+  };
+
+  const drawSectionTitle = (text) => {
+    ensureSpace(2);
+    drawLine(text, 12, fontBold);
+  };
+
+  const drawField = (label, value) => {
+    drawLine(label, 10, fontBold);
+    drawWrapped(value ?? "", 10, font, 12);
+    y -= 4;
+  };
+
+  const BRAILLE_LETTERS = {
+    a: "⠁", b: "⠃", c: "⠉", d: "⠙", e: "⠑",
+    f: "⠋", g: "⠛", h: "⠓", i: "⠊", j: "⠚",
+    k: "⠅", l: "⠇", m: "⠍", n: "⠝", o: "⠕",
+    p: "⠏", q: "⠟", r: "⠗", s: "⠎", t: "⠞",
+    u: "⠥", v: "⠧", w: "⠺", x: "⠭", y: "⠽",
+    z: "⠵", "ä": "⠜", "ö": "⠪", "ü": "⠳", "ë": "⠫",
+    "ï": "⠻", "à": "⠷", "á": "⠷", "è": "⠮", "é": "⠮",
+    "â": "⠡", "ê": "⠣", "î": "⠩", "ô": "⠹", "û": "⠱"
+  };
+  const BRAILLE_DIGITS = {
+    "0": "⠚", "1": "⠁", "2": "⠃", "3": "⠉", "4": "⠙",
+    "5": "⠑", "6": "⠋", "7": "⠛", "8": "⠓", "9": "⠊"
+  };
+  const BRAILLE_PUNCT = {
+    ".": "⠲", ",": "⠂", ";": "⠆", ":": "⠒", "?": "⠦", "!": "⠖",
+    "-": "⠤", "'": "⠄", "\"": "⠶", "(": "⠷", ")": "⠾", "/": "⠌"
+  };
+  const toBraille = (text) => {
+    const s = (text ?? "").toString();
+    let out = "";
+    let inNumber = false;
+    for (const ch of s) {
+      if (ch >= "0" && ch <= "9") {
+        if (!inNumber) {
+          out += "⠼";
+          inNumber = true;
+        }
+        out += BRAILLE_DIGITS[ch] || ch;
+        continue;
+      }
+      if (inNumber) inNumber = false;
+      if (ch === " " || ch === "\n" || ch === "\t") {
+        out += ch;
+        continue;
+      }
+      const lower = ch.toLowerCase();
+      if (BRAILLE_LETTERS[lower]) {
+        out += BRAILLE_LETTERS[lower];
+        continue;
+      }
+      if (BRAILLE_PUNCT[ch]) {
+        out += BRAILLE_PUNCT[ch];
+        continue;
+      }
+      out += ch;
+    }
+    return out;
+  };
+
+  drawSectionTitle("Braille pagina's");
+  for (const p of pages || []) {
+    const pageNo = Number(p.page_no);
+    drawLine(`Braille pagina ${pageNo}`, 11, fontBold);
+    drawField("Interline on", p.interlinie_on ? "true" : "false");
+    drawField("Titel (letters)", p.title_letters || "");
+    drawField("Titel (braille)", toBraille(p.title_letters || ""));
+    drawField("Tekst (letters)", p.text || "");
+    drawField("Tekst (braille)", toBraille(p.text || ""));
+    drawField("Opmerkingen", p.remarks || "");
+    y -= 4;
+  }
+
+  const pdfBytes = await pdfDoc.save();
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `inline; filename="mpop-${id}.pdf"`);
+  res.send(Buffer.from(pdfBytes));
+}
