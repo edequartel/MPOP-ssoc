@@ -52,7 +52,7 @@ export default async function handler(req, res) {
   const PAGE_W = 595;
   const PAGE_H = 842;
   const MARGIN = 48;
-  const LINE_HEIGHT = 14;
+  const LINE_HEIGHT = 16;
   let page = pdfDoc.addPage([PAGE_W, PAGE_H]);
   let y = PAGE_H - MARGIN;
 
@@ -65,13 +65,13 @@ export default async function handler(req, res) {
     if (y - lines * LINE_HEIGHT < MARGIN) newPage();
   };
 
-  const drawLine = (text, size = 10, usedFont = font, x = MARGIN) => {
+  const drawLine = (text, size = 12, usedFont = font, x = MARGIN) => {
     ensureSpace(1);
     page.drawText(text ?? "", { x, y, size, font: usedFont });
     y -= LINE_HEIGHT;
   };
 
-  const drawWrapped = (text, size = 10, usedFont = font, indent = 0) => {
+  const drawWrapped = (text, size = 12, usedFont = font, indent = 0) => {
     const raw = (text ?? "").toString();
     const maxWidth = PAGE_W - MARGIN * 2 - indent;
     if (!raw) {
@@ -101,7 +101,7 @@ export default async function handler(req, res) {
     }
   };
 
-  const drawTopRight = (text, size = 10, usedFont = fontBold) => {
+  const drawTopRight = (text, size = 12, usedFont = fontBold) => {
     const content = text ?? "";
     const w = usedFont.widthOfTextAtSize(content, size);
     const x = PAGE_W - MARGIN - w;
@@ -115,9 +115,16 @@ export default async function handler(req, res) {
     const p = pageList[i];
     const pageNo = Number(p.page_no);
     drawTopRight(String(pageNo));
-    drawWrapped(p.title_letters || "");
-    y -= LINE_HEIGHT * 5;
-    drawWrapped(p.text || "");
+    const line2Y = PAGE_H - MARGIN - LINE_HEIGHT;
+    if (p.title_letters) {
+      y = line2Y;
+      drawWrapped(p.title_letters || "");
+      y = PAGE_H - MARGIN - LINE_HEIGHT * 6;
+      drawWrapped(p.text || "");
+    } else {
+      y = line2Y;
+      drawWrapped(p.text || "");
+    }
     y -= 4;
     drawWrapped(p.remarks || "");
     y -= 4;
