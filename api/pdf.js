@@ -138,12 +138,14 @@ export default async function handler(req, res) {
       );
       const drawWidth = image.width * scale;
       const drawHeight = image.height * scale;
-      const imageTopY = 760;
-      const imageY = imageTopY - drawHeight;
+      const pageWidth = 595;
+      const pageHeight = 842;
+      const centerX = (pageWidth - drawWidth) / 2;
+      const centerY = (pageHeight - drawHeight) / 2;
 
       page.drawImage(image, {
-        x: 48,
-        y: Math.max(imageY, 48),
+        x: centerX,
+        y: centerY,
         width: drawWidth,
         height: drawHeight,
       });
