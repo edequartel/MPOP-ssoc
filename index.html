@@ -98,7 +98,7 @@
         <div id="saveMsg" class="tiny mt-10 msg-placeholder"></div>
 
         <div class="btnrow mt-10">
-          <button id="btnPdf" type="button" disabled>Generate PDF</button>
+          <button id="btnPdf" type="button" disabled>Generate Manual</button>
           <button id="btnPdfBraille" type="button" disabled>Generate Braille PDF</button>
         </div>
 
@@ -338,8 +338,8 @@
     };
     const CONFIG_URL_LOCAL = "./supabase-config.js";
     const CONFIG_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/supabase-config.js";
-    const PDF_URL_LOCAL = "/api/pdf";
-    const PDF_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdf";
+    const PDF_URL_LOCAL = "/api/manualpdf";
+    const PDF_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/manualpdf";
     const PDF_BRAILLE_URL_LOCAL = "/api/pdfbraille";
     const PDF_BRAILLE_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdfbraille";
     const SHOW_FIELD_NAMES = false;
@@ -1373,7 +1373,7 @@ function scheduleAutosave() {
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-+|-+$/g, "");
         const fileId = safeTitle || String(currentItem?.id || "mpop");
-        a.download = `mpop-${fileId}.pdf`;
+        a.download = `mpop-manual-${fileId}.pdf`;
         document.body.appendChild(a);
         a.click();
         a.remove();
