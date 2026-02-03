@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
   const { data: item, error } = await supabase
     .from("mpop_items")
-    .select("id,title,story_text,remarks_pg_c")
+    .select("id,title")
     .eq("id", id)
     .maybeSingle();
 
@@ -43,8 +43,6 @@ export default async function handler(req, res) {
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
   page.drawText(item.title ?? "MPOP item", { x: 48, y: 800, size: 16, font });
-  page.drawText(item.story_text ?? "", { x: 48, y: 760, size: 10, font, maxWidth: 500 });
-  page.drawText(item.remarks_1 ?? "", { x: 48, y: 680, size: 10, font, maxWidth: 500 });
 
   const pdfBytes = await pdfDoc.save();
 
