@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
   const { data: item, error } = await supabase
     .from("mpop_items")
-    .select("id,title")
+    .select("id,title,handleiding_text")
     .eq("id", id)
     .maybeSingle();
 
@@ -49,6 +49,40 @@ export default async function handler(req, res) {
   const titleY = 800;
 
   page.drawText(titleText, { x: titleX, y: titleY, size: titleSize, font });
+
+  const bodyText = (item.handleiding_text ?? "").toString();
+  const bodySize = 12;
+  const lineHeight = 14;
+  const margin = 48;
+  const maxWidth = 595 - margin * 2;
+  let y = titleY - titleSize - 16;
+
+  const lines = bodyText.split(/\r?\n/);
+  for (const lineText of lines) {
+    if (!lineText) {
+      y -= lineHeight;
+      continue;
+    }
+    const words = lineText.split(/\s+/);
+    let line = "";
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      const w = font.widthOfTextAtSize(test, bodySize);
+      if (w <= maxWidth) {
+        line = test;
+      } else {
+        if (y < margin) break;
+        page.drawText(line, { x: margin, y, size: bodySize, font });
+        y -= lineHeight;
+        line = word;
+      }
+    }
+    if (line && y >= margin) {
+      page.drawText(line, { x: margin, y, size: bodySize, font });
+      y -= lineHeight;
+    }
+    if (y < margin) break;
+  }
 
   const pdfBytes = await pdfDoc.save();
 

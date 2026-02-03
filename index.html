@@ -98,7 +98,8 @@
         <div id="saveMsg" class="tiny mt-10 msg-placeholder"></div>
 
         <div class="btnrow mt-10">
-          <button id="btnPdf" type="button" disabled>Generate Manual</button>
+          <button id="btnPdf" type="button" disabled>Generate PDF</button>
+          <button id="btnManualPdf" type="button" disabled>Generate Manual</button>
           <button id="btnPdfBraille" type="button" disabled>Generate Braille PDF</button>
         </div>
 
@@ -338,8 +339,10 @@
     };
     const CONFIG_URL_LOCAL = "./supabase-config.js";
     const CONFIG_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/supabase-config.js";
-    const PDF_URL_LOCAL = "/api/manualpdf";
-    const PDF_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/manualpdf";
+    const PDF_URL_LOCAL = "/api/pdf";
+    const PDF_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdf";
+    const MANUAL_PDF_URL_LOCAL = "/api/manualpdf";
+    const MANUAL_PDF_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/manualpdf";
     const PDF_BRAILLE_URL_LOCAL = "/api/pdfbraille";
     const PDF_BRAILLE_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdfbraille";
     const SHOW_FIELD_NAMES = false;
@@ -984,6 +987,7 @@ function scheduleAutosave() {
 
     function updatePdfButton() {
       $("btnPdf").disabled = !currentItem?.id;
+      $("btnManualPdf").disabled = !currentItem?.id;
       $("btnPdfBraille").disabled = !currentItem?.id;
     }
 
@@ -1373,7 +1377,7 @@ function scheduleAutosave() {
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/^-+|-+$/g, "");
         const fileId = safeTitle || String(currentItem?.id || "mpop");
-        a.download = `mpop-manual-${fileId}.pdf`;
+        a.download = `mpop-${fileId}.pdf`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -1412,6 +1416,45 @@ function scheduleAutosave() {
           .replace(/^-+|-+$/g, "");
         const fileId = safeTitle || String(currentItem?.id || "mpop");
         a.download = `mpop-${fileId}-braille.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      } catch (e) {
+        msg($("saveMsg"), e.message || String(e), false);
+      }
+    };
+
+    $("btnManualPdf").onclick = async () => {
+      try {
+        if (!currentItem?.id) return;
+        await flushAutosaveForPdf();
+        const { data } = await sb.auth.getSession();
+        const token = data?.session?.access_token;
+        const qs = `?id=${encodeURIComponent(currentItem.id)}`;
+        let r = await fetch(`${MANUAL_PDF_URL_LOCAL}${qs}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (r.status === 404) {
+          r = await fetch(`${MANUAL_PDF_URL_REMOTE}${qs}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        }
+        if (!r.ok) {
+          const body = await r.text().catch(() => "");
+          throw new Error(`Manual PDF failed (${r.status}). ${body}`.trim());
+        }
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const rawTitle = (currentItem?.title || "").trim();
+        const safeTitle = rawTitle
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        const fileId = safeTitle || String(currentItem?.id || "mpop");
+        a.download = `mpop-manual-${fileId}.pdf`;
         document.body.appendChild(a);
         a.click();
         a.remove();
