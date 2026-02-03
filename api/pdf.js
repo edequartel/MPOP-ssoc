@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, StandardFonts } from "pdf-lib";
 
 export const config = { runtime: "nodejs" };
@@ -39,10 +40,13 @@ export default async function handler(req, res) {
   if (!item) return res.status(404).json({ error: "Item not found" });
 
   const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const IMAGE_BASE_URL = "https://www.tastenbraille.com/braillestudio";
   const LOGO_URL =
     "https://www.tastenbraille.com/braillestudio/resources/assets/pen_dot.png";
+  const BRAILLE_FONT_URL =
+    "https://www.tastenbraille.com/braillestudio/resources/fonts/bartimeus6dots.ttf";
 
   let logoImage = null;
   try {
@@ -55,6 +59,17 @@ export default async function handler(req, res) {
     // If logo fetch fails, continue without it.
   }
 
+  let brailleFont = null;
+  try {
+    const brailleResponse = await fetch(BRAILLE_FONT_URL);
+    if (brailleResponse.ok) {
+      const brailleBytes = await brailleResponse.arrayBuffer();
+      brailleFont = await pdfDoc.embedFont(brailleBytes);
+    }
+  } catch {
+    // If font fetch fails, continue without it.
+  }
+
   const addImagePage = async (imagePath, pageTitle, showTitle, pageNumber) => {
     const page = pdfDoc.addPage([595, 842]);
     if (showTitle) {
@@ -62,6 +77,21 @@ export default async function handler(req, res) {
       const titleWidth = font.widthOfTextAtSize(pageTitle, titleSize);
       const titleX = (595 - titleWidth) / 2;
       page.drawText(pageTitle, { x: titleX, y: 800, size: titleSize, font });
+
+      if (brailleFont) {
+        const brailleSize = 32;
+        const brailleWidth = brailleFont.widthOfTextAtSize(
+          pageTitle,
+          brailleSize
+        );
+        const brailleX = (595 - brailleWidth) / 2;
+        page.drawText(pageTitle, {
+          x: brailleX,
+          y: 760,
+          size: brailleSize,
+          font: brailleFont,
+        });
+      }
     }
 
     if (logoImage) {
