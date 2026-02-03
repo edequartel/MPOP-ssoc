@@ -94,6 +94,21 @@ export default async function handler(req, res) {
       }
     }
 
+    const pageNumberText = String(pageNumber);
+    const pageNumberSize = 10;
+    const pageNumberWidth = font.widthOfTextAtSize(
+      pageNumberText,
+      pageNumberSize
+    );
+    const pageNumberX = 595 - 48 - pageNumberWidth;
+    const pageNumberY = 800;
+    page.drawText(pageNumberText, {
+      x: pageNumberX,
+      y: pageNumberY,
+      size: pageNumberSize,
+      font,
+    });
+
     if (logoImage) {
       const maxLogoSize = 32;
       const scale = Math.min(
@@ -131,21 +146,6 @@ export default async function handler(req, res) {
         y: bottomY,
         width: logoWidth,
         height: logoHeight,
-      });
-
-      const pageNumberText = String(pageNumber);
-      const pageNumberSize = 10;
-      const pageNumberWidth = font.widthOfTextAtSize(
-        pageNumberText,
-        pageNumberSize
-      );
-      const pageNumberX = rightX + logoWidth - pageNumberWidth;
-      const pageNumberY = topY - 14;
-      page.drawText(pageNumberText, {
-        x: pageNumberX,
-        y: pageNumberY,
-        size: pageNumberSize,
-        font,
       });
     }
 
