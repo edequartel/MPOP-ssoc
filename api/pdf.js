@@ -41,10 +41,39 @@ export default async function handler(req, res) {
   const pdfDoc = await PDFDocument.create();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const IMAGE_BASE_URL = "https://www.tastenbraille.com/braillestudio";
+  const LOGO_URL = "https://www.tastenbraille.com/resources/assets/pen_dot.png";
+
+  let logoImage = null;
+  try {
+    const logoResponse = await fetch(LOGO_URL);
+    if (logoResponse.ok) {
+      const logoBytes = await logoResponse.arrayBuffer();
+      logoImage = await pdfDoc.embedPng(logoBytes);
+    }
+  } catch {
+    // If logo fetch fails, continue without it.
+  }
 
   const addImagePage = async (imagePath, pageTitle) => {
     const page = pdfDoc.addPage([595, 842]);
     page.drawText(pageTitle, { x: 48, y: 800, size: 16, font });
+
+    if (logoImage) {
+      const maxLogoSize = 32;
+      const scale = Math.min(
+        maxLogoSize / logoImage.width,
+        maxLogoSize / logoImage.height,
+        1
+      );
+      const logoWidth = logoImage.width * scale;
+      const logoHeight = logoImage.height * scale;
+      page.drawImage(logoImage, {
+        x: 595 - 48 - logoWidth,
+        y: 842 - 48 - logoHeight,
+        width: logoWidth,
+        height: logoHeight,
+      });
+    }
 
     const imageUrl = imagePath ? `${IMAGE_BASE_URL}${imagePath}` : "";
     if (!imageUrl) {
