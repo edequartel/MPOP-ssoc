@@ -67,9 +67,32 @@ export default async function handler(req, res) {
       );
       const logoWidth = logoImage.width * scale;
       const logoHeight = logoImage.height * scale;
+      const leftX = 48;
+      const rightX = 595 - 48 - logoWidth;
+      const topY = 842 - 48 - logoHeight;
+      const bottomY = 48;
+
       page.drawImage(logoImage, {
-        x: 595 - 48 - logoWidth,
-        y: 842 - 48 - logoHeight,
+        x: leftX,
+        y: topY,
+        width: logoWidth,
+        height: logoHeight,
+      });
+      page.drawImage(logoImage, {
+        x: rightX,
+        y: topY,
+        width: logoWidth,
+        height: logoHeight,
+      });
+      page.drawImage(logoImage, {
+        x: rightX,
+        y: bottomY,
+        width: logoWidth,
+        height: logoHeight,
+      });
+      page.drawImage(logoImage, {
+        x: leftX,
+        y: bottomY,
         width: logoWidth,
         height: logoHeight,
       });
