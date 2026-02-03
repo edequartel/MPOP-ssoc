@@ -100,27 +100,9 @@ export default async function handler(req, res) {
       pageNumberText,
       pageNumberSize
     );
-    const pageNumberX = 595 - 48 - pageNumberWidth;
-    const pageNumberY = 800;
-    page.drawText(pageNumberText, {
-      x: pageNumberX,
-      y: pageNumberY,
-      size: pageNumberSize,
-      font,
-    });
-    if (brailleFont) {
-      const braillePageText = `#${pageNumberText}  `;
-      const braillePageSize = 32;
-      const pageNumberGap = 8;
-      const braillePageX = pageNumberX + pageNumberWidth + pageNumberGap;
-      const braillePageY = pageNumberY;
-      page.drawText(braillePageText, {
-        x: braillePageX,
-        y: braillePageY,
-        size: braillePageSize,
-        font: brailleFont,
-      });
-    }
+    const pageNumberLeftShift = 24;
+    let pageNumberX = 595 - 48 - pageNumberWidth - pageNumberLeftShift;
+    let pageNumberY = 800;
 
     if (logoImage) {
       const maxLogoSize = 32;
@@ -136,6 +118,28 @@ export default async function handler(req, res) {
       const topY = 842 - 48 - logoHeight;
       const bottomY = 48;
 
+      pageNumberX = rightX - pageNumberLeftShift;
+      pageNumberY = topY + logoHeight + 4;
+      page.drawText(pageNumberText, {
+        x: pageNumberX,
+        y: pageNumberY,
+        size: pageNumberSize,
+        font,
+      });
+      if (brailleFont) {
+        const braillePageText = `#${pageNumberText}  `;
+        const braillePageSize = 32;
+        const pageNumberGap = 8;
+        const braillePageX = pageNumberX + pageNumberWidth + pageNumberGap;
+        const braillePageY = pageNumberY;
+        page.drawText(braillePageText, {
+          x: braillePageX,
+          y: braillePageY,
+          size: braillePageSize,
+          font: brailleFont,
+        });
+      }
+
       page.drawImage(logoImage, {
         x: leftX,
         y: topY,
@@ -160,6 +164,26 @@ export default async function handler(req, res) {
         width: logoWidth,
         height: logoHeight,
       });
+    } else {
+      page.drawText(pageNumberText, {
+        x: pageNumberX,
+        y: pageNumberY,
+        size: pageNumberSize,
+        font,
+      });
+      if (brailleFont) {
+        const braillePageText = `#${pageNumberText}  `;
+        const braillePageSize = 32;
+        const pageNumberGap = 8;
+        const braillePageX = pageNumberX + pageNumberWidth + pageNumberGap;
+        const braillePageY = pageNumberY;
+        page.drawText(braillePageText, {
+          x: braillePageX,
+          y: braillePageY,
+          size: braillePageSize,
+          font: brailleFont,
+        });
+      }
     }
 
     const imageUrl = imagePath ? `${IMAGE_BASE_URL}${imagePath}` : "";
