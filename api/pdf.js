@@ -41,7 +41,8 @@ export default async function handler(req, res) {
   const pdfDoc = await PDFDocument.create();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const IMAGE_BASE_URL = "https://www.tastenbraille.com/braillestudio";
-  const LOGO_URL = "https://www.tastenbraille.com/resources/assets/pen_dot.png";
+  const LOGO_URL =
+    "https://www.tastenbraille.com/braillestudio/resources/assets/pen_dot.png";
 
   let logoImage = null;
   try {
