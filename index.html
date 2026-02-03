@@ -98,7 +98,6 @@
         <div id="saveMsg" class="tiny mt-10 msg-placeholder"></div>
 
         <div class="btnrow mt-10">
-          <button id="btnPdfManual" type="button" disabled>Generate Manual PDF</button>
           <button id="btnPdf" type="button" disabled>Generate PDF</button>
           <button id="btnPdfBraille" type="button" disabled>Generate Braille PDF</button>
         </div>
@@ -341,8 +340,6 @@
     const CONFIG_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/supabase-config.js";
     const PDF_URL_LOCAL = "/api/pdf";
     const PDF_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdf";
-    const PDF_MANUAL_URL_LOCAL = "/api/pdfmanual";
-    const PDF_MANUAL_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdfmanual";
     const PDF_BRAILLE_URL_LOCAL = "/api/pdfbraille";
     const PDF_BRAILLE_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdfbraille";
     const SHOW_FIELD_NAMES = false;
@@ -987,7 +984,6 @@ function scheduleAutosave() {
 
     function updatePdfButton() {
       $("btnPdf").disabled = !currentItem?.id;
-      $("btnPdfManual").disabled = !currentItem?.id;
       $("btnPdfBraille").disabled = !currentItem?.id;
     }
 
@@ -1560,35 +1556,3 @@ function scheduleAutosave() {
   </script>
 </body>
 </html>
-    $("btnPdfManual").onclick = async () => {
-      if (!currentItem?.id) return;
-      try {
-        await flushAutosaveForPdf();
-        const qs = `?id=${encodeURIComponent(currentItem.id)}`;
-        let r = await fetch(`${PDF_MANUAL_URL_LOCAL}${qs}`, {
-          headers: { Authorization: getAuthHeaderValue() },
-        });
-        if (!r.ok) {
-          r = await fetch(`${PDF_MANUAL_URL_REMOTE}${qs}`, {
-            headers: { Authorization: getAuthHeaderValue() },
-          });
-        }
-        if (!r.ok) {
-          const body = await r.text();
-          throw new Error(`Manual PDF failed (${r.status}). ${body}`.trim());
-        }
-        const blob = await r.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        const fileId = currentItem.id || "item";
-        a.href = url;
-        a.download = `mpop-${fileId}-manual.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 3000);
-      } catch (err) {
-        console.error(err);
-        alert(err.message || "Manual PDF failed");
-      }
-    };
