@@ -101,7 +101,7 @@ export default async function handler(req, res) {
       pageNumberSize
     );
     const pageNumberGap = 8;
-    const pageNumberY = 24;
+    let pageNumberY = 24;
     const braillePageText = `#${pageNumberText}  `;
     const braillePageSize = 32;
     const braillePageWidth = brailleFont
@@ -124,6 +124,9 @@ export default async function handler(req, res) {
       const rightX = 595 - 48 - logoWidth;
       const topY = 842 - 48 - logoHeight;
       const bottomY = 48;
+
+      const bottomLogoCenterY = bottomY + logoHeight / 2;
+      pageNumberY = bottomLogoCenterY - pageNumberSize / 2;
 
       page.drawImage(logoImage, {
         x: leftX,
