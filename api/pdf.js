@@ -95,7 +95,7 @@ export default async function handler(req, res) {
     }
 
     const pageNumberText = String(pageNumber);
-    const pageNumberSize = 32;
+    const pageNumberSize = 12;
     const pageNumberWidth = font.widthOfTextAtSize(
       pageNumberText,
       pageNumberSize
@@ -111,12 +111,9 @@ export default async function handler(req, res) {
     if (brailleFont) {
       const braillePageText = `#${pageNumberText}`;
       const braillePageSize = 32;
-      const braillePageWidth = brailleFont.widthOfTextAtSize(
-        braillePageText,
-        braillePageSize
-      );
-      const braillePageX = 595 - 48 - braillePageWidth;
-      const braillePageY = pageNumberY - 32;
+      const pageNumberGap = 8;
+      const braillePageX = pageNumberX + pageNumberWidth + pageNumberGap;
+      const braillePageY = pageNumberY;
       page.drawText(braillePageText, {
         x: braillePageX,
         y: braillePageY,
