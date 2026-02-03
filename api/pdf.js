@@ -151,10 +151,15 @@ export default async function handler(req, res) {
 
     const imageUrl = imagePath ? `${IMAGE_BASE_URL}${imagePath}` : "";
     if (!imageUrl) {
-      page.drawText("Afbeelding bestaat niet", {
-        x: 48,
-        y: 780,
-        size: 12,
+      const missingText = "Afbeelding bestaat niet";
+      const missingSize = 12;
+      const missingWidth = font.widthOfTextAtSize(missingText, missingSize);
+      const missingX = (595 - missingWidth) / 2;
+      const missingY = 842 / 2;
+      page.drawText(missingText, {
+        x: missingX,
+        y: missingY,
+        size: missingSize,
         font,
       });
       return;
@@ -163,10 +168,15 @@ export default async function handler(req, res) {
     try {
       const response = await fetch(imageUrl);
       if (!response.ok) {
-        page.drawText("Afbeelding bestaat niet", {
-          x: 48,
-          y: 760,
-          size: 12,
+        const missingText = "Afbeelding bestaat niet";
+        const missingSize = 12;
+        const missingWidth = font.widthOfTextAtSize(missingText, missingSize);
+        const missingX = (595 - missingWidth) / 2;
+        const missingY = 842 / 2;
+        page.drawText(missingText, {
+          x: missingX,
+          y: missingY,
+          size: missingSize,
           font,
         });
         return;
@@ -198,10 +208,15 @@ export default async function handler(req, res) {
         height: drawHeight,
       });
     } catch {
-      page.drawText("Afbeelding bestaat niet", {
-        x: 48,
-        y: 760,
-        size: 12,
+      const missingText = "Afbeelding bestaat niet";
+      const missingSize = 12;
+      const missingWidth = font.widthOfTextAtSize(missingText, missingSize);
+      const missingX = (595 - missingWidth) / 2;
+      const missingY = 842 / 2;
+      page.drawText(missingText, {
+        x: missingX,
+        y: missingY,
+        size: missingSize,
         font,
       });
     }
