@@ -115,8 +115,7 @@ export default async function handler(req, res) {
       const logoHeight = logoImage.height * scale;
       const leftX = 48;
       const rightX = 595 - 48 - logoWidth;
-      const topYOffset = 12;
-      const topY = 842 - 48 - logoHeight - topYOffset;
+      const topY = 842 - 48 - logoHeight;
       const bottomY = 48;
 
       pageNumberX = rightX - pageNumberLeftShift;
