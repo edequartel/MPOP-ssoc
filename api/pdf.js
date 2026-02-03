@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
   const { data: item, error } = await supabase
     .from("mpop_items")
-    .select("id,title,image1_path")
+    .select("id,title,image1_path,image2_path,image3_path")
     .eq("id", id)
     .maybeSingle();
 
@@ -39,51 +39,75 @@ export default async function handler(req, res) {
   if (!item) return res.status(404).json({ error: "Item not found" });
 
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595, 842]);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-  const titleText = item.title ?? "MPOP item";
-  page.drawText(titleText, { x: 48, y: 800, size: 16, font });
-
   const IMAGE_BASE_URL = "https://www.tastenbraille.com/braillestudio";
-  const imagePath = item.image1_path ?? "";
-  const imageUrl = imagePath ? `${IMAGE_BASE_URL}${imagePath}` : "";
 
-  if (imageUrl) {
+  const addImagePage = async (imagePath, pageTitle) => {
+    const page = pdfDoc.addPage([595, 842]);
+    page.drawText(pageTitle, { x: 48, y: 800, size: 16, font });
+
+    const imageUrl = imagePath ? `${IMAGE_BASE_URL}${imagePath}` : "";
+    if (!imageUrl) {
+      page.drawText("Afbeelding bestaat niet", {
+        x: 48,
+        y: 780,
+        size: 12,
+        font,
+      });
+      return;
+    }
+
     page.drawText(imageUrl, { x: 48, y: 780, size: 10, font });
 
     try {
       const response = await fetch(imageUrl);
-      if (response.ok) {
-        const imageBytes = await response.arrayBuffer();
-        const isPng = imagePath.toLowerCase().endsWith(".png");
-        const image = isPng
-          ? await pdfDoc.embedPng(imageBytes)
-          : await pdfDoc.embedJpg(imageBytes);
-
-        const maxWidth = 500;
-        const maxHeight = 680;
-        const scale = Math.min(
-          maxWidth / image.width,
-          maxHeight / image.height,
-          1
-        );
-        const drawWidth = image.width * scale;
-        const drawHeight = image.height * scale;
-        const imageTopY = 760;
-        const imageY = imageTopY - drawHeight;
-
-        page.drawImage(image, {
+      if (!response.ok) {
+        page.drawText("Afbeelding bestaat niet", {
           x: 48,
-          y: Math.max(imageY, 48),
-          width: drawWidth,
-          height: drawHeight,
+          y: 760,
+          size: 12,
+          font,
         });
+        return;
       }
+      const imageBytes = await response.arrayBuffer();
+      const isPng = imagePath.toLowerCase().endsWith(".png");
+      const image = isPng
+        ? await pdfDoc.embedPng(imageBytes)
+        : await pdfDoc.embedJpg(imageBytes);
+
+      const maxWidth = 500;
+      const maxHeight = 680;
+      const scale = Math.min(
+        maxWidth / image.width,
+        maxHeight / image.height,
+        1
+      );
+      const drawWidth = image.width * scale;
+      const drawHeight = image.height * scale;
+      const imageTopY = 760;
+      const imageY = imageTopY - drawHeight;
+
+      page.drawImage(image, {
+        x: 48,
+        y: Math.max(imageY, 48),
+        width: drawWidth,
+        height: drawHeight,
+      });
     } catch {
-      // If image fetch fails, keep the PDF with title + URL only.
+      page.drawText("Afbeelding bestaat niet", {
+        x: 48,
+        y: 760,
+        size: 12,
+        font,
+      });
     }
-  }
+  };
+
+  const titleText = item.title ?? "MPOP item";
+  await addImagePage(item.image1_path ?? "", titleText);
+  await addImagePage(item.image2_path ?? "", titleText);
+  await addImagePage(item.image3_path ?? "", titleText);
 
   const pdfBytes = await pdfDoc.save();
 
