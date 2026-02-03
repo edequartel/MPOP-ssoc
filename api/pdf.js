@@ -73,7 +73,7 @@ export default async function handler(req, res) {
   const addImagePage = async (imagePath, pageTitle, showTitle, pageNumber) => {
     const page = pdfDoc.addPage([595, 842]);
     if (showTitle) {
-      const titleSize = 16;
+      const titleSize = 32;
       const titleWidth = font.widthOfTextAtSize(pageTitle, titleSize);
       const titleX = (595 - titleWidth) / 2;
       page.drawText(pageTitle, { x: titleX, y: 800, size: titleSize, font });
@@ -95,7 +95,7 @@ export default async function handler(req, res) {
     }
 
     const pageNumberText = String(pageNumber);
-    const pageNumberSize = 10;
+    const pageNumberSize = 32;
     const pageNumberWidth = font.widthOfTextAtSize(
       pageNumberText,
       pageNumberSize
@@ -108,6 +108,22 @@ export default async function handler(req, res) {
       size: pageNumberSize,
       font,
     });
+    if (brailleFont) {
+      const braillePageText = `#${pageNumberText}`;
+      const braillePageSize = 32;
+      const braillePageWidth = brailleFont.widthOfTextAtSize(
+        braillePageText,
+        braillePageSize
+      );
+      const braillePageX = 595 - 48 - braillePageWidth;
+      const braillePageY = pageNumberY - 32;
+      page.drawText(braillePageText, {
+        x: braillePageX,
+        y: braillePageY,
+        size: braillePageSize,
+        font: brailleFont,
+      });
+    }
 
     if (logoImage) {
       const maxLogoSize = 32;
