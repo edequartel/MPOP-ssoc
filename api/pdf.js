@@ -55,9 +55,14 @@ export default async function handler(req, res) {
     // If logo fetch fails, continue without it.
   }
 
-  const addImagePage = async (imagePath, pageTitle) => {
+  const addImagePage = async (imagePath, pageTitle, showTitle, pageNumber) => {
     const page = pdfDoc.addPage([595, 842]);
-    page.drawText(pageTitle, { x: 48, y: 800, size: 16, font });
+    if (showTitle) {
+      const titleSize = 16;
+      const titleWidth = font.widthOfTextAtSize(pageTitle, titleSize);
+      const titleX = (595 - titleWidth) / 2;
+      page.drawText(pageTitle, { x: titleX, y: 800, size: titleSize, font });
+    }
 
     if (logoImage) {
       const maxLogoSize = 32;
@@ -96,6 +101,21 @@ export default async function handler(req, res) {
         y: bottomY,
         width: logoWidth,
         height: logoHeight,
+      });
+
+      const pageNumberText = String(pageNumber);
+      const pageNumberSize = 10;
+      const pageNumberWidth = font.widthOfTextAtSize(
+        pageNumberText,
+        pageNumberSize
+      );
+      const pageNumberX = rightX + logoWidth - pageNumberWidth;
+      const pageNumberY = topY - 14;
+      page.drawText(pageNumberText, {
+        x: pageNumberX,
+        y: pageNumberY,
+        size: pageNumberSize,
+        font,
       });
     }
 
@@ -160,9 +180,9 @@ export default async function handler(req, res) {
   };
 
   const titleText = item.title ?? "MPOP item";
-  await addImagePage(item.image1_path ?? "", titleText);
-  await addImagePage(item.image2_path ?? "", titleText);
-  await addImagePage(item.image3_path ?? "", titleText);
+  await addImagePage(item.image1_path ?? "", titleText, true, 1);
+  await addImagePage(item.image2_path ?? "", titleText, false, 2);
+  await addImagePage(item.image3_path ?? "", titleText, false, 3);
 
   const pdfBytes = await pdfDoc.save();
 
