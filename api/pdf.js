@@ -130,8 +130,6 @@ export default async function handler(req, res) {
       return;
     }
 
-    page.drawText(imageUrl, { x: 48, y: 780, size: 10, font });
-
     try {
       const response = await fetch(imageUrl);
       if (!response.ok) {
