@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
   const { data: item, error } = await supabase
     .from("mpop_items")
-    .select("id,title,image_path")
+    .select("id,title,image1_path")
     .eq("id", id)
     .maybeSingle();
 
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
   page.drawText(titleText, { x: 48, y: 800, size: 16, font });
 
   const IMAGE_BASE_URL = "https://www.tastenbraille.com/braillestudio";
-  const imagePath = item.image_path ?? "";
+  const imagePath = item.image1_path ?? "";
   const imageUrl = imagePath ? `${IMAGE_BASE_URL}${imagePath}` : "";
 
   if (imageUrl) {
