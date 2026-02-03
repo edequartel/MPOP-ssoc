@@ -109,7 +109,7 @@ export default async function handler(req, res) {
       font,
     });
     if (brailleFont) {
-      const braillePageText = `#${pageNumberText}`;
+      const braillePageText = `#${pageNumberText}  `;
       const braillePageSize = 32;
       const pageNumberGap = 8;
       const braillePageX = pageNumberX + pageNumberWidth + pageNumberGap;
