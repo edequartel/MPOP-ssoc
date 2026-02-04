@@ -114,7 +114,7 @@ export default async function handler(req, res) {
     if (i > 0) newPage();
     const p = pageList[i];
     const pageNo = Number(p.page_no);
-    drawTopRight(String(pageNo));
+    drawTopRight(`#${pageNo}`);
     const line2Y = PAGE_H - MARGIN - LINE_HEIGHT;
     if (p.title_letters) {
       y = line2Y;
