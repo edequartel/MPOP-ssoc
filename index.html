@@ -474,6 +474,54 @@
       return max;
     }
 
+    function getPagesSortedByNo() {
+      return Array.from(currentPagesByNo.values())
+        .sort((a, b) => Number(a.page_no) - Number(b.page_no));
+    }
+
+    async function renumberPagesOrdered(orderedPages) {
+      if (!currentItem?.id) return;
+      if (!orderedPages?.length) return;
+      const pageNos = orderedPages.map(p => Number(p.page_no));
+      const minNo = Math.min(0, ...pageNos);
+      const tempStart = minNo - 1000;
+      const tempNos = orderedPages.map((_, i) => tempStart - i);
+
+      for (let i = 0; i < orderedPages.length; i += 1) {
+        const oldNo = Number(orderedPages[i].page_no);
+        const tempNo = tempNos[i];
+        const { error } = await sb
+          .from("mpop_pages")
+          .update({ page_no: tempNo })
+          .eq("mpop_item_id", currentItem.id)
+          .eq("page_no", oldNo);
+        if (error) throw error;
+      }
+
+      for (let i = 0; i < orderedPages.length; i += 1) {
+        const finalNo = i + 1;
+        const tempNo = tempNos[i];
+        const { error } = await sb
+          .from("mpop_pages")
+          .update({ page_no: finalNo })
+          .eq("mpop_item_id", currentItem.id)
+          .eq("page_no", tempNo);
+        if (error) throw error;
+      }
+    }
+
+    async function renumberPagesSequential() {
+      const pages = getPagesSortedByNo();
+      await renumberPagesOrdered(pages);
+    }
+
+    function getUnusedTempPageNo() {
+      const existing = new Set(Array.from(currentPagesByNo.keys()).map(Number));
+      let temp = -1;
+      while (existing.has(temp)) temp -= 1;
+      return temp;
+    }
+
     function updatePageBraille(no) {
       setVal(pageId(no, "title_braille"), toBraille(val(pageId(no, "title_letters"))));
       setVal(pageId(no, "text_braille"), toBraille(val(pageId(no, "text"))));
@@ -484,8 +532,7 @@
       if (!host) return;
       host.innerHTML = "";
 
-      const pages = Array.from(currentPagesByNo.values())
-        .sort((a, b) => Number(a.page_no) - Number(b.page_no));
+      const pages = getPagesSortedByNo();
 
       for (const p of pages) {
         const no = Number(p.page_no);
@@ -502,11 +549,15 @@
         headerLeft.appendChild(headerTitle);
         const headerRight = document.createElement("div");
         headerRight.className = "header-right";
+        const insertBtn = document.createElement("button");
+        insertBtn.type = "button";
+        insertBtn.className = "btn-small";
+        insertBtn.textContent = "Voeg in na";
         const deleteBtn = document.createElement("button");
         deleteBtn.type = "button";
         deleteBtn.className = "btn-small";
         deleteBtn.textContent = "Verwijder";
-        headerRight.appendChild(deleteBtn);
+        headerRight.append(insertBtn, deleteBtn);
         header.append(headerLeft, headerRight);
 
         const interlineRow = document.createElement("div");
@@ -594,8 +645,49 @@
               .eq("page_no", no);
             if (error) throw error;
             await loadPagesForItem(currentItem.id);
+            await renumberPagesSequential();
+            await loadPagesForItem(currentItem.id);
             renderBraillePages();
-            msg($("saveMsg"), `Braille pagina ${no} verwijderd.`);
+            msg($("saveMsg"), `Braille pagina ${no} verwijderd en hergenummerd.`);
+          } catch (e) {
+            msg($("saveMsg"), e.message || String(e), false);
+          }
+        };
+
+        insertBtn.onclick = async () => {
+          try {
+            if (!currentItem?.id) return;
+            suppressAutosaveUntil = Date.now() + 5000;
+            msg($("saveMsg"), `Braille pagina invoegen na ${no}...`);
+            const tempNo = getUnusedTempPageNo();
+            const row = {
+              mpop_item_id: currentItem.id,
+              page_no: tempNo,
+              title_letters: "",
+              text: "",
+              remarks: "",
+              interlinie_on: false,
+            };
+            const { error: insertError } = await sb
+              .from("mpop_pages")
+              .insert(row);
+            if (insertError) throw insertError;
+
+            const ordered = [];
+            const pages = getPagesSortedByNo();
+            for (const p of pages) {
+              ordered.push(p);
+              if (Number(p.page_no) === no) {
+                ordered.push({ page_no: tempNo });
+              }
+            }
+            if (!ordered.some(p => Number(p.page_no) === tempNo)) {
+              ordered.push({ page_no: tempNo });
+            }
+            await renumberPagesOrdered(ordered);
+            await loadPagesForItem(currentItem.id);
+            renderBraillePages();
+            msg($("saveMsg"), `Braille pagina ingevoegd na ${no}.`);
           } catch (e) {
             msg($("saveMsg"), e.message || String(e), false);
           }
@@ -632,8 +724,10 @@
       if (error) throw error;
 
       await loadPagesForItem(currentItem.id);
+      await renumberPagesSequential();
+      await loadPagesForItem(currentItem.id);
       renderBraillePages();
-      msg($("saveMsg"), `Braille pagina ${nextNo} toegevoegd`);
+      msg($("saveMsg"), `Braille pagina ${nextNo} toegevoegd en hergenummerd`);
     }
 
     function setEditorReadonly(readonly) {
