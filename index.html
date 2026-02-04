@@ -415,6 +415,21 @@
       });
     }
 
+    function setButtonBusy(btn, busy, label = "Bezig...") {
+      if (!btn) return;
+      if (busy) {
+        if (!btn.dataset.label) btn.dataset.label = btn.textContent || "";
+        btn.textContent = label;
+        btn.classList.add("busy");
+        btn.disabled = true;
+        return;
+      }
+      const prev = btn.dataset.label;
+      if (prev !== undefined) btn.textContent = prev;
+      btn.classList.remove("busy");
+      delete btn.dataset.label;
+    }
+
 
     const BRAILLE_LETTERS = {
       a: "⠁", b: "⠃", c: "⠉", d: "⠙", e: "⠑", f: "⠋", g: "⠛", h: "⠓", i: "⠊", j: "⠚",
@@ -1101,16 +1116,16 @@ function scheduleAutosave() {
           tick();
         });
       }
-      await saveItem();
+      await saveItem(false);
     }
 
     // -----------------------------
     // Save (optimistic concurrency via version)
     // -----------------------------
-    async function saveItem() {
+    async function saveItem(showMsg = true) {
       if (!currentItem) return;
       try {
-        msg($("saveMsg"), "Saving...");
+        if (showMsg) msg($("saveMsg"), "Saving...");
         const payload = {
           auteur: val("auteur").trim(),
           title: val("title").trim(),
@@ -1180,7 +1195,7 @@ function scheduleAutosave() {
         currentItem = data;
         await upsertPagesFromDynamicUI();
         showEditor(data);
-        msg($("saveMsg"), "Saved.");
+        if (showMsg) msg($("saveMsg"), "Saved.");
         await loadItems();
       } catch (e) {
         msg($("saveMsg"), e.message || String(e), false);
@@ -1446,6 +1461,7 @@ function scheduleAutosave() {
     $("btnPdf").onclick = async () => {
       try {
         if (!currentItem?.id) return;
+        setButtonBusy($("btnPdf"), true, "PDF bezig...");
         msg($("saveMsg"), "PDF wordt gemaakt...");
         await flushAutosaveForPdf();
         const { data } = await sb.auth.getSession();
@@ -1481,11 +1497,15 @@ function scheduleAutosave() {
         msg($("saveMsg"), "PDF gereed.");
       } catch (e) {
         msg($("saveMsg"), e.message || String(e), false);
+      } finally {
+        setButtonBusy($("btnPdf"), false);
+        updatePdfButton();
       }
     };
     $("btnPdfBraille").onclick = async () => {
       try {
         if (!currentItem?.id) return;
+        setButtonBusy($("btnPdfBraille"), true, "Braille bezig...");
         msg($("saveMsg"), "Braille PDF wordt gemaakt...");
         await flushAutosaveForPdf();
         const { data } = await sb.auth.getSession();
@@ -1521,12 +1541,16 @@ function scheduleAutosave() {
         msg($("saveMsg"), "Braille PDF gereed.");
       } catch (e) {
         msg($("saveMsg"), e.message || String(e), false);
+      } finally {
+        setButtonBusy($("btnPdfBraille"), false);
+        updatePdfButton();
       }
     };
 
     $("btnManualPdf").onclick = async () => {
       try {
         if (!currentItem?.id) return;
+        setButtonBusy($("btnManualPdf"), true, "Manual bezig...");
         msg($("saveMsg"), "Manual PDF wordt gemaakt...");
         await flushAutosaveForPdf();
         const { data } = await sb.auth.getSession();
@@ -1562,6 +1586,9 @@ function scheduleAutosave() {
         msg($("saveMsg"), "Manual PDF gereed.");
       } catch (e) {
         msg($("saveMsg"), e.message || String(e), false);
+      } finally {
+        setButtonBusy($("btnManualPdf"), false);
+        updatePdfButton();
       }
     };
 
