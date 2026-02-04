@@ -1446,6 +1446,7 @@ function scheduleAutosave() {
     $("btnPdf").onclick = async () => {
       try {
         if (!currentItem?.id) return;
+        msg($("saveMsg"), "PDF wordt gemaakt...");
         await flushAutosaveForPdf();
         const { data } = await sb.auth.getSession();
         const token = data?.session?.access_token;
@@ -1477,6 +1478,7 @@ function scheduleAutosave() {
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        msg($("saveMsg"), "PDF gereed.");
       } catch (e) {
         msg($("saveMsg"), e.message || String(e), false);
       }
@@ -1484,6 +1486,7 @@ function scheduleAutosave() {
     $("btnPdfBraille").onclick = async () => {
       try {
         if (!currentItem?.id) return;
+        msg($("saveMsg"), "Braille PDF wordt gemaakt...");
         await flushAutosaveForPdf();
         const { data } = await sb.auth.getSession();
         const token = data?.session?.access_token;
@@ -1515,6 +1518,7 @@ function scheduleAutosave() {
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        msg($("saveMsg"), "Braille PDF gereed.");
       } catch (e) {
         msg($("saveMsg"), e.message || String(e), false);
       }
@@ -1523,6 +1527,7 @@ function scheduleAutosave() {
     $("btnManualPdf").onclick = async () => {
       try {
         if (!currentItem?.id) return;
+        msg($("saveMsg"), "Manual PDF wordt gemaakt...");
         await flushAutosaveForPdf();
         const { data } = await sb.auth.getSession();
         const token = data?.session?.access_token;
@@ -1554,6 +1559,7 @@ function scheduleAutosave() {
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        msg($("saveMsg"), "Manual PDF gereed.");
       } catch (e) {
         msg($("saveMsg"), e.message || String(e), false);
       }
