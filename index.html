@@ -45,8 +45,8 @@
           <input id="password" type="password" placeholder="••••••••" />
 
           <div class="btnrow mt-10">
-            <button id="btnSignIn">Sign in</button>
-            <button id="btnSignUp">Sign up</button>
+            <button id="btnSignIn">Inloggen</button>
+            <button id="btnSignUp">Registreren</button>
           </div>
           <div id="authMsg" class="tiny mt-10"></div>
         </div>
@@ -803,7 +803,7 @@
         const password = val("password");
         const { error } = await sb.auth.signUp({ email, password });
         if (error) throw error;
-        msg($("authMsg"), "Sign-up OK. If email confirmation is enabled, confirm your email before signing in.");
+        msg($("authMsg"), "Registratie gelukt. Bevestig je e-mail voordat je kunt inloggen.");
       } catch (e) {
         msg($("authMsg"), e.message || String(e), false);
       }
