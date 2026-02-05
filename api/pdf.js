@@ -146,9 +146,16 @@ export default async function handler(req, res) {
         width: logoWidth,
         height: logoHeight,
       });
+      page.drawImage(logoImage, {
+        x: leftX,
+        y: bottomY,
+        width: logoWidth,
+        height: logoHeight,
+      });
+
       if (pageNumber !== 1) {
         page.drawImage(logoImage, {
-          x: leftX,
+          x: rightX,
           y: bottomY,
           width: logoWidth,
           height: logoHeight,
