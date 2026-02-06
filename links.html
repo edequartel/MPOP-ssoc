@@ -27,7 +27,10 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
     const mdHost = document.getElementById("mdContent");
-    fetch("links.md")
+    const renderPlain = (md) => {
+      mdHost.textContent = md || "";
+    };
+    fetch("links.md", { cache: "no-cache" })
       .then((res) => {
         if (!res.ok) {
           throw new Error(`Failed to load links.md (${res.status})`);
@@ -35,7 +38,11 @@
         return res.text();
       })
       .then((md) => {
-        mdHost.innerHTML = marked.parse(md || "");
+        if (window.marked && typeof window.marked.parse === "function") {
+          mdHost.innerHTML = window.marked.parse(md || "");
+        } else {
+          renderPlain(md);
+        }
       })
       .catch((err) => {
         mdHost.textContent = err.message || String(err);
