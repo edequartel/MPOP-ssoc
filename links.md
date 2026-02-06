@@ -11,3 +11,9 @@ Een set richtlijnen voor het ontwerpen van tactiele afbeeldingen die goed leesba
 
 ### [Curriculum Braille](https://www.tastenbraille.com/braillestudio/versie1/Curriculum-Braille-maart-2025.pdf)
 Een uitgebreid overzicht van leerdoelen, leerlijnen en didactische aanpak voor brailleonderwijs. Het document ondersteunt scholen bij het systematisch opbouwen van braillevaardigheid — van voorbereidende tactiele vaardigheden tot vloeiend lezen en schrijven — en helpt bij het borgen van kwaliteit en continuïteit binnen het onderwijsprogramma.
+
+### Links naar voorbeelden
+
+* [Amazing Maze](https://www.maxiaids.com/product/braille-childrens-book-amazing-mazes#mz-expanded-view-102812266677)
+* [Doolhof met LEGO bricks](https://www.youtube.com/watch?v=vdP7qWNTECI)
+* [Doolhof spel](https://www.teacherspayteachers.com/Product/Braille-Alphabet-AZ-Maze-Activities-Learn-the-Alphabet-with-Braille-Symbols-13545079)
