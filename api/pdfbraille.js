@@ -53,6 +53,7 @@ export default async function handler(req, res) {
   const PAGE_H = 842;
   const MARGIN = 48;
   const LINE_HEIGHT = 16;
+  const QR_SIZE = 40;
   let page = pdfDoc.addPage([PAGE_W, PAGE_H]);
   let y = PAGE_H - MARGIN;
 
@@ -109,11 +110,50 @@ export default async function handler(req, res) {
     page.drawText(content, { x, y: yTop, size, font: usedFont });
   };
 
+  const codeText =
+    item.code === null || item.code === undefined ? "" : String(item.code);
+  const qrCache = new Map();
+  const getQrImage = async (pageNumber) => {
+    if (!codeText) return null;
+    const cacheKey = String(pageNumber);
+    if (qrCache.has(cacheKey)) return qrCache.get(cacheKey);
+    const qrData = `B${codeText}${pageNumber}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+      qrData
+    )}`;
+    try {
+      const qrResponse = await fetch(qrUrl);
+      if (qrResponse.ok) {
+        const qrBytes = await qrResponse.arrayBuffer();
+        const qrImage = await pdfDoc.embedPng(qrBytes);
+        qrCache.set(cacheKey, qrImage);
+        return qrImage;
+      }
+    } catch {
+      // If QR fetch fails, continue without it.
+    }
+    qrCache.set(cacheKey, null);
+    return null;
+  };
+
+  const drawBottomRightQr = (qrImage) => {
+    if (!qrImage) return;
+    const x = PAGE_W - MARGIN - QR_SIZE;
+    const yBottom = MARGIN;
+    page.drawImage(qrImage, {
+      x,
+      y: yBottom,
+      width: QR_SIZE,
+      height: QR_SIZE,
+    });
+  };
+
   const pageList = pages || [];
   for (let i = 0; i < pageList.length; i += 1) {
     if (i > 0) newPage();
     const p = pageList[i];
     const pageNo = Number(p.page_no);
+    const qrImage = await getQrImage(pageNo);
     drawTopRight(`#${pageNo}`);
     const line2Y = PAGE_H - MARGIN - LINE_HEIGHT;
     if (p.title_letters) {
@@ -128,6 +168,7 @@ export default async function handler(req, res) {
     y -= 4;
     drawWrapped(p.remarks || "");
     y -= 4;
+    drawBottomRightQr(qrImage);
   }
 
   const pdfBytes = await pdfDoc.save();

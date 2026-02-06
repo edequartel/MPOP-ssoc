@@ -74,24 +74,33 @@ export default async function handler(req, res) {
 
   const codeText =
     item.code === null || item.code === undefined ? "" : String(item.code);
-  let qrImage = null;
-  if (codeText) {
+  const qrCache = new Map();
+  const getQrImage = async (pageNumber) => {
+    if (!codeText) return null;
+    const cacheKey = String(pageNumber);
+    if (qrCache.has(cacheKey)) return qrCache.get(cacheKey);
+    const qrData = `M${codeText}${pageNumber}`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-      codeText
+      qrData
     )}`;
     try {
       const qrResponse = await fetch(qrUrl);
       if (qrResponse.ok) {
         const qrBytes = await qrResponse.arrayBuffer();
-        qrImage = await pdfDoc.embedPng(qrBytes);
+        const qrImage = await pdfDoc.embedPng(qrBytes);
+        qrCache.set(cacheKey, qrImage);
+        return qrImage;
       }
     } catch {
       // If QR fetch fails, continue without it.
     }
-  }
+    qrCache.set(cacheKey, null);
+    return null;
+  };
 
   const addImagePage = async (imagePath, pageTitle, showTitle, pageNumber) => {
     const page = pdfDoc.addPage([595, 842]);
+    const qrImage = await getQrImage(pageNumber);
     if (showTitle) {
       const titleSize = 32;
       const titleWidth = font.widthOfTextAtSize(pageTitle, titleSize);
