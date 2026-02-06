@@ -176,16 +176,19 @@ export default async function handler(req, res) {
         height: logoHeight,
       });
 
-      page.drawImage(logoImage, {
-        x: rightX,
-        y: bottomY,
-        width: logoWidth,
-        height: logoHeight,
-      });
+      if (pageNumber !== 1) {
+        page.drawImage(logoImage, {
+          x: rightX,
+          y: bottomY,
+          width: logoWidth,
+          height: logoHeight,
+        });
+      }
 
       if (qrImage) {
-        const qrX = rightX + (logoWidth - QR_SIZE) / 2;
-        const qrY = bottomY + logoHeight + QR_GAP;
+        const qrX =
+          pageNumber === 1 ? rightX : rightX + (logoWidth - QR_SIZE) / 2;
+        const qrY = pageNumber === 1 ? bottomY : bottomY + logoHeight + QR_GAP;
         page.drawImage(qrImage, {
           x: qrX,
           y: qrY,
