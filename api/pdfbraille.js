@@ -158,12 +158,12 @@ export default async function handler(req, res) {
     const line2Y = PAGE_H - MARGIN - LINE_HEIGHT;
     if (p.title_letters) {
       y = line2Y;
-      drawWrapped(p.title_letters || "");
+      drawWrapped(p.title_letters || "", 32);
       y = PAGE_H - MARGIN - LINE_HEIGHT * 6;
-      drawWrapped(p.text || "");
+      drawWrapped(p.text || "", 32);
     } else {
       y = line2Y;
-      drawWrapped(p.text || "");
+      drawWrapped(p.text || "", 32);
     }
     y -= 4;
     drawWrapped(p.remarks || "");
