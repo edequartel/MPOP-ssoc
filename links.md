@@ -1,7 +1,7 @@
-# Links
+# Handige links
 
 ### [LEGO braille bricks](https://www.tastenbraille.com/braillestudio/versie1/lego_acitiviteiten_braillebricks_NL_v3.pdf)
-Een praktische handleiding met activiteiten waarbij LEGO Braille Bricks worden ingezet om beginnende braillevaardigheden spelenderwijs te ontwikkelen. De nadruk ligt op tactiel ontdekken, letterherkenning, fonologisch bewustzijn en samenwerken. Geschikt voor jonge leerlingen en goed toepasbaar binnen onderwijs dat uitgaat van “learning by doing”.
+Een praktische handleiding met activiteiten waarbij LEGO Braille Bricks worden ingezet om beginnende braillevaardigheden spelenderwijs te ontwikkelen. De nadruk ligt op tactiel ontdekken, letterherkenning, fonologisch bewustzijn en samenwerken. Geschikt voor jonge leerlingen en goed toepasbaar binnen onderwijs dat uitgaat van “learning by plaay”.
 
 ### [LTP (Learning Through Play)](https://www.tastenbraille.com/braillestudio/versie1/learning-through-play_web.pdf)
 Dit document beschrijft de pedagogische visie achter leren door spel. Het laat zien hoe betrokkenheid, actief experimenteren, sociale interactie en betekenisvolle context bijdragen aan diep leren. Het biedt een theoretisch kader dat helpt bij het ontwerpen van motiverende braillelessen en rijke leeromgevingen.
