@@ -32,7 +32,7 @@ export default async function handler(req, res) {
 
   const { data: item, error } = await supabase
     .from("mpop_items")
-    .select("id,title,image1_path,image2_path,image3_path")
+    .select("id,code,title,image1_path,image2_path,image3_path")
     .eq("id", id)
     .maybeSingle();
 
@@ -47,6 +47,8 @@ export default async function handler(req, res) {
     "https://www.tastenbraille.com/braillestudio/resources/assets/pen_dot.png";
   const BRAILLE_FONT_URL =
     "https://www.tastenbraille.com/braillestudio/resources/fonts/bartimeus6dots.ttf";
+  const QR_SIZE = 40;
+  const QR_GAP = 6;
 
   let logoImage = null;
   try {
@@ -68,6 +70,24 @@ export default async function handler(req, res) {
     }
   } catch {
     // If font fetch fails, continue without it.
+  }
+
+  const codeText =
+    item.code === null || item.code === undefined ? "" : String(item.code);
+  let qrImage = null;
+  if (codeText) {
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+      codeText
+    )}`;
+    try {
+      const qrResponse = await fetch(qrUrl);
+      if (qrResponse.ok) {
+        const qrBytes = await qrResponse.arrayBuffer();
+        qrImage = await pdfDoc.embedPng(qrBytes);
+      }
+    } catch {
+      // If QR fetch fails, continue without it.
+    }
   }
 
   const addImagePage = async (imagePath, pageTitle, showTitle, pageNumber) => {
@@ -147,14 +167,35 @@ export default async function handler(req, res) {
         height: logoHeight,
       });
 
-      if (pageNumber !== 1) {
-        page.drawImage(logoImage, {
-          x: rightX,
-          y: bottomY,
-          width: logoWidth,
-          height: logoHeight,
+      page.drawImage(logoImage, {
+        x: rightX,
+        y: bottomY,
+        width: logoWidth,
+        height: logoHeight,
+      });
+
+      if (qrImage) {
+        const qrX = rightX + (logoWidth - QR_SIZE) / 2;
+        const qrY = bottomY + logoHeight + QR_GAP;
+        page.drawImage(qrImage, {
+          x: qrX,
+          y: qrY,
+          width: QR_SIZE,
+          height: QR_SIZE,
         });
       }
+    } else if (qrImage) {
+      const rightMargin = 48;
+      const bottomMargin = 48;
+      const fallbackLogoSize = 32;
+      const qrX = 595 - rightMargin - QR_SIZE;
+      const qrY = bottomMargin + fallbackLogoSize + QR_GAP;
+      page.drawImage(qrImage, {
+        x: qrX,
+        y: qrY,
+        width: QR_SIZE,
+        height: QR_SIZE,
+      });
     }
 
     page.drawText(pageNumberText, {
