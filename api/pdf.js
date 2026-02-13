@@ -48,7 +48,7 @@ export default async function handler(req, res) {
   const EN_DOT_URL =
     "https://www.tastenbraille.com/braillestudio/resources/assets/en_dot.png";
   const BRAILLE_FONT_URL =
-    "https://www.tastenbraille.com/braillestudio/resources/fonts/bartimeus6dots.ttf";
+    "https://www.tastenbraille.com/braillestudio/resources/fonts/bartimeus6dotszwelpapier.tff";
   const QR_SIZE = 40;
   const QR_GAP = 6;
   const CM_TO_PT = 28.35;
