@@ -123,6 +123,9 @@
         <label>Handleiding</label>
         <textarea id="handleiding_text"></textarea>
 
+        <label>Materialen</label>
+        <textarea id="materialen"></textarea>
+
         <label>Opmerkingen</label>
         <textarea id="remarks_handleiding"></textarea>
 
@@ -431,6 +434,7 @@
       { id: "remarks_2", key: "remarks_2" },
       { id: "remarks_3", key: "remarks_3" },
       { id: "handleiding_text", key: "handleiding_text" },
+      { id: "materialen", key: "materialen" },
       { id: "remarks_handleiding", key: "remarks_handleiding" },
       { id: "remarks_braille_algemeen", key: "remarks_braille_algemeen" },
       { id: "lange_klanken", key: "lange_klanken" },
@@ -1172,6 +1176,7 @@ function scheduleAutosave() {
       setVal("medeklinkers", row.medeklinkers || "");
       setVal("tweetekenklanken", row.tweetekenklanken || "");
       setVal("handleiding_text", row.handleiding_text || "");
+      setVal("materialen", row.materialen || "");
       setVal("remarks_handleiding", row.remarks_handleiding || "");
 
       // paths
@@ -1289,6 +1294,7 @@ function scheduleAutosave() {
           tweetekenklanken: val("tweetekenklanken"),
 
           handleiding_text: val("handleiding_text"),
+          materialen: val("materialen"),
           remarks_handleiding: val("remarks_handleiding"),
         };
 
