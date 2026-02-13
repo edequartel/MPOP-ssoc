@@ -493,16 +493,16 @@
           const { data, error } = await sb
             .from("mpop_items")
             .select("*")
-            .eq("code", "dummy-001")
+            .eq("code", "dummy-01")
             .maybeSingle();
           if (error) {
-            console.warn("dummy-001 placeholder load failed:", error.message || error);
+            console.warn("dummy-01 placeholder load failed:", error.message || error);
             return null;
           }
           dummyItemDefaults = data || null;
           return dummyItemDefaults;
         } catch (e) {
-          console.warn("dummy-001 placeholder load failed:", e?.message || e);
+          console.warn("dummy-01 placeholder load failed:", e?.message || e);
           return null;
         } finally {
           dummyItemDefaultsPromise = null;
@@ -529,7 +529,7 @@
     async function applyItemPlaceholdersFromDummy(row) {
       if (!row) return;
       applyDummyPlaceholdersToForm(row, dummyItemDefaults);
-      if (row.code === "dummy-001" || dummyItemDefaults) return;
+      if (row.code === "dummy-01" || dummyItemDefaults) return;
       const rowId = row.id;
       const loadedDummy = await loadDummyItemDefaults();
       if (!currentItem || currentItem.id !== rowId) return;
