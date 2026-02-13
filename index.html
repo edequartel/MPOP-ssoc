@@ -396,6 +396,49 @@
     const AUDIO_ENDPOINT = "https://www.tastenbraille.com/braillestudio";
     const LOGO_AUDIO_URL = "https://www.tastenbraille.com/braillestudio/sounds/nl/stories/mpop-001.mp3";
     let logoAudioPlayer = null;
+    let dummyItemDefaults = null;
+    let dummyItemDefaultsPromise = null;
+    let dummyItemDefaultsTried = false;
+    const ITEM_PLACEHOLDER_FIELDS = [
+      { id: "auteur", key: "auteur" },
+      { id: "title", key: "title" },
+      { id: "story_text", key: "story_text" },
+      { id: "object1_description", key: "object1_description" },
+      { id: "object1_audio_path", key: "object1_audio_path" },
+      { id: "klankzuiver_text", key: "klankzuiver_text" },
+      { id: "klankzuiver_letters", key: "klankzuiver_audio_path" },
+      { id: "woord_text", key: "woord_text" },
+      { id: "woord_audio_path", key: "woord_audio_path" },
+      { id: "opdracht1_text", key: "opdracht1_text" },
+      { id: "opdracht1_audio_path", key: "opdracht1_audio_path" },
+      { id: "opdracht2_text", key: "opdracht2_text" },
+      { id: "opdracht2_audio_path", key: "opdracht2_audio_path" },
+      { id: "opdracht3_text", key: "opdracht3_text" },
+      { id: "opdracht3_audio_path", key: "opdracht3_audio_path" },
+      { id: "opdracht4_text", key: "opdracht4_text" },
+      { id: "opdracht4_audio_path", key: "opdracht4_audio_path" },
+      { id: "opdracht5_text", key: "opdracht5_text" },
+      { id: "opdracht5_audio_path", key: "opdracht5_audio_path" },
+      { id: "opdracht6_text", key: "opdracht6_text" },
+      { id: "opdracht6_audio_path", key: "opdracht6_audio_path" },
+      { id: "object2_description", key: "object2_description" },
+      { id: "object2_audio_path", key: "object2_audio_path" },
+      { id: "image2_path", key: "image2_path" },
+      { id: "object3_description", key: "object3_description" },
+      { id: "object3_audio_path", key: "object3_audio_path" },
+      { id: "image3_path", key: "image3_path" },
+      { id: "image1_path", key: "image1_path" },
+      { id: "remarks_1", key: "remarks_1" },
+      { id: "remarks_2", key: "remarks_2" },
+      { id: "remarks_3", key: "remarks_3" },
+      { id: "handleiding_text", key: "handleiding_text" },
+      { id: "remarks_handleiding", key: "remarks_handleiding" },
+      { id: "remarks_braille_algemeen", key: "remarks_braille_algemeen" },
+      { id: "lange_klanken", key: "lange_klanken" },
+      { id: "klinkers", key: "klinkers" },
+      { id: "medeklinkers", key: "medeklinkers" },
+      { id: "tweetekenklanken", key: "tweetekenklanken" },
+    ];
     const { client: sbClient, config: sbConfig, error: sbInitError } = await supabaseInit();
     sb = sbClient;
     // no UI display of config values
@@ -434,6 +477,63 @@
       if (prev !== undefined) btn.textContent = prev;
       btn.classList.remove("busy");
       delete btn.dataset.label;
+    }
+
+    const asText = (v) => (v === null || v === undefined ? "" : String(v));
+    const isBlankValue = (v) => asText(v).trim() === "";
+
+    async function loadDummyItemDefaults() {
+      if (dummyItemDefaults) return dummyItemDefaults;
+      if (dummyItemDefaultsTried) return null;
+      if (dummyItemDefaultsPromise) return dummyItemDefaultsPromise;
+
+      dummyItemDefaultsPromise = (async () => {
+        dummyItemDefaultsTried = true;
+        try {
+          const { data, error } = await sb
+            .from("mpop_items")
+            .select("*")
+            .eq("code", "dummy-001")
+            .maybeSingle();
+          if (error) {
+            console.warn("dummy-001 placeholder load failed:", error.message || error);
+            return null;
+          }
+          dummyItemDefaults = data || null;
+          return dummyItemDefaults;
+        } catch (e) {
+          console.warn("dummy-001 placeholder load failed:", e?.message || e);
+          return null;
+        } finally {
+          dummyItemDefaultsPromise = null;
+        }
+      })();
+
+      return dummyItemDefaultsPromise;
+    }
+
+    function applyDummyPlaceholdersToForm(row, dummyRow) {
+      for (const field of ITEM_PLACEHOLDER_FIELDS) {
+        const el = $(field.id);
+        if (!el || typeof el.placeholder !== "string") continue;
+        if (el.dataset.basePlaceholder === undefined) {
+          el.dataset.basePlaceholder = el.getAttribute("placeholder") || "";
+        }
+        const rowValue = row ? row[field.key] : "";
+        const dummyValue = dummyRow ? dummyRow[field.key] : "";
+        const useDummy = isBlankValue(rowValue) && !isBlankValue(dummyValue);
+        el.placeholder = useDummy ? asText(dummyValue) : el.dataset.basePlaceholder;
+      }
+    }
+
+    async function applyItemPlaceholdersFromDummy(row) {
+      if (!row) return;
+      applyDummyPlaceholdersToForm(row, dummyItemDefaults);
+      if (row.code === "dummy-001" || dummyItemDefaults) return;
+      const rowId = row.id;
+      const loadedDummy = await loadDummyItemDefaults();
+      if (!currentItem || currentItem.id !== rowId) return;
+      applyDummyPlaceholdersToForm(row, loadedDummy);
     }
 
 
@@ -1101,6 +1201,7 @@ function scheduleAutosave() {
       updateImagePreview("image1_path", "image1_preview");
       updateImagePreview("image2_path", "image2_preview");
       updateImagePreview("image3_path", "image3_preview");
+      void applyItemPlaceholdersFromDummy(row);
 
     }
 
