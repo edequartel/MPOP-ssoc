@@ -51,7 +51,6 @@ export default async function handler(req, res) {
     "https://www.tastenbraille.com/braillestudio/resources/fonts/bartimeus6dots.ttf";
   const QR_SIZE = 40;
   const QR_GAP = 6;
-  const TOP_EN_DOT_LINE_OFFSET = 24;
 
   let logoImage = null;
   try {
@@ -146,100 +145,80 @@ export default async function handler(req, res) {
     const rightMargin = 48;
     const topMargin = 48;
     const pageNumberY = 842 - topMargin - pageNumberSize;
-    const pageNumberX = 595 - rightMargin - pageNumberWidth;
     const braillePageText = `#${pageNumberText}  `;
     const braillePageSize = 32;
     const braillePageWidth = brailleFont
       ? brailleFont.widthOfTextAtSize(braillePageText, braillePageSize)
       : 0;
-    const braillePageX = 595 - rightMargin - braillePageWidth;
-    const braillePageY = pageNumberY - braillePageSize - 4;
+    const headerTextGap = brailleFont ? 8 : 0;
+    const headerTextWidth = pageNumberWidth + headerTextGap + braillePageWidth;
+    const pageNumberX = 595 - rightMargin - headerTextWidth;
+    const braillePageX = pageNumberX + pageNumberWidth + headerTextGap;
+    const braillePageY = pageNumberY;
 
-    if (logoImage) {
+    if (logoImage || enDotImage) {
       const maxLogoSize = 32;
-      const scale = Math.min(
-        maxLogoSize / logoImage.width,
-        maxLogoSize / logoImage.height,
+      const topCornerImage = enDotImage || logoImage;
+      const bottomLeftImage = logoImage || enDotImage;
+      const bottomRightImage = enDotImage || logoImage;
+      const bottomY = 48;
+      const topCornerScale = Math.min(
+        maxLogoSize / topCornerImage.width,
+        maxLogoSize / topCornerImage.height,
         1
       );
-      const logoWidth = logoImage.width * scale;
-      const logoHeight = logoImage.height * scale;
-      const enDotScale = enDotImage
-        ? Math.min(
-            maxLogoSize / enDotImage.width,
-            maxLogoSize / enDotImage.height,
-            1
-          )
-        : scale;
-      const enDotWidth = enDotImage ? enDotImage.width * enDotScale : logoWidth;
-      const enDotHeight = enDotImage ? enDotImage.height * enDotScale : logoHeight;
-      const leftX = 48;
-      const topRightX = 595 - 48 - logoWidth;
-      const topY = 842 - 48 - logoHeight;
-      const topYEnDot = topY - TOP_EN_DOT_LINE_OFFSET;
-      const bottomY = 48;
-      const rightBottomScale = enDotImage
-        ? Math.min(
-            maxLogoSize / enDotImage.width,
-            maxLogoSize / enDotImage.height,
-            1
-          )
-        : scale;
-      const rightBottomWidth = enDotImage
-        ? enDotImage.width * rightBottomScale
-        : logoWidth;
-      const rightBottomHeight = enDotImage
-        ? enDotImage.height * rightBottomScale
-        : logoHeight;
-      const rightBottomX = 595 - 48 - rightBottomWidth;
+      const topCornerWidth = topCornerImage.width * topCornerScale;
+      const topCornerHeight = topCornerImage.height * topCornerScale;
+      const topLeftX = 48;
+      const topRightX = 595 - 48 - topCornerWidth;
+      const topY = pageNumberY - 8 - topCornerHeight;
 
-      page.drawImage(logoImage, {
-        x: leftX,
+      const bottomLeftScale = Math.min(
+        maxLogoSize / bottomLeftImage.width,
+        maxLogoSize / bottomLeftImage.height,
+        1
+      );
+      const bottomLeftWidth = bottomLeftImage.width * bottomLeftScale;
+      const bottomLeftHeight = bottomLeftImage.height * bottomLeftScale;
+      const bottomLeftX = 48;
+
+      const bottomRightScale = Math.min(
+        maxLogoSize / bottomRightImage.width,
+        maxLogoSize / bottomRightImage.height,
+        1
+      );
+      const bottomRightWidth = bottomRightImage.width * bottomRightScale;
+      const bottomRightHeight = bottomRightImage.height * bottomRightScale;
+      const bottomRightX = 595 - 48 - bottomRightWidth;
+
+      page.drawImage(topCornerImage, {
+        x: topLeftX,
         y: topY,
-        width: logoWidth,
-        height: logoHeight,
+        width: topCornerWidth,
+        height: topCornerHeight,
       });
-      if (enDotImage) {
-        page.drawImage(enDotImage, {
-          x: 595 - 48 - enDotWidth,
-          y: topYEnDot,
-          width: enDotWidth,
-          height: enDotHeight,
-        });
-      } else {
-        page.drawImage(logoImage, {
-          x: topRightX,
-          y: topY,
-          width: logoWidth,
-          height: logoHeight,
-        });
-      }
-      page.drawImage(logoImage, {
-        x: leftX,
+      page.drawImage(topCornerImage, {
+        x: topRightX,
+        y: topY,
+        width: topCornerWidth,
+        height: topCornerHeight,
+      });
+      page.drawImage(bottomLeftImage, {
+        x: bottomLeftX,
         y: bottomY,
-        width: logoWidth,
-        height: logoHeight,
+        width: bottomLeftWidth,
+        height: bottomLeftHeight,
       });
-
-      if (enDotImage) {
-        page.drawImage(enDotImage, {
-          x: rightBottomX,
-          y: bottomY,
-          width: rightBottomWidth,
-          height: rightBottomHeight,
-        });
-      } else {
-        page.drawImage(logoImage, {
-          x: rightBottomX,
-          y: bottomY,
-          width: rightBottomWidth,
-          height: rightBottomHeight,
-        });
-      }
+      page.drawImage(bottomRightImage, {
+        x: bottomRightX,
+        y: bottomY,
+        width: bottomRightWidth,
+        height: bottomRightHeight,
+      });
 
       if (qrImage) {
-        const qrX = rightBottomX + (rightBottomWidth - QR_SIZE) / 2;
-        const qrY = bottomY + rightBottomHeight + QR_GAP;
+        const qrX = bottomRightX + (bottomRightWidth - QR_SIZE) / 2;
+        const qrY = bottomY + bottomRightHeight + QR_GAP;
         page.drawImage(qrImage, {
           x: qrX,
           y: qrY,
