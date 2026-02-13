@@ -143,16 +143,17 @@ export default async function handler(req, res) {
       pageNumberText,
       pageNumberSize
     );
-    const pageNumberGap = 8;
-    let pageNumberY = 24;
+    const rightMargin = 48;
+    const topMargin = 48;
+    const pageNumberY = 842 - topMargin - pageNumberSize;
+    const pageNumberX = 595 - rightMargin - pageNumberWidth;
     const braillePageText = `#${pageNumberText}  `;
     const braillePageSize = 32;
     const braillePageWidth = brailleFont
       ? brailleFont.widthOfTextAtSize(braillePageText, braillePageSize)
       : 0;
-    const totalWidth = pageNumberWidth + pageNumberGap + braillePageWidth;
-    const pageNumberX = (595 - totalWidth) / 2;
-    const braillePageX = pageNumberX + pageNumberWidth + pageNumberGap;
+    const braillePageX = 595 - rightMargin - braillePageWidth;
+    const braillePageY = pageNumberY - braillePageSize - 4;
 
     if (logoImage) {
       const maxLogoSize = 32;
@@ -191,9 +192,6 @@ export default async function handler(req, res) {
         ? enDotImage.height * rightBottomScale
         : logoHeight;
       const rightBottomX = 595 - 48 - rightBottomWidth;
-
-      const bottomLogoCenterY = bottomY + logoHeight / 2;
-      pageNumberY = bottomLogoCenterY - pageNumberSize / 2;
 
       page.drawImage(logoImage, {
         x: leftX,
@@ -272,7 +270,7 @@ export default async function handler(req, res) {
     if (brailleFont) {
       page.drawText(braillePageText, {
         x: braillePageX,
-        y: pageNumberY,
+        y: braillePageY,
         size: braillePageSize,
         font: brailleFont,
       });
