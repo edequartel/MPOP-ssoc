@@ -482,9 +482,9 @@
     const asText = (v) => (v === null || v === undefined ? "" : String(v));
     const isBlankValue = (v) => asText(v).trim() === "";
 
-    async function loadDummyItemDefaults() {
-      if (dummyItemDefaults) return dummyItemDefaults;
-      if (dummyItemDefaultsTried) return null;
+    async function loadDummyItemDefaults(force = false) {
+      if (!force && dummyItemDefaults) return dummyItemDefaults;
+      if (!force && dummyItemDefaultsTried) return null;
       if (dummyItemDefaultsPromise) return dummyItemDefaultsPromise;
 
       dummyItemDefaultsPromise = (async () => {
@@ -528,10 +528,14 @@
 
     async function applyItemPlaceholdersFromDummy(row) {
       if (!row) return;
+      if (row.code === "dummy-01") {
+        dummyItemDefaults = row;
+        dummyItemDefaultsTried = true;
+        return;
+      }
       applyDummyPlaceholdersToForm(row, dummyItemDefaults);
-      if (row.code === "dummy-01" || dummyItemDefaults) return;
       const rowId = row.id;
-      const loadedDummy = await loadDummyItemDefaults();
+      const loadedDummy = await loadDummyItemDefaults(true);
       if (!currentItem || currentItem.id !== rowId) return;
       applyDummyPlaceholdersToForm(row, loadedDummy);
     }
