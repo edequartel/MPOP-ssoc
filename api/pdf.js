@@ -143,8 +143,7 @@ export default async function handler(req, res) {
       pageNumberSize
     );
     const rightMargin = 48;
-    const topMargin = 48;
-    const pageNumberY = 842 - topMargin - pageNumberSize;
+    const pageNumberY = 800;
     const braillePageText = `#${pageNumberText}  `;
     const braillePageSize = 32;
     const braillePageWidth = brailleFont
@@ -152,8 +151,8 @@ export default async function handler(req, res) {
       : 0;
     const headerTextGap = brailleFont ? 8 : 0;
     const headerTextWidth = pageNumberWidth + headerTextGap + braillePageWidth;
-    const pageNumberX = 595 - rightMargin - headerTextWidth;
-    const braillePageX = pageNumberX + pageNumberWidth + headerTextGap;
+    let pageNumberX = 595 - rightMargin - headerTextWidth;
+    let braillePageX = pageNumberX + pageNumberWidth + headerTextGap;
     const braillePageY = pageNumberY;
 
     if (logoImage || enDotImage) {
@@ -172,6 +171,10 @@ export default async function handler(req, res) {
       const topLeftX = 48;
       const topRightX = 595 - 48 - topCornerWidth;
       const topY = pageNumberY - 8 - topCornerHeight;
+      const topRightCenterX = topRightX + topCornerWidth / 2;
+
+      pageNumberX = topRightCenterX - headerTextWidth / 2;
+      braillePageX = pageNumberX + pageNumberWidth + headerTextGap;
 
       const bottomLeftScale = Math.min(
         maxLogoSize / bottomLeftImage.width,
