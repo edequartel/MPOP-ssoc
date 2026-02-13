@@ -51,6 +51,7 @@ export default async function handler(req, res) {
     "https://www.tastenbraille.com/braillestudio/resources/fonts/bartimeus6dotszwelpapier.ttf";
   const QR_SIZE = 40;
   const QR_GAP = 6;
+  const CM_TO_PT = 28.35;
 
   let logoImage = null;
   try {
@@ -142,7 +143,7 @@ export default async function handler(req, res) {
       pageNumberText,
       pageNumberSize
     );
-    const rightMargin = 24;
+    const rightMargin = 8;
     const topMargin = 24;
     const pageNumberY = 842 - topMargin - pageNumberSize;
     const braillePageText = `#${pageNumberText}  `;
@@ -171,7 +172,7 @@ export default async function handler(req, res) {
       const topCornerHeight = topCornerImage.height * topCornerScale;
       const topLeftX = 48;
       const topRightX = 595 - 48 - topCornerWidth;
-      const topY = pageNumberY - 8 - topCornerHeight;
+      const topY = pageNumberY - 8 - topCornerHeight - CM_TO_PT;
 
       const bottomLeftScale = Math.min(
         maxLogoSize / bottomLeftImage.width,
