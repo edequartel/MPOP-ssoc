@@ -210,7 +210,7 @@ export default async function handler(req, res) {
           width: rightBottomWidth,
           height: rightBottomHeight,
         });
-      } else if (pageNumber !== 1) {
+      } else {
         page.drawImage(logoImage, {
           x: rightBottomX,
           y: bottomY,
