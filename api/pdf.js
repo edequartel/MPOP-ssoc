@@ -48,10 +48,9 @@ export default async function handler(req, res) {
   const EN_DOT_URL =
     "https://www.tastenbraille.com/braillestudio/resources/assets/en_dot.png";
   const BRAILLE_FONT_URL =
-    "https://www.tastenbraille.com/braillestudio/resources/fonts/bartimeus6dotszwelpapier.tff";
+    "https://www.tastenbraille.com/braillestudio/resources/fonts/bartimeus6dotszwelpapier.ttf";
   const QR_SIZE = 40;
   const QR_GAP = 6;
-  const CM_TO_PT = 28.35;
 
   let logoImage = null;
   try {
@@ -144,7 +143,8 @@ export default async function handler(req, res) {
       pageNumberSize
     );
     const rightMargin = 48;
-    const pageNumberY = 800;
+    const topMargin = 48;
+    const pageNumberY = 842 - topMargin - pageNumberSize;
     const braillePageText = `#${pageNumberText}  `;
     const braillePageSize = 32;
     const braillePageWidth = brailleFont
@@ -152,8 +152,8 @@ export default async function handler(req, res) {
       : 0;
     const headerTextGap = brailleFont ? 8 : 0;
     const headerTextWidth = pageNumberWidth + headerTextGap + braillePageWidth;
-    let pageNumberX = 595 - rightMargin - headerTextWidth;
-    let braillePageX = pageNumberX + pageNumberWidth + headerTextGap;
+    const pageNumberX = 595 - rightMargin - headerTextWidth;
+    const braillePageX = pageNumberX + pageNumberWidth + headerTextGap;
     const braillePageY = pageNumberY;
 
     if (logoImage || enDotImage) {
@@ -171,11 +171,7 @@ export default async function handler(req, res) {
       const topCornerHeight = topCornerImage.height * topCornerScale;
       const topLeftX = 48;
       const topRightX = 595 - 48 - topCornerWidth;
-      const topY = pageNumberY - 8 - topCornerHeight - CM_TO_PT;
-      const topRightCenterX = topRightX + topCornerWidth / 2;
-
-      pageNumberX = topRightCenterX - pageNumberWidth / 2;
-      braillePageX = pageNumberX + pageNumberWidth + headerTextGap;
+      const topY = pageNumberY - 8 - topCornerHeight;
 
       const bottomLeftScale = Math.min(
         maxLogoSize / bottomLeftImage.width,
