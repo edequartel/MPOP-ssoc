@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     "https://www.tastenbraille.com/braillestudio/resources/fonts/bartimeus6dots.ttf";
   const QR_SIZE = 40;
   const QR_GAP = 6;
-  const CM_TO_PT = 28.35;
+  const TOP_EN_DOT_LINE_OFFSET = 24;
 
   let logoImage = null;
   try {
@@ -176,7 +176,7 @@ export default async function handler(req, res) {
       const leftX = 48;
       const topRightX = 595 - 48 - logoWidth;
       const topY = 842 - 48 - logoHeight;
-      const topYFirstPageEnDot = topY - CM_TO_PT;
+      const topYEnDot = topY - TOP_EN_DOT_LINE_OFFSET;
       const bottomY = 48;
       const rightBottomScale = enDotImage
         ? Math.min(
@@ -199,10 +199,10 @@ export default async function handler(req, res) {
         width: logoWidth,
         height: logoHeight,
       });
-      if (pageNumber === 1 && enDotImage) {
+      if (enDotImage) {
         page.drawImage(enDotImage, {
           x: 595 - 48 - enDotWidth,
-          y: topYFirstPageEnDot,
+          y: topYEnDot,
           width: enDotWidth,
           height: enDotHeight,
         });
