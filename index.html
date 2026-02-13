@@ -1667,6 +1667,10 @@ function scheduleAutosave() {
       try { toggleAudio($("btnPlayOpdracht5Audio"), val("opdracht5_audio_path")); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
+    $("btnPlayOpdracht6Audio").onclick = () => {
+      try { toggleAudio($("btnPlayOpdracht6Audio"), val("opdracht6_audio_path")); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
     $("btnPlayWoordAudio").onclick = () => {
       try { toggleAudio($("btnPlayWoordAudio"), val("woord_audio_path")); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
@@ -1685,6 +1689,7 @@ function scheduleAutosave() {
     wireAudioInput("opdracht4_audio_path", "btnPlayOpdracht4Audio");
     wireAudioInput("object3_audio_path", "btnPlayAudioObject3");
     wireAudioInput("opdracht5_audio_path", "btnPlayOpdracht5Audio");
+    wireAudioInput("opdracht6_audio_path", "btnPlayOpdracht6Audio");
     wireAudioInput("woord_audio_path", "btnPlayWoordAudio");
     wireAudioInput("object2_audio_path", "btnPlayAudioObject2");
     wireImagePreview("image1_preview");
