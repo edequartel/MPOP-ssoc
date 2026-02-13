@@ -247,13 +247,20 @@
         <h2 class="section-title pdf-page-break">Pagina 3</h2>
 
         <div class="split">
-          <div></div>
           <div>
             <label>Opdracht 4</label>
             <textarea id="opdracht4_text"></textarea>
             <div class="inlineRow">
               <input id="opdracht4_audio_path" placeholder="/sounds/nl/opdracht/opdracht4.mp3" />
               <button id="btnPlayOpdracht4Audio" disabled>Play</button>
+            </div>
+          </div>
+          <div>
+            <label>Opdracht 5</label>
+            <textarea id="opdracht5_text"></textarea>
+            <div class="inlineRow">
+              <input id="opdracht5_audio_path" placeholder="/sounds/nl/opdracht/opdracht5.mp3" />
+              <button id="btnPlayOpdracht5Audio" disabled>Play</button>
             </div>
           </div>
         </div>
@@ -272,11 +279,11 @@
             </div>
           </div>
           <div>
-            <label>Opdracht 5</label>
-            <textarea id="opdracht5_text"></textarea>
+            <label>Opdracht 6</label>
+            <textarea id="opdracht6_text"></textarea>
             <div class="inlineRow">
-              <input id="opdracht5_audio_path" placeholder="/sounds/nl/opdracht/opdracht5.mp3" />
-              <button id="btnPlayOpdracht5Audio" disabled>Play</button>
+              <input id="opdracht6_audio_path" placeholder="/sounds/nl/opdracht/opdracht6.mp3" />
+              <button id="btnPlayOpdracht6Audio" disabled>Play</button>
             </div>
           </div>
         </div>
@@ -1047,6 +1054,7 @@ function scheduleAutosave() {
       setVal("opdracht3_text", row.opdracht3_text || "");
       setVal("opdracht4_text", row.opdracht4_text || "");
       setVal("opdracht5_text", row.opdracht5_text || "");
+      setVal("opdracht6_text", row.opdracht6_text || "");
       setVal("object3_description", row.object3_description || "");
       setVal("image3_path", row.image3_path || "");
       setVal("woord_text", row.woord_text || "");
@@ -1071,6 +1079,7 @@ function scheduleAutosave() {
       setVal("opdracht4_audio_path", row.opdracht4_audio_path || "");
       setVal("object3_audio_path", row.object3_audio_path || "");
       setVal("opdracht5_audio_path", row.opdracht5_audio_path || "");
+      setVal("opdracht6_audio_path", row.opdracht6_audio_path || "");
       setVal("woord_audio_path", row.woord_audio_path || "");
       setVal("object2_audio_path", row.object2_audio_path || "");
       setVal("image1_path", row.image1_path || "");
@@ -1085,6 +1094,7 @@ function scheduleAutosave() {
       setPlayButton("btnPlayOpdracht4Audio", val("opdracht4_audio_path"));
       setPlayButton("btnPlayAudioObject3", val("object3_audio_path"));
       setPlayButton("btnPlayOpdracht5Audio", val("opdracht5_audio_path"));
+      setPlayButton("btnPlayOpdracht6Audio", val("opdracht6_audio_path"));
       setPlayButton("btnPlayWoordAudio", val("woord_audio_path"));
       setPlayButton("btnPlayAudioObject2", val("object2_audio_path"));
       setPlayButton("btnPlayKlankzuiverAudio", val("klankzuiver_letters"));
@@ -1141,6 +1151,7 @@ function scheduleAutosave() {
           opdracht3_text: val("opdracht3_text"),
           opdracht4_text: val("opdracht4_text"),
           opdracht5_text: val("opdracht5_text"),
+          opdracht6_text: val("opdracht6_text"),
           object3_description: val("object3_description"),
 
           woord_text: val("woord_text"),
@@ -1154,6 +1165,7 @@ function scheduleAutosave() {
           opdracht4_audio_path: val("opdracht4_audio_path").trim(),
           object3_audio_path: val("object3_audio_path").trim(),
           opdracht5_audio_path: val("opdracht5_audio_path").trim(),
+          opdracht6_audio_path: val("opdracht6_audio_path").trim(),
           woord_audio_path: val("woord_audio_path").trim(),
           object2_audio_path: val("object2_audio_path").trim(),
           image1_path: val("image1_path").trim(),
