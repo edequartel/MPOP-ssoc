@@ -142,8 +142,8 @@ export default async function handler(req, res) {
       pageNumberText,
       pageNumberSize
     );
-    const rightMargin = 48;
-    const topMargin = 48;
+    const rightMargin = 24;
+    const topMargin = 24;
     const pageNumberY = 842 - topMargin - pageNumberSize;
     const braillePageText = `#${pageNumberText}  `;
     const braillePageSize = 32;
