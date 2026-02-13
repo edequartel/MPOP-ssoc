@@ -115,6 +115,9 @@ export default async function handler(req, res) {
   const addImagePage = async (imagePath, pageTitle, showTitle, pageNumber) => {
     const page = pdfDoc.addPage([595, 842]);
     const qrImage = await getQrImage(pageNumber);
+    const imageClearance = 8;
+    let imageAreaTopY = 842 - 48;
+    let imageAreaBottomY = 48;
     if (showTitle) {
       const titleSize = 32;
       const titleWidth = font.widthOfTextAtSize(pageTitle, titleSize);
@@ -173,6 +176,7 @@ export default async function handler(req, res) {
       const topLeftX = 48;
       const topRightX = 595 - 48 - topCornerWidth;
       const topY = pageNumberY - 8 - topCornerHeight - CM_TO_PT;
+      imageAreaTopY = Math.min(imageAreaTopY, topY - imageClearance);
 
       const bottomLeftScale = Math.min(
         maxLogoSize / bottomLeftImage.width,
@@ -191,6 +195,15 @@ export default async function handler(req, res) {
       const bottomRightWidth = bottomRightImage.width * bottomRightScale;
       const bottomRightHeight = bottomRightImage.height * bottomRightScale;
       const bottomRightX = 595 - 48 - bottomRightWidth;
+      const bottomReservedTop = bottomY + Math.max(
+        bottomLeftHeight,
+        bottomRightHeight,
+        qrImage ? bottomRightHeight + QR_GAP + QR_SIZE : 0
+      );
+      imageAreaBottomY = Math.max(
+        imageAreaBottomY,
+        bottomReservedTop + imageClearance
+      );
 
       page.drawImage(topCornerImage, {
         x: topLeftX,
@@ -233,6 +246,10 @@ export default async function handler(req, res) {
       const fallbackLogoSize = 32;
       const qrX = 595 - rightMargin - QR_SIZE;
       const qrY = bottomMargin + fallbackLogoSize + QR_GAP;
+      imageAreaBottomY = Math.max(
+        imageAreaBottomY,
+        qrY + QR_SIZE + imageClearance
+      );
       page.drawImage(qrImage, {
         x: qrX,
         y: qrY,
@@ -294,8 +311,8 @@ export default async function handler(req, res) {
         ? await pdfDoc.embedPng(imageBytes)
         : await pdfDoc.embedJpg(imageBytes);
 
-      const maxWidth = 500;
-      const maxHeight = 680;
+      const maxWidth = 595 - 96;
+      const maxHeight = Math.max(1, imageAreaTopY - imageAreaBottomY);
       const scale = Math.min(
         maxWidth / image.width,
         maxHeight / image.height,
@@ -304,9 +321,8 @@ export default async function handler(req, res) {
       const drawWidth = image.width * scale;
       const drawHeight = image.height * scale;
       const pageWidth = 595;
-      const pageHeight = 842;
       const centerX = (pageWidth - drawWidth) / 2;
-      const centerY = (pageHeight - drawHeight) / 2;
+      const centerY = imageAreaBottomY + (maxHeight - drawHeight) / 2;
 
       page.drawImage(image, {
         x: centerX,
