@@ -51,6 +51,7 @@ export default async function handler(req, res) {
     "https://www.tastenbraille.com/braillestudio/resources/fonts/bartimeus6dots.ttf";
   const QR_SIZE = 40;
   const QR_GAP = 6;
+  const CM_TO_PT = 28.35;
 
   let logoImage = null;
   try {
@@ -162,9 +163,19 @@ export default async function handler(req, res) {
       );
       const logoWidth = logoImage.width * scale;
       const logoHeight = logoImage.height * scale;
+      const enDotScale = enDotImage
+        ? Math.min(
+            maxLogoSize / enDotImage.width,
+            maxLogoSize / enDotImage.height,
+            1
+          )
+        : scale;
+      const enDotWidth = enDotImage ? enDotImage.width * enDotScale : logoWidth;
+      const enDotHeight = enDotImage ? enDotImage.height * enDotScale : logoHeight;
       const leftX = 48;
       const topRightX = 595 - 48 - logoWidth;
       const topY = 842 - 48 - logoHeight;
+      const topYFirstPageEnDot = topY - CM_TO_PT;
       const bottomY = 48;
       const rightBottomScale = enDotImage
         ? Math.min(
@@ -190,12 +201,21 @@ export default async function handler(req, res) {
         width: logoWidth,
         height: logoHeight,
       });
-      page.drawImage(logoImage, {
-        x: topRightX,
-        y: topY,
-        width: logoWidth,
-        height: logoHeight,
-      });
+      if (pageNumber === 1 && enDotImage) {
+        page.drawImage(enDotImage, {
+          x: 595 - 48 - enDotWidth,
+          y: topYFirstPageEnDot,
+          width: enDotWidth,
+          height: enDotHeight,
+        });
+      } else {
+        page.drawImage(logoImage, {
+          x: topRightX,
+          y: topY,
+          width: logoWidth,
+          height: logoHeight,
+        });
+      }
       page.drawImage(logoImage, {
         x: leftX,
         y: bottomY,
