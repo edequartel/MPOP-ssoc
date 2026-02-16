@@ -4,32 +4,132 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Links</title>
+
   <style>
-    :root { --bg:#0b0e14; --fg:#e9effa; --muted:#a9b6c8; --card:#121826; --line:rgba(255,255,255,.12); }
-    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--fg); margin:16px; }
-    h1 { font-size:20px; margin:0 0 10px; }
-    .topbar { display:flex; align-items:center; justify-content:flex-start; gap:10px; margin:0 0 10px; }
-    .home { font-size:12px; text-decoration:none; color:var(--fg); background: rgba(255,255,255,.08); border:1px solid var(--line); padding:6px 10px; border-radius:999px; }
-    .home:hover { background: rgba(255,255,255,.12); }
-    h2 { font-size:16px; margin:16px 0 8px; }
-    p, li { color:var(--muted); font-size:13px; line-height:1.5; }
-    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; margin-top:12px; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    :root {
+      --bg:#0b0e14;
+      --fg:#e9effa;
+      --muted:#a9b6c8;
+      --card:#121826;
+      --line:rgba(255,255,255,.12);
+
+      /* link colors */
+      --link:#7cc4ff;
+      --link-hover:#a6d9ff;
+    }
+
+    body {
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background:var(--bg);
+      color:var(--fg);
+      margin:16px;
+    }
+
+    h1 {
+      font-size:20px;
+      margin:0 0 10px;
+    }
+
+    h2 {
+      font-size:16px;
+      margin:16px 0 8px;
+    }
+
+    p, li {
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+    }
+
+    .topbar {
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:10px;
+      margin:0 0 10px;
+    }
+
+    .home {
+      font-size:12px;
+      text-decoration:none;
+      color:var(--fg);
+      background: rgba(255,255,255,.08);
+      border:1px solid var(--line);
+      padding:6px 10px;
+      border-radius:999px;
+    }
+
+    .home:hover {
+      background: rgba(255,255,255,.12);
+    }
+
+    .card {
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+      margin-top:12px;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                   "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+    }
+
+    /* =========================
+       MARKDOWN LINK STYLING
+       ========================= */
+
+    #mdContent a {
+      color: var(--link);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1.5px;
+      font-weight: 500;
+    }
+
+    #mdContent a:hover {
+      color: var(--link-hover);
+      background: rgba(124,196,255,0.12);
+      border-radius: 4px;
+      text-decoration-thickness: 2px;
+    }
+
+    #mdContent a:focus-visible {
+      outline: 2px solid var(--link);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    /* Lists iets meer ademruimte */
+    #mdContent ul {
+      padding-left: 18px;
+    }
+
+    #mdContent li {
+      margin: 4px 0;
+    }
   </style>
 </head>
+
 <body>
   <div class="topbar">
     <a class="home" href="index.html">Home</a>
   </div>
+
   <div class="card">
     <div id="mdContent">Loading…</div>
   </div>
+
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
     const mdHost = document.getElementById("mdContent");
+
     const renderPlain = (md) => {
       mdHost.textContent = md || "";
     };
+
     fetch("links.md", { cache: "no-cache" })
       .then((res) => {
         if (!res.ok) {
