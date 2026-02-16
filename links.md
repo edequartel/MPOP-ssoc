@@ -1,5 +1,8 @@
 # Handige links
 
+### [Zo leer je kinderen lezen en spellen](https://www.zoleerjekinderenlezenenspellen.nl/)
+Zo leer je kinderen lezen en spellen is een onderwijs-methodiek en ondersteuningstraject voor leerkrachten gericht op het verbeteren van het technisch lees- en spellingonderwijs bij kinderen. Het biedt een gestructureerde aanpak om lezen en spellen effectief aan te leren in de basisschool, door duidelijke instructies, oefeningen en begeleidingsmateriaal voor leerkrachten. Het doel is de effectiviteit van lees- en spellinglessen te vergroten, zodat meer kinderen met succes leren lezen en spellen, en dit geïntegreerd kan worden binnen het bestaande onderwijs.  
+
 ### [LEGO braille bricks](https://www.tastenbraille.com/braillestudio/versie1/lego_acitiviteiten_braillebricks_NL_v3.pdf)
 Een praktische handleiding met activiteiten waarbij LEGO Braille Bricks worden ingezet om beginnende braillevaardigheden spelenderwijs te ontwikkelen. De nadruk ligt op tactiel ontdekken, letterherkenning, fonologisch bewustzijn en samenwerken. Geschikt voor jonge leerlingen en goed toepasbaar binnen onderwijs dat uitgaat van “learning by plaay”.
 
