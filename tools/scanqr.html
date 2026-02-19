@@ -12,10 +12,7 @@
       color: #e9effa;
       margin: 16px;
     }
-    h1 {
-      font-size: 18px;
-      margin-bottom: 12px;
-    }
+    h1 { font-size: 18px; margin-bottom: 12px; }
     button {
       padding: 10px 14px;
       font-size: 16px;
@@ -25,14 +22,8 @@
       color: #e9effa;
       margin-right: 8px;
     }
-    button:disabled {
-      opacity: 0.5;
-    }
-    #reader {
-      width: 100%;
-      max-width: 320px;
-      margin-top: 12px;
-    }
+    button:disabled { opacity: 0.5; }
+    #reader { width: 100%; max-width: 360px; margin-top: 12px; }
     #result {
       margin-top: 12px;
       padding: 10px;
@@ -46,6 +37,12 @@
       font-size: 14px;
       color: #a9b6c8;
       white-space: pre-line;
+    }
+    /* Make the video clearly visible */
+    #reader video {
+      width: 100% !important;
+      height: auto !important;
+      border-radius: 12px;
     }
   </style>
 </head>
@@ -62,7 +59,6 @@
 <div id="status">Loading QR library…</div>
 
 <script>
-  // ---- Robust CDN loader (NO download required) ----
   function loadScript(src) {
     return new Promise((resolve, reject) => {
       const s = document.createElement("script");
@@ -74,13 +70,10 @@
   }
 
   async function loadHtml5Qrcode() {
-    // Use jsDelivr "dist" path (no version pinned) first
     const cdns = [
       "https://cdn.jsdelivr.net/npm/html5-qrcode/dist/html5-qrcode.min.js",
-      // optional fallback if jsDelivr is blocked:
       "https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"
     ];
-
     for (const url of cdns) {
       try {
         document.getElementById("status").textContent = "Loading " + url;
@@ -91,7 +84,6 @@
     return false;
   }
 
-  // ---- App logic (only runs if library exists) ----
   async function main() {
     const statusEl = document.getElementById("status");
     const startBtn = document.getElementById("startBtn");
@@ -100,10 +92,8 @@
     const resultEl = document.getElementById("result");
 
     const ok = await loadHtml5Qrcode();
-
     if (!ok) {
-      statusEl.textContent =
-        "❌ QR library blocked by network.\nTry another Wi-Fi or hotspot.";
+      statusEl.textContent = "❌ QR library blocked by network.\nTry another Wi-Fi or hotspot.";
       return;
     }
 
@@ -119,24 +109,46 @@
       copyBtn.disabled = !text;
     }
 
+    function qrboxSize(viewWidth, viewHeight) {
+      // Keep box within the smaller dimension; phone-friendly
+      const minEdge = Math.min(viewWidth, viewHeight);
+      const size = Math.floor(minEdge * 0.70); // 70% of min edge
+      return { width: size, height: size };
+    }
+
     async function startScanner() {
       try {
         if (!qr) qr = new Html5Qrcode("reader");
 
+        statusEl.textContent = "Opening camera…";
+
         await qr.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: 250 },
-          decodedText => {
-            if (decodedText !== lastResult) setResult(decodedText);
-          }
+          // On iPhone, this is best. If it picks the wrong camera, we can switch to deviceId selection.
+          { facingMode: { ideal: "environment" } },
+          {
+            fps: 15,
+            qrbox: qrboxSize,
+            aspectRatio: 1.7777778, // helps some iPhones (16:9-ish)
+            disableFlip: true
+          },
+          (decodedText) => {
+            if (decodedText && decodedText !== lastResult) {
+              setResult(decodedText);
+              statusEl.textContent = "✅ Scanned!";
+              // Optional: stop after first successful scan
+              // stopScanner();
+            }
+          },
+          // This gets called *a lot*; don’t spam alerts
+          () => { /* ignore per-frame decode errors */ }
         );
 
         startBtn.disabled = true;
         stopBtn.disabled = false;
-        statusEl.textContent = "Scanning…";
+        statusEl.textContent = "Scanning… Hold QR steady inside the box.";
       } catch (err) {
-        alert("Camera error: " + err);
-        statusEl.textContent = "Camera error: " + err;
+        statusEl.textContent = "Camera error: " + (err?.message || err);
+        alert("Camera error: " + (err?.message || err));
       }
     }
 
@@ -152,7 +164,7 @@
       try {
         await navigator.clipboard.writeText(lastResult);
         copyBtn.textContent = "Copied!";
-        setTimeout(() => copyBtn.textContent = "Copy", 800);
+        setTimeout(() => (copyBtn.textContent = "Copy"), 800);
       } catch {
         alert("Copy failed");
       }
