@@ -12,17 +12,25 @@
       color: #e9effa;
       margin: 16px;
     }
-    h1 { font-size: 18px; margin-bottom: 12px; }
+
+    h1 {
+      font-size: 18px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
 
     .wrap {
       max-width: 420px;
       margin: 0 auto;
     }
 
-    .row {
+    /* Buttons */
+    .controls {
       display: flex;
       gap: 8px;
+      justify-content: center;
       flex-wrap: wrap;
+      margin-bottom: 24px; /* 👈 SPACE BELOW BUTTONS */
     }
 
     button {
@@ -33,23 +41,29 @@
       background: #121826;
       color: #e9effa;
     }
-    button:disabled { opacity: 0.5; }
+    button:disabled {
+      opacity: 0.5;
+    }
 
+    /* Scanner container */
     #reader {
       position: relative;
-      width: 100%;
-      max-width: 360px;
-      margin: 12px auto 0;
-      display: flex;
-      justify-content: center;
+      width: min(360px, 100%);
+      margin: 0 auto; /* centered horizontally */
     }
+
+    /* html5-qrcode injected content */
     #reader video {
+      display: block;
       width: 100% !important;
       height: auto !important;
       border-radius: 12px;
+      object-fit: cover;
+      object-position: center;
+      background: #000;
     }
 
-    /* Scan frame overlay (matches qrbox 250x250) */
+    /* Scan frame overlay */
     #reader::after {
       content: "";
       position: absolute;
@@ -61,42 +75,47 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      box-shadow: 0 0 0 2000px rgba(0,0,0,0.10) inset;
     }
 
     #result {
-      margin-top: 12px;
+      margin-top: 16px;
       padding: 10px;
       border: 1px dashed rgba(255,255,255,.25);
       border-radius: 10px;
       word-break: break-word;
       min-height: 40px;
+      text-align: center;
     }
+
     #status {
       margin-top: 10px;
       font-size: 14px;
       color: #a9b6c8;
       white-space: pre-line;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>QR Code Scanner</h1>
 
-    <div class="row">
-      <button id="startBtn" disabled>Start camera</button>
-      <button id="stopBtn" disabled>Stop</button>
-      <button id="copyBtn" disabled>Copy</button>
-    </div>
+<div class="wrap">
+  <h1>QR Code Scanner</h1>
 
-    <div id="reader"></div>
-    <div id="result">(no result yet)</div>
-    <div id="status">Loading QR library…</div>
+  <!-- Buttons -->
+  <div class="controls">
+    <button id="startBtn" disabled>Start camera</button>
+    <button id="stopBtn" disabled>Stop</button>
+    <button id="copyBtn" disabled>Copy</button>
   </div>
 
+  <!-- Camera view is NOW clearly below buttons -->
+  <div id="reader"></div>
+
+  <div id="result">(no result yet)</div>
+  <div id="status">Loading QR library…</div>
+</div>
+
 <script>
-  // Load Html5Qrcode from jsDelivr (no download, no npm)
   function loadScript(src) {
     return new Promise((resolve, reject) => {
       const s = document.createElement("script");
@@ -110,7 +129,7 @@
   async function loadHtml5Qrcode() {
     const url = "https://cdn.jsdelivr.net/npm/html5-qrcode/dist/html5-qrcode.min.js";
     try {
-      document.getElementById("status").textContent = "Loading " + url;
+      document.getElementById("status").textContent = "Loading QR library…";
       await loadScript(url);
       return typeof Html5Qrcode === "function";
     } catch {
@@ -119,7 +138,7 @@
   }
 
   function vibrate() {
-    if (navigator.vibrate) navigator.vibrate(50);
+    if (navigator.vibrate) navigator.vibrate(40);
   }
 
   async function main() {
@@ -131,12 +150,11 @@
 
     const ok = await loadHtml5Qrcode();
     if (!ok) {
-      statusEl.textContent =
-        "❌ QR library failed to load.\nNetwork may block CDN.";
+      statusEl.textContent = "❌ QR library failed to load.";
       return;
     }
 
-    statusEl.textContent = "QR library loaded. Ready.";
+    statusEl.textContent = "Ready";
     startBtn.disabled = false;
 
     let qr = null;
@@ -164,18 +182,17 @@
               setResult(decodedText);
               statusEl.textContent = "✅ Scanned";
               vibrate();
-              // stopScanner(); // enable if you want auto-stop after first scan
             }
           },
-          () => {} // ignore per-frame decode errors
+          () => {}
         );
 
         startBtn.disabled = true;
         stopBtn.disabled = false;
-        statusEl.textContent = "Scanning… Hold QR steady in the frame.";
+        statusEl.textContent = "Scanning…";
       } catch (err) {
-        statusEl.textContent = "Camera error: " + (err?.message || err);
-        alert("Camera error: " + (err?.message || err));
+        statusEl.textContent = "Camera error: " + err;
+        alert("Camera error: " + err);
       }
     }
 
