@@ -7,20 +7,20 @@
 
   <style>
     :root {
-      --bg: #0b0e14;
-      --fg: #e9effa;
-      --card: #121826;
-      --line: rgba(255,255,255,.15);
-      --muted: #a9b6c8;
-      --accent: rgba(0, 255, 180, 0.8);
+      --bg:#0b0e14;
+      --fg:#e9effa;
+      --card:#121826;
+      --line:rgba(255,255,255,.15);
+      --muted:#a9b6c8;
+      --accent:rgba(0,255,180,.85);
     }
 
     body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background: var(--bg);
-      color: var(--fg);
       margin: 0;
       padding: 16px;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial;
     }
 
     .wrap {
@@ -30,19 +30,10 @@
       row-gap: 16px;
     }
 
-    header {
-      text-align: center;
-    }
-
     h1 {
       font-size: 18px;
-      margin: 0 0 6px;
-    }
-
-    .sub {
-      color: var(--muted);
-      font-size: 14px;
       margin: 0;
+      text-align: center;
     }
 
     .scannerCard {
@@ -52,10 +43,9 @@
       padding: 14px;
       display: grid;
       place-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
-    /* Fixed viewport box so the camera is ALWAYS in the right place */
     #reader {
       position: relative;
       width: 100%;
@@ -66,10 +56,9 @@
       background: #000;
     }
 
-    /* Force injected elements to fill the box */
-    #reader > div,
     #reader video,
-    #reader canvas {
+    #reader canvas,
+    #reader > div {
       width: 100% !important;
       height: 100% !important;
       display: block !important;
@@ -80,74 +69,49 @@
       object-position: center;
     }
 
-    /* Scan frame overlay */
+    /* scan frame */
     #reader::after {
-      content: "";
-      position: absolute;
-      width: 250px;
-      height: 250px;
-      border: 2px solid var(--accent);
-      border-radius: 12px;
-      pointer-events: none;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      box-shadow:
-        0 0 0 999px rgba(0,0,0,0.20) inset;
+      content:"";
+      position:absolute;
+      width:250px;
+      height:250px;
+      border:2px solid var(--accent);
+      border-radius:12px;
+      top:50%;
+      left:50%;
+      transform:translate(-50%,-50%);
+      pointer-events:none;
+      box-shadow:0 0 0 999px rgba(0,0,0,.2) inset;
     }
 
     .status {
-      text-align: center;
-      color: var(--muted);
-      font-size: 14px;
-      white-space: pre-line;
-      margin: 0;
+      font-size:14px;
+      color:var(--muted);
+      text-align:center;
     }
 
     .result {
-      border: 1px dashed rgba(255,255,255,.25);
-      border-radius: 14px;
-      padding: 12px;
-      text-align: center;
-      word-break: break-word;
-      min-height: 44px;
-      background: rgba(18,24,38,.35);
-    }
-
-    .hint {
-      color: var(--muted);
-      font-size: 13px;
-      text-align: center;
-      margin: 0;
-    }
-
-    .pill {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.18);
-      background: rgba(18,24,38,.55);
-      color: var(--fg);
-      font-size: 12px;
-      margin-left: 6px;
+      border:1px dashed rgba(255,255,255,.25);
+      border-radius:14px;
+      padding:12px;
+      text-align:center;
+      word-break:break-word;
+      min-height:44px;
+      background:rgba(18,24,38,.35);
     }
   </style>
 </head>
 <body>
 
 <div class="wrap">
-  <header>
-    <h1>Scan QR Code</h1>
-    <p class="sub">Camera starts automatically <span class="pill" id="modePill">loading…</span></p>
-  </header>
+  <h1>Scan QR Code</h1>
 
-  <section class="scannerCard">
+  <div class="scannerCard">
     <div id="reader"></div>
-    <p class="status" id="status">Loading QR library…</p>
-  </section>
+    <div class="status" id="status">Loading scanner…</div>
+  </div>
 
   <div class="result" id="result">(no result yet)</div>
-  <p class="hint">Tip: hold the QR steady inside the square for 1–2 seconds.</p>
 </div>
 
 <script>
@@ -156,48 +120,32 @@
       const s = document.createElement("script");
       s.src = src;
       s.onload = resolve;
-      s.onerror = () => reject(new Error("Failed: " + src));
+      s.onerror = () => reject();
       document.head.appendChild(s);
     });
   }
 
-  async function loadHtml5Qrcode() {
-    const url = "https://cdn.jsdelivr.net/npm/html5-qrcode/dist/html5-qrcode.min.js";
-    try {
-      document.getElementById("status").textContent = "Loading QR library…";
-      await loadScript(url);
-      return typeof Html5Qrcode === "function";
-    } catch {
-      return false;
+  function vibrate() {
+    if (navigator.vibrate) {
+      navigator.vibrate(50); // 📳 vibration on scan
     }
   }
 
-  function vibrate() {
-    if (navigator.vibrate) navigator.vibrate(40);
-  }
-
-  async function startAutoScan() {
+  async function startScanner() {
     const statusEl = document.getElementById("status");
     const resultEl = document.getElementById("result");
-    const pillEl   = document.getElementById("modePill");
 
-    const ok = await loadHtml5Qrcode();
-    if (!ok) {
-      pillEl.textContent = "error";
-      statusEl.textContent = "❌ QR library failed to load (network blocks CDN).";
+    await loadScript("https://cdn.jsdelivr.net/npm/html5-qrcode/dist/html5-qrcode.min.js");
+
+    if (typeof Html5Qrcode !== "function") {
+      statusEl.textContent = "QR library failed to load.";
       return;
     }
 
-    pillEl.textContent = "auto";
-    statusEl.textContent = "Requesting camera permission…";
-
-    let lastResult = "";
     const qr = new Html5Qrcode("reader");
+    let lastResult = "";
 
-    function setResult(text) {
-      lastResult = text;
-      resultEl.textContent = text || "(no result yet)";
-    }
+    statusEl.textContent = "Requesting camera permission…";
 
     try {
       await qr.start(
@@ -209,12 +157,10 @@
         },
         decodedText => {
           if (decodedText && decodedText !== lastResult) {
-            setResult(decodedText);
-            statusEl.textContent = "✅ Scanned";
-            vibrate();
-
-            // Optional: auto-stop after first scan (uncomment)
-            // qr.stop().then(() => qr.clear()).catch(() => {});
+            lastResult = decodedText;
+            resultEl.textContent = decodedText;
+            statusEl.textContent = "✅ QR detected";
+            vibrate(); // 🔔 HERE is the vibration
           }
         },
         () => {}
@@ -222,18 +168,15 @@
 
       statusEl.textContent = "Scanning…";
     } catch (err) {
-      pillEl.textContent = "error";
-      statusEl.textContent = "Camera error: " + (err?.message || err);
+      statusEl.textContent = "Camera error: " + err;
     }
 
-    // Clean up when leaving the page
     window.addEventListener("pagehide", () => {
       qr.stop().then(() => qr.clear()).catch(() => {});
     });
   }
 
-  // Auto-start on load
-  startAutoScan();
+  startScanner();
 </script>
 
 </body>
