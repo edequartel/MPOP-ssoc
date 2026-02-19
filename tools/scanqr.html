@@ -12,7 +12,7 @@
       --card: #121826;
       --line: rgba(255,255,255,.15);
       --muted: #a9b6c8;
-      --accent: rgba(0, 255, 180, 0.7);
+      --accent: rgba(0, 255, 180, 0.8);
     }
 
     body {
@@ -23,69 +23,50 @@
       padding: 16px;
     }
 
-    /* Use a real page grid: header, controls, scanner, output */
     .wrap {
       max-width: 420px;
       margin: 0 auto;
       display: grid;
-      grid-template-rows: auto auto auto auto;
       row-gap: 16px;
+    }
+
+    header {
+      text-align: center;
     }
 
     h1 {
       font-size: 18px;
+      margin: 0 0 6px;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 14px;
       margin: 0;
-      text-align: center;
     }
 
-    .controls {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      padding: 12px;
-      border: 1px solid var(--line);
-      background: rgba(18,24,38,.55);
-      border-radius: 14px;
-      /* IMPORTANT: guarantee separation below controls */
-      margin-bottom: 8px;
-    }
-
-    button {
-      padding: 10px 14px;
-      font-size: 16px;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: var(--card);
-      color: var(--fg);
-    }
-    button:disabled { opacity: 0.5; }
-
-    /* Scanner card guarantees camera sits LOWER than controls */
     .scannerCard {
       border: 1px solid var(--line);
       background: rgba(18,24,38,.55);
       border-radius: 14px;
       padding: 14px;
       display: grid;
-      place-items: center; /* hard center inside the card */
+      place-items: center;
       gap: 12px;
     }
 
-    /* Fixed viewport box for the camera. This prevents "wrong position"
-       caused by injected element sizes or flex behavior. */
+    /* Fixed viewport box so the camera is ALWAYS in the right place */
     #reader {
       position: relative;
       width: 100%;
       max-width: 360px;
-      aspect-ratio: 3 / 4;      /* portrait-ish camera window */
+      aspect-ratio: 3 / 4;
       border-radius: 14px;
-      overflow: hidden;         /* ensures video stays inside */
+      overflow: hidden;
       background: #000;
     }
 
-    /* html5-qrcode injects a DIV and a VIDEO; force them to fill the box */
+    /* Force injected elements to fill the box */
     #reader > div,
     #reader video,
     #reader canvas {
@@ -95,11 +76,11 @@
     }
 
     #reader video {
-      object-fit: cover;        /* center crop */
-      object-position: center;  /* always centered */
+      object-fit: cover;
+      object-position: center;
     }
 
-    /* Scan frame overlay centered within the fixed viewport */
+    /* Scan frame overlay */
     #reader::after {
       content: "";
       position: absolute;
@@ -111,15 +92,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-    }
-
-    .output {
-      border: 1px dashed rgba(255,255,255,.25);
-      border-radius: 14px;
-      padding: 12px;
-      text-align: center;
-      word-break: break-word;
-      min-height: 44px;
+      box-shadow:
+        0 0 0 999px rgba(0,0,0,0.20) inset;
     }
 
     .status {
@@ -127,29 +101,54 @@
       color: var(--muted);
       font-size: 14px;
       white-space: pre-line;
-      margin-top: -6px;
+      margin: 0;
+    }
+
+    .result {
+      border: 1px dashed rgba(255,255,255,.25);
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+      word-break: break-word;
+      min-height: 44px;
+      background: rgba(18,24,38,.35);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      margin: 0;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(18,24,38,.55);
+      color: var(--fg);
+      font-size: 12px;
+      margin-left: 6px;
     }
   </style>
 </head>
 <body>
 
-  <div class="wrap">
-    <h1>QR Code Scanner</h1>
+<div class="wrap">
+  <header>
+    <h1>Scan QR Code</h1>
+    <p class="sub">Camera starts automatically <span class="pill" id="modePill">loading…</span></p>
+  </header>
 
-    <div class="controls">
-      <button id="startBtn" disabled>Start camera</button>
-      <button id="stopBtn" disabled>Stop</button>
-      <button id="copyBtn" disabled>Copy</button>
-    </div>
+  <section class="scannerCard">
+    <div id="reader"></div>
+    <p class="status" id="status">Loading QR library…</p>
+  </section>
 
-    <!-- Camera is now inside its own card BELOW controls -->
-    <div class="scannerCard">
-      <div id="reader"></div>
-      <div class="status" id="status">Loading QR library…</div>
-    </div>
-
-    <div class="output" id="result">(no result yet)</div>
-  </div>
+  <div class="result" id="result">(no result yet)</div>
+  <p class="hint">Tip: hold the QR steady inside the square for 1–2 seconds.</p>
+</div>
 
 <script>
   function loadScript(src) {
@@ -177,86 +176,64 @@
     if (navigator.vibrate) navigator.vibrate(40);
   }
 
-  async function main() {
+  async function startAutoScan() {
     const statusEl = document.getElementById("status");
-    const startBtn = document.getElementById("startBtn");
-    const stopBtn  = document.getElementById("stopBtn");
-    const copyBtn  = document.getElementById("copyBtn");
     const resultEl = document.getElementById("result");
+    const pillEl   = document.getElementById("modePill");
 
     const ok = await loadHtml5Qrcode();
     if (!ok) {
-      statusEl.textContent = "❌ QR library failed to load.";
+      pillEl.textContent = "error";
+      statusEl.textContent = "❌ QR library failed to load (network blocks CDN).";
       return;
     }
 
-    statusEl.textContent = "Ready";
-    startBtn.disabled = false;
+    pillEl.textContent = "auto";
+    statusEl.textContent = "Requesting camera permission…";
 
-    let qr = null;
     let lastResult = "";
+    const qr = new Html5Qrcode("reader");
 
     function setResult(text) {
       lastResult = text;
       resultEl.textContent = text || "(no result yet)";
-      copyBtn.disabled = !text;
     }
 
-    async function startScanner() {
-      try {
-        if (!qr) qr = new Html5Qrcode("reader");
+    try {
+      await qr.start(
+        { facingMode: "environment" },
+        {
+          fps: 15,
+          qrbox: { width: 250, height: 250 },
+          disableFlip: true
+        },
+        decodedText => {
+          if (decodedText && decodedText !== lastResult) {
+            setResult(decodedText);
+            statusEl.textContent = "✅ Scanned";
+            vibrate();
 
-        await qr.start(
-          { facingMode: "environment" },
-          {
-            fps: 15,
-            qrbox: { width: 250, height: 250 },
-            disableFlip: true
-          },
-          decodedText => {
-            if (decodedText && decodedText !== lastResult) {
-              setResult(decodedText);
-              statusEl.textContent = "✅ Scanned";
-              vibrate();
-            }
-          },
-          () => {}
-        );
+            // Optional: auto-stop after first scan (uncomment)
+            // qr.stop().then(() => qr.clear()).catch(() => {});
+          }
+        },
+        () => {}
+      );
 
-        startBtn.disabled = true;
-        stopBtn.disabled = false;
-        statusEl.textContent = "Scanning… Hold QR steady in the frame.";
-      } catch (err) {
-        statusEl.textContent = "Camera error: " + (err?.message || err);
-        alert("Camera error: " + (err?.message || err));
-      }
+      statusEl.textContent = "Scanning…";
+    } catch (err) {
+      pillEl.textContent = "error";
+      statusEl.textContent = "Camera error: " + (err?.message || err);
     }
 
-    async function stopScanner() {
-      if (!qr) return;
-      try { await qr.stop(); await qr.clear(); } catch {}
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-      statusEl.textContent = "Stopped";
-    }
-
-    async function copyResult() {
-      try {
-        await navigator.clipboard.writeText(lastResult);
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => (copyBtn.textContent = "Copy"), 800);
-      } catch {
-        alert("Copy failed");
-      }
-    }
-
-    startBtn.onclick = startScanner;
-    stopBtn.onclick  = stopScanner;
-    copyBtn.onclick  = copyResult;
-    window.addEventListener("pagehide", stopScanner);
+    // Clean up when leaving the page
+    window.addEventListener("pagehide", () => {
+      qr.stop().then(() => qr.clear()).catch(() => {});
+    });
   }
 
-  main();
+  // Auto-start on load
+  startAutoScan();
 </script>
 
 </body>
