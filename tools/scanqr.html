@@ -45,6 +45,7 @@
       margin-top: 12px;
       font-size: 14px;
       color: #a9b6c8;
+      white-space: pre-line;
     }
   </style>
 </head>
@@ -73,8 +74,10 @@
   }
 
   async function loadHtml5Qrcode() {
+    // Use jsDelivr "dist" path (no version pinned) first
     const cdns = [
-      "https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.10/html5-qrcode.min.js",
+      "https://cdn.jsdelivr.net/npm/html5-qrcode/dist/html5-qrcode.min.js",
+      // optional fallback if jsDelivr is blocked:
       "https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"
     ];
 
@@ -133,7 +136,7 @@
         statusEl.textContent = "Scanning…";
       } catch (err) {
         alert("Camera error: " + err);
-        statusEl.textContent = "Camera error";
+        statusEl.textContent = "Camera error: " + err;
       }
     }
 
