@@ -23,7 +23,16 @@
       margin-right: 8px;
     }
     button:disabled { opacity: 0.5; }
-    #reader { width: 100%; max-width: 360px; margin-top: 12px; }
+    #reader {
+      width: 100%;
+      max-width: 360px;
+      margin-top: 12px;
+    }
+    #reader video {
+      width: 100% !important;
+      height: auto !important;
+      border-radius: 12px;
+    }
     #result {
       margin-top: 12px;
       padding: 10px;
@@ -37,12 +46,6 @@
       font-size: 14px;
       color: #a9b6c8;
       white-space: pre-line;
-    }
-    /* Make the video clearly visible */
-    #reader video {
-      width: 100% !important;
-      height: auto !important;
-      border-radius: 12px;
     }
   </style>
 </head>
@@ -59,6 +62,7 @@
 <div id="status">Loading QR library…</div>
 
 <script>
+  // ---- Load Html5Qrcode from jsDelivr (no version pin) ----
   function loadScript(src) {
     return new Promise((resolve, reject) => {
       const s = document.createElement("script");
@@ -70,18 +74,14 @@
   }
 
   async function loadHtml5Qrcode() {
-    const cdns = [
-      "https://cdn.jsdelivr.net/npm/html5-qrcode/dist/html5-qrcode.min.js",
-      "https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"
-    ];
-    for (const url of cdns) {
-      try {
-        document.getElementById("status").textContent = "Loading " + url;
-        await loadScript(url);
-        if (typeof Html5Qrcode === "function") return true;
-      } catch {}
+    const url = "https://cdn.jsdelivr.net/npm/html5-qrcode/dist/html5-qrcode.min.js";
+    try {
+      document.getElementById("status").textContent = "Loading " + url;
+      await loadScript(url);
+      return typeof Html5Qrcode === "function";
+    } catch {
+      return false;
     }
-    return false;
   }
 
   async function main() {
@@ -93,7 +93,8 @@
 
     const ok = await loadHtml5Qrcode();
     if (!ok) {
-      statusEl.textContent = "❌ QR library blocked by network.\nTry another Wi-Fi or hotspot.";
+      statusEl.textContent =
+        "❌ QR library failed to load.\nNetwork may block CDN.";
       return;
     }
 
@@ -109,43 +110,31 @@
       copyBtn.disabled = !text;
     }
 
-    function qrboxSize(viewWidth, viewHeight) {
-      // Keep box within the smaller dimension; phone-friendly
-      const minEdge = Math.min(viewWidth, viewHeight);
-      const size = Math.floor(minEdge * 0.70); // 70% of min edge
-      return { width: size, height: size };
-    }
-
     async function startScanner() {
       try {
         if (!qr) qr = new Html5Qrcode("reader");
 
-        statusEl.textContent = "Opening camera…";
-
         await qr.start(
-          // On iPhone, this is best. If it picks the wrong camera, we can switch to deviceId selection.
-          { facingMode: { ideal: "environment" } },
+          { facingMode: "environment" },
           {
             fps: 15,
-            qrbox: qrboxSize,
-            aspectRatio: 1.7777778, // helps some iPhones (16:9-ish)
+            qrbox: { width: 250, height: 250 },
             disableFlip: true
           },
-          (decodedText) => {
+          decodedText => {
             if (decodedText && decodedText !== lastResult) {
               setResult(decodedText);
-              statusEl.textContent = "✅ Scanned!";
-              // Optional: stop after first successful scan
+              statusEl.textContent = "✅ Scanned";
+              // Optional: stop after first scan
               // stopScanner();
             }
           },
-          // This gets called *a lot*; don’t spam alerts
-          () => { /* ignore per-frame decode errors */ }
+          () => {} // ignore per-frame decode errors
         );
 
         startBtn.disabled = true;
         stopBtn.disabled = false;
-        statusEl.textContent = "Scanning… Hold QR steady inside the box.";
+        statusEl.textContent = "Scanning… Hold QR steady.";
       } catch (err) {
         statusEl.textContent = "Camera error: " + (err?.message || err);
         alert("Camera error: " + (err?.message || err));
