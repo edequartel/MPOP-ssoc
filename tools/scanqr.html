@@ -41,89 +41,127 @@
       word-break: break-word;
       min-height: 40px;
     }
+    #status {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #a9b6c8;
+    }
   </style>
 </head>
 <body>
 
 <h1>QR Code Scanner</h1>
 
-<button id="startBtn">Start camera</button>
+<button id="startBtn" disabled>Start camera</button>
 <button id="stopBtn" disabled>Stop</button>
 <button id="copyBtn" disabled>Copy</button>
 
 <div id="reader"></div>
 <div id="result">(no result yet)</div>
-
-<!-- ✅ MUST be loaded BEFORE your own script -->
-<script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
+<div id="status">Loading QR library…</div>
 
 <script>
-  // Debug: must log "function"
-  console.log("Html5Qrcode:", typeof Html5Qrcode);
-
-  const startBtn = document.getElementById("startBtn");
-  const stopBtn  = document.getElementById("stopBtn");
-  const copyBtn  = document.getElementById("copyBtn");
-  const resultEl = document.getElementById("result");
-
-  let qr = null;
-  let lastResult = "";
-
-  function setResult(text) {
-    lastResult = text;
-    resultEl.textContent = text || "(no result yet)";
-    copyBtn.disabled = !text;
+  // ---- Robust CDN loader (NO download required) ----
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error("Failed: " + src));
+      document.head.appendChild(s);
+    });
   }
 
-  async function startScanner() {
-    try {
-      if (!qr) {
-        qr = new Html5Qrcode("reader");
-      }
+  async function loadHtml5Qrcode() {
+    const cdns = [
+      "https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.10/html5-qrcode.min.js",
+      "https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"
+    ];
 
-      await qr.start(
-        { facingMode: "environment" }, // back camera
-        { fps: 10, qrbox: 250 },
-        decodedText => {
-          if (decodedText !== lastResult) {
-            setResult(decodedText);
-            // stopScanner(); // enable if you want auto-stop
-          }
-        }
-      );
-
-      startBtn.disabled = true;
-      stopBtn.disabled = false;
-    } catch (err) {
-      alert("Camera error: " + err);
+    for (const url of cdns) {
+      try {
+        document.getElementById("status").textContent = "Loading " + url;
+        await loadScript(url);
+        if (typeof Html5Qrcode === "function") return true;
+      } catch {}
     }
+    return false;
   }
 
-  async function stopScanner() {
-    if (!qr) return;
-    try {
-      await qr.stop();
-      await qr.clear();
-    } catch {}
+  // ---- App logic (only runs if library exists) ----
+  async function main() {
+    const statusEl = document.getElementById("status");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn  = document.getElementById("stopBtn");
+    const copyBtn  = document.getElementById("copyBtn");
+    const resultEl = document.getElementById("result");
+
+    const ok = await loadHtml5Qrcode();
+
+    if (!ok) {
+      statusEl.textContent =
+        "❌ QR library blocked by network.\nTry another Wi-Fi or hotspot.";
+      return;
+    }
+
+    statusEl.textContent = "QR library loaded. Ready.";
     startBtn.disabled = false;
-    stopBtn.disabled = true;
-  }
 
-  async function copyResult() {
-    try {
-      await navigator.clipboard.writeText(lastResult);
-      copyBtn.textContent = "Copied!";
-      setTimeout(() => copyBtn.textContent = "Copy", 800);
-    } catch {
-      alert("Copy failed");
+    let qr = null;
+    let lastResult = "";
+
+    function setResult(text) {
+      lastResult = text;
+      resultEl.textContent = text || "(no result yet)";
+      copyBtn.disabled = !text;
     }
+
+    async function startScanner() {
+      try {
+        if (!qr) qr = new Html5Qrcode("reader");
+
+        await qr.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: 250 },
+          decodedText => {
+            if (decodedText !== lastResult) setResult(decodedText);
+          }
+        );
+
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        statusEl.textContent = "Scanning…";
+      } catch (err) {
+        alert("Camera error: " + err);
+        statusEl.textContent = "Camera error";
+      }
+    }
+
+    async function stopScanner() {
+      if (!qr) return;
+      try { await qr.stop(); await qr.clear(); } catch {}
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      statusEl.textContent = "Stopped";
+    }
+
+    async function copyResult() {
+      try {
+        await navigator.clipboard.writeText(lastResult);
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => copyBtn.textContent = "Copy", 800);
+      } catch {
+        alert("Copy failed");
+      }
+    }
+
+    startBtn.onclick = startScanner;
+    stopBtn.onclick  = stopScanner;
+    copyBtn.onclick  = copyResult;
+    window.addEventListener("pagehide", stopScanner);
   }
 
-  startBtn.addEventListener("click", startScanner);
-  stopBtn.addEventListener("click", stopScanner);
-  copyBtn.addEventListener("click", copyResult);
-
-  window.addEventListener("pagehide", stopScanner);
+  main();
 </script>
 
 </body>
