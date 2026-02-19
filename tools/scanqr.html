@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>QR Code Scanner</title>
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: #0b0e14;
+      color: #e9effa;
+      margin: 16px;
+    }
+    h1 {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+    button {
+      padding: 10px 14px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.15);
+      background: #121826;
+      color: #e9effa;
+      margin-right: 8px;
+    }
+    button:disabled {
+      opacity: 0.5;
+    }
+    #reader {
+      width: 100%;
+      max-width: 320px;
+      margin-top: 12px;
+    }
+    #result {
+      margin-top: 12px;
+      padding: 10px;
+      border: 1px dashed rgba(255,255,255,.25);
+      border-radius: 10px;
+      word-break: break-word;
+      min-height: 40px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>QR Code Scanner</h1>
+
+<button id="startBtn">Start camera</button>
+<button id="stopBtn" disabled>Stop</button>
+<button id="copyBtn" disabled>Copy</button>
+
+<div id="reader"></div>
+<div id="result">(no result yet)</div>
+
+<!-- ✅ MUST be loaded BEFORE your own script -->
+<script src="https://unpkg.com/html5-qrcode@2.3.10/html5-qrcode.min.js"></script>
+
+<script>
+  // Debug: must log "function"
+  console.log("Html5Qrcode:", typeof Html5Qrcode);
+
+  const startBtn = document.getElementById("startBtn");
+  const stopBtn  = document.getElementById("stopBtn");
+  const copyBtn  = document.getElementById("copyBtn");
+  const resultEl = document.getElementById("result");
+
+  let qr = null;
+  let lastResult = "";
+
+  function setResult(text) {
+    lastResult = text;
+    resultEl.textContent = text || "(no result yet)";
+    copyBtn.disabled = !text;
+  }
+
+  async function startScanner() {
+    try {
+      if (!qr) {
+        qr = new Html5Qrcode("reader");
+      }
+
+      await qr.start(
+        { facingMode: "environment" }, // back camera
+        { fps: 10, qrbox: 250 },
+        decodedText => {
+          if (decodedText !== lastResult) {
+            setResult(decodedText);
+            // stopScanner(); // enable if you want auto-stop
+          }
+        }
+      );
+
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+    } catch (err) {
+      alert("Camera error: " + err);
+    }
+  }
+
+  async function stopScanner() {
+    if (!qr) return;
+    try {
+      await qr.stop();
+      await qr.clear();
+    } catch {}
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+  }
+
+  async function copyResult() {
+    try {
+      await navigator.clipboard.writeText(lastResult);
+      copyBtn.textContent = "Copied!";
+      setTimeout(() => copyBtn.textContent = "Copy", 800);
+    } catch {
+      alert("Copy failed");
+    }
+  }
+
+  startBtn.addEventListener("click", startScanner);
+  stopBtn.addEventListener("click", stopScanner);
+  copyBtn.addEventListener("click", copyResult);
+
+  window.addEventListener("pagehide", stopScanner);
+</script>
+
+</body>
+</html>
