@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Escape Room Code</title>
+
+<style>
+
+body{
+    font-family: Arial, sans-serif;
+    background-color:#f2f7fb;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.box{
+    background:white;
+    padding:40px;
+    border-radius:20px;
+    text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,0.1);
+    width:400px;
+}
+
+input{
+    font-size:28px;
+    padding:10px;
+    width:260px;
+    text-align:center;
+    letter-spacing:6px;
+}
+
+button{
+    margin-top:20px;
+    padding:12px 30px;
+    font-size:18px;
+    border:none;
+    border-radius:10px;
+    background:#4CAF50;
+    color:white;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#45a049;
+}
+
+#result{
+    margin-top:25px;
+    font-size:22px;
+    font-weight:bold;
+}
+
+.success{
+    color:green;
+}
+
+.error{
+    color:red;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h1>🔐 Voer de ontsnappingscode in</h1>
+
+<input 
+    id="code"
+    type="text"
+    maxlength="10"
+    aria-label="Voer de code in"
+>
+
+<br>
+
+<button onclick="checkCode()">Open de deur</button>
+
+<div id="result"></div>
+
+</div>
+
+<script>
+
+function checkCode(){
+
+    const correctCode = "2835714690";
+    const entered = document.getElementById("code").value;
+    const result = document.getElementById("result");
+
+    if(entered === correctCode){
+
+        result.innerHTML = "🎉 GELUKT! De deur gaat open!";
+        result.className = "success";
+
+        document.body.style.backgroundColor = "#d4edda";
+
+    }else{
+
+        result.innerHTML = "❌ Helaas… probeer opnieuw!";
+        result.className = "error";
+
+    }
+}
+
+</script>
+
+</body>
+</html>
