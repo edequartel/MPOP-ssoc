@@ -1,0 +1,93 @@
+<!-- file: elevenlabs-howler.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ElevenLabs Streaming TTS (Howler)</title>
+  <link rel="stylesheet" href="./elevenlabs-howler.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="header">
+      <h1>ElevenLabs Streaming TTS</h1>
+      <p class="sub">
+        Uses <code>POST /v1/text-to-speech/{voice_id}/stream</code> and plays via Howler.
+      </p>
+    </header>
+
+    <section class="panel">
+      <div class="grid">
+        <label class="field">
+          <span>API key</span>
+          <input id="apiKey" type="password" placeholder="xi-api-key…" autocomplete="off" />
+        </label>
+
+        <label class="field">
+          <span>Voice ID</span>
+          <input id="voiceId" type="text" placeholder="e.g. nPczCjzI2devNBz1zQrb" />
+        </label>
+
+        <label class="field full">
+          <span>Text</span>
+          <textarea id="text" rows="5" placeholder="Type text to speak…"></textarea>
+        </label>
+
+        <label class="field">
+          <span>Model (optional)</span>
+          <input id="modelId" type="text" placeholder="e.g. eleven_multilingual_v2" />
+        </label>
+
+        <label class="field">
+          <span>Output format (optional)</span>
+          <input id="outputFormat" type="text" placeholder="e.g. mp3_44100_128" />
+        </label>
+
+        <div class="actions full">
+          <button id="btnPlay" class="btn primary">Play</button>
+          <button id="btnStop" class="btn">Stop</button>
+          <button id="btnClear" class="btn">Clear log</button>
+          
+          <button id="clearTextBtn" class="btn">
+  Clear text
+</button>
+          
+          
+          <button id="btnDownload" class="btn" disabled>Download audio</button>
+
+          <div class="toggles" role="group" aria-label="Preferences">
+            <label class="toggle">
+              <input id="chkRememberVoice" type="checkbox" checked />
+              <span>Remember Voice ID</span>
+            </label>
+            <label class="toggle">
+              <input id="chkRememberModel" type="checkbox" checked />
+              <span>Remember Model</span>
+            </label>
+            <label class="toggle">
+              <input id="chkRememberKey" type="checkbox" />
+              <span>Remember API key (local)</span>
+            </label>
+            <label class="toggle">
+              <input id="chkTryMSE" type="checkbox" checked />
+              <span>Try "true streaming" (MediaSource) first</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="row">
+        <strong>Status:</strong>
+        <span id="status" class="status">Idle</span>
+      </div>
+      <pre id="log" class="log" aria-live="polite"></pre>
+    </section>
+  </main>
+
+  <!-- Howler.js -->
+  <script src="https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js"></script>
+  <script src="./elevenlabs-howler.js"></script>
+</body>
+</html>
