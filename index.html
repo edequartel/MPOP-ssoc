@@ -139,7 +139,7 @@
             <textarea id="story_text"></textarea>
 
             <div class="inlineRow">
-              <input id="story_audio_path" placeholder="/sounds/nl/stories/bal-001.mp3" />
+              <input id="story_audio_path" placeholder="/sounds/nl/stories/" />
               <button id="btnPlayStoryAudio" disabled>Play</button>
               <button id="btnProduceStoryAudio" type="button">Produce</button>
               <span id="storyAudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Story audio online status unknown" aria-label="Story audio online status"></span>
@@ -150,7 +150,7 @@
             <textarea id="klankzuiver_text"></textarea>
 
             <div class="inlineRow">
-              <input id="klankzuiver_letters" placeholder="/sounds/nl/klankzuiver/klankzuiver.mp3" />
+              <input id="klankzuiver_letters" placeholder="/sounds/nl/klankzuiver/" />
               <button id="btnPlayKlankzuiverAudio" disabled>Play</button>
             </div>
           </div>
@@ -173,7 +173,7 @@
            <!-- <label>audio</label> -->
             
             <div class="inlineRow">
-              <input id="object1_audio_path" placeholder="/sounds/nl/objects/object.mp3" />
+              <input id="object1_audio_path" placeholder="/sounds/nl/objects/" />
               <button id="btnPlayAudioObject1" disabled>Play</button>
             </div>
           </div>
@@ -183,7 +183,7 @@
             <textarea id="woord_text"></textarea>
 
             <div class="inlineRow">
-              <input id="woord_audio_path" class="extra-pad" placeholder="/sounds/general/sound.mp3" />
+              <input id="woord_audio_path" class="extra-pad" placeholder="/sounds/general/" />
               <button id="btnPlayWoordAudio" disabled>Play</button>
             </div>
           </div>
@@ -201,7 +201,7 @@
             <textarea id="opdracht1_text"></textarea>
 
             <div class="inlineRow">
-              <input id="opdracht1_audio_path" placeholder="/sounds/nl/opdracht/opdracht1.mp3" />
+              <input id="opdracht1_audio_path" placeholder="/sounds/nl/opdracht/" />
               <button id="btnPlayOpdracht1Audio" disabled>Play</button>
             </div>
           </div>
@@ -210,7 +210,7 @@
             <textarea id="opdracht2_text"></textarea>
 
             <div class="inlineRow">
-              <input id="opdracht2_audio_path" placeholder="/sounds/nl/opdracht/opdracht2.mp3" />
+              <input id="opdracht2_audio_path" placeholder="/sounds/nl/opdracht/" />
               <button id="btnPlayOpdracht2Audio" disabled>Play</button>
             </div>
           </div>
@@ -231,7 +231,7 @@
             <textarea id="object2_description"></textarea>
 
             <div class="inlineRow">
-              <input id="object2_audio_path" placeholder="/sounds/nl/objects/beschrijving.mp3" />
+              <input id="object2_audio_path" placeholder="/sounds/nl/objects/" />
               <button id="btnPlayAudioObject2" disabled>Play</button>
             </div>
           </div>
@@ -239,7 +239,7 @@
             <label>Opdracht 3</label>
             <textarea id="opdracht3_text"></textarea>
             <div class="inlineRow">
-              <input id="opdracht3_audio_path" placeholder="/sounds/nl/opdracht/opdracht3.mp3" />
+              <input id="opdracht3_audio_path" placeholder="/sounds/nl/opdracht/" />
               <button id="btnPlayOpdracht3Audio" disabled>Play</button>
             </div>
           </div>
@@ -256,7 +256,7 @@
             <label>Opdracht 4</label>
             <textarea id="opdracht4_text"></textarea>
             <div class="inlineRow">
-              <input id="opdracht4_audio_path" placeholder="/sounds/nl/opdracht/opdracht4.mp3" />
+              <input id="opdracht4_audio_path" placeholder="/sounds/nl/opdracht/" />
               <button id="btnPlayOpdracht4Audio" disabled>Play</button>
             </div>
           </div>
@@ -264,7 +264,7 @@
             <label>Opdracht 5</label>
             <textarea id="opdracht5_text"></textarea>
             <div class="inlineRow">
-              <input id="opdracht5_audio_path" placeholder="/sounds/nl/opdracht/opdracht5.mp3" />
+              <input id="opdracht5_audio_path" placeholder="/sounds/nl/opdracht/" />
               <button id="btnPlayOpdracht5Audio" disabled>Play</button>
             </div>
           </div>
@@ -279,7 +279,7 @@
             <label>Object3</label>
             <textarea id="object3_description"></textarea>
             <div class="inlineRow">
-              <input id="object3_audio_path" placeholder="/sounds/nl/object3.mp3" />
+              <input id="object3_audio_path" placeholder="/sounds/nl/" />
               <button id="btnPlayAudioObject3" disabled>Play</button>
             </div>
           </div>
@@ -287,7 +287,7 @@
             <label>Opdracht 6</label>
             <textarea id="opdracht6_text"></textarea>
             <div class="inlineRow">
-              <input id="opdracht6_audio_path" placeholder="/sounds/nl/opdracht/opdracht6.mp3" />
+              <input id="opdracht6_audio_path" placeholder="/sounds/nl/opdracht/" />
               <button id="btnPlayOpdracht6Audio" disabled>Play</button>
             </div>
           </div>
@@ -1688,8 +1688,7 @@ function scheduleAutosave() {
         msg($("saveMsg"), "Uploading story audio MP3...");
         const result = await uploadStoryMp3Blob(blob, target);
         const savedRelativePath = `/${target.path}/${target.audiofile}`;
-        setVal("story_audio_path", savedRelativePath);
-      refreshStoryAudioUiState();
+        refreshStoryAudioUiState();
 
         setProduceStoryButtonState("downloading");
         triggerBlobDownload(blob, storyRecordFilename());

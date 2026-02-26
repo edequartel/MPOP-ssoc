@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Maak baal.mp3</title>
+<style>
+  body{font-family:system-ui;background:#0b0e14;color:#e9effa;margin:16px}
+  .panel{max-width:720px;padding:16px;border:1px solid #223;border-radius:14px;background:#0f1420}
+  button{padding:12px 16px;border-radius:12px;border:1px solid #223;background:#0b0e14;color:#e9effa;font-weight:800;cursor:pointer}
+  audio{width:100%;margin-top:12px}
+  .mono{font-family:ui-monospace,Menlo,monospace;white-space:pre-wrap}
+</style>
+</head>
+<body>
+
+<h2>Maak <code>baal.mp3</code> (b + aa + l)</h2>
+
+<div class="panel">
+  <p class="mono">
+Bron:
+- b.mp3
+- aa.mp3
+- l.mp3
+
+Pad:
+https://www.tastenbraille.com/braillestudio/sounds/nl/alfabet/
+  </p>
+
+  <button id="run">▶ Maak baal.mp3</button>
+
+  <audio id="player" controls></audio>
+
+  <p>
+    <a id="download" download="baal.mp3" style="display:none">Download baal.mp3</a>
+  </p>
+
+  <div class="mono" id="log">Idle</div>
+</div>
+
+<!-- ffmpeg.wasm -->
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
+<script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+
+<script>
+const { FFmpeg } = FFmpegWASM;
+const { fetchFile } = FFmpegUtil;
+
+const BASE =
+  "https://www.tastenbraille.com/braillestudio/sounds/nl/alfabet/";
+
+const FILES = ["b.mp3", "aa.mp3", "l.mp3"];
+const OUTPUT = "baal.mp3";
+
+// optioneel: kleine pauze tussen letters (seconden)
+const PAUSE_SECONDS = 0.15;
+
+const logEl = document.getElementById("log");
+const player = document.getElementById("player");
+const dl = document.getElementById("download");
+const btn = document.getElementById("run");
+
+function log(m){ logEl.textContent += "\n" + m; }
+
+btn.onclick = async () => {
+  btn.disabled = true;
+  logEl.textContent = "Loading ffmpeg…";
+
+  const ffmpeg = new FFmpeg({ log: true });
+  await ffmpeg.load();
+
+  log("Fetching source MP3s…");
+
+  // schrijf inputbestanden
+  for (let i = 0; i < FILES.length; i++) {
+    const url = BASE + FILES[i];
+    const data = await fetchFile(url);
+    await ffmpeg.writeFile(`in${i}.mp3`, data);
+  }
+
+  // filter: letter + stilte + letter + stilte + letter
+  const filter =
+    "[0:a]aresample=48000,aformat=fltp:stereo[a0];" +
+    "aevalsrc=0:d=" + PAUSE_SECONDS + ":s=48000[s0];" +
+    "[1:a]aresample=48000,aformat=fltp:stereo[a1];" +
+    "aevalsrc=0:d=" + PAUSE_SECONDS + ":s=48000[s1];" +
+    "[2:a]aresample=48000,aformat=fltp:stereo[a2];" +
+    "[a0][s0][a1][s1][a2]concat=n=5:v=0:a=1[out]";
+
+  log("Merging into baal.mp3…");
+
+  await ffmpeg.exec([
+    "-i","in0.mp3",
+    "-i","in1.mp3",
+    "-i","in2.mp3",
+    "-filter_complex", filter,
+    "-map","[out]",
+    "-c:a","libmp3lame",
+    "-b:a","192k",
+    "-y",
+    OUTPUT
+  ]);
+
+  const out = await ffmpeg.readFile(OUTPUT);
+  const blob = new Blob([out.buffer], { type:"audio/mpeg" });
+  const url = URL.createObjectURL(blob);
+
+  player.src = url;
+  dl.href = url;
+  dl.style.display = "inline";
+
+  log("Done ✅ baal.mp3 ready");
+  btn.disabled = false;
+};
+</script>
+
+</body>
+</html>
