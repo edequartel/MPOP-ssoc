@@ -367,6 +367,7 @@
     const ELEVENLABS_DEFAULT_OUTPUT_FORMAT = "mp3_44100_128";
     const STORY_MP3_UPLOAD_URL = "https://www.tastenbraille.com/upload_mp3.php";
     const STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY = "storyMp3Upload.token";
+    const STORY_AUDIO_EXISTS_CHECK_URL = "https://www.tastenbraille.com/check_audio_exists.php";
 
     const supabaseInit = async () => {
       try {
@@ -406,6 +407,7 @@
     let authRefreshRunning = false;
     let authListenerBound = false;
     let isViewerRole = false;
+    let storyAudioExistsCheckSeq = 0;
     const audioPlayers = new Map();
     const AUDIO_ENDPOINT = "https://www.tastenbraille.com/braillestudio";
     const LOGO_AUDIO_URL = "https://www.tastenbraille.com/braillestudio/sounds/nl/stories/mpop-001.mp3";
@@ -1206,7 +1208,7 @@ function scheduleAutosave() {
       setVal("image2_path", row.image2_path || "");
       setVal("image3_path", row.image3_path || "");
 
-      refreshStoryPlayButton();
+      refreshStoryAudioUiState();
       setPlayButton("btnPlayAudioObject1", val("object1_audio_path"));
       setPlayButton("btnPlayOpdracht1Audio", val("opdracht1_audio_path"));
       setPlayButton("btnPlayOpdracht2Audio", val("opdracht2_audio_path"));
@@ -1512,6 +1514,55 @@ function scheduleAutosave() {
       setPlayButton("btnPlayStoryAudio", getStoryPlaybackPath());
     }
 
+    function setStoryAudioOnlineDot(state, titleText) {
+      const dot = $("storyAudioOnlineDot");
+      if (!dot) return;
+      dot.dataset.state = state || "unknown";
+      dot.title = titleText || "Story audio online status unknown";
+      dot.setAttribute("aria-label", dot.title);
+    }
+
+    async function refreshStoryAudioOnlineIndicator() {
+      const relPath = getStoryPlaybackPath();
+      if (!relPath) {
+        setStoryAudioOnlineDot("unknown", "Story audio path/title incomplete");
+        return;
+      }
+      const url = buildAudioUrl(relPath);
+      const relPathNoLeadingSlash = relPath.replace(/^\/+/, "");
+      const checkId = ++storyAudioExistsCheckSeq;
+      setStoryAudioOnlineDot("checking", `Checking: ${url}`);
+      try {
+        const checkUrl = new URL(STORY_AUDIO_EXISTS_CHECK_URL);
+        checkUrl.searchParams.set("path", relPathNoLeadingSlash);
+        const res = await fetch(checkUrl.toString(), { method: "GET", cache: "no-store" });
+        if (checkId !== storyAudioExistsCheckSeq) return;
+
+        if (!res.ok) {
+          setStoryAudioOnlineDot("unknown", `Could not confirm file (${res.status}): ${url}`);
+          return;
+        }
+
+        const data = await res.json().catch(() => null);
+        if (checkId !== storyAudioExistsCheckSeq) return;
+        if (data?.exists === true) {
+          setStoryAudioOnlineDot("exists", `Online file exists: ${data?.url || url}`);
+        } else if (data?.exists === false) {
+          setStoryAudioOnlineDot("missing", `Online file not found: ${data?.url || url}`);
+        } else {
+          setStoryAudioOnlineDot("unknown", `Could not confirm file: ${url}`);
+        }
+      } catch (e) {
+        if (checkId !== storyAudioExistsCheckSeq) return;
+        setStoryAudioOnlineDot("unknown", `Could not check file via server script: ${url}`);
+      }
+    }
+
+    function refreshStoryAudioUiState() {
+      refreshStoryPlayButton();
+      void refreshStoryAudioOnlineIndicator();
+    }
+
     function getStoryUploadToken() {
       try {
         return (localStorage.getItem(STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY) || "").trim();
@@ -1638,7 +1689,7 @@ function scheduleAutosave() {
         const result = await uploadStoryMp3Blob(blob, target);
         const savedRelativePath = `/${target.path}/${target.audiofile}`;
         setVal("story_audio_path", savedRelativePath);
-        refreshStoryPlayButton();
+      refreshStoryAudioUiState();
 
         setProduceStoryButtonState("downloading");
         triggerBlobDownload(blob, storyRecordFilename());
@@ -2051,9 +2102,9 @@ function scheduleAutosave() {
     };
 
     wireAudioInput("story_audio_path", "btnPlayStoryAudio");
-    $("story_audio_path").addEventListener("input", refreshStoryPlayButton);
-    $("title").addEventListener("input", refreshStoryPlayButton);
-    refreshStoryPlayButton();
+    $("story_audio_path").addEventListener("input", refreshStoryAudioUiState);
+    $("title").addEventListener("input", refreshStoryAudioUiState);
+    refreshStoryAudioUiState();
     wireAudioInput("object1_audio_path", "btnPlayAudioObject1");
     wireAudioInput("klankzuiver_letters", "btnPlayKlankzuiverAudio");
     wireAudioInput("opdracht1_audio_path", "btnPlayOpdracht1Audio");
