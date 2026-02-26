@@ -45,7 +45,7 @@ https://www.tastenbraille.com/braillestudio/sounds/nl/alfabet/
 
 <script>
 const { FFmpeg } = FFmpegWASM;
-const { fetchFile, toBlobURL } = FFmpegUtil;
+const { fetchFile } = FFmpegUtil;
 
 const BASE = "https://www.tastenbraille.com/braillestudio/sounds/nl/alfabet/";
 const FILES = ["b.mp3", "aa.mp3", "l.mp3"];
@@ -58,8 +58,48 @@ const dl = document.getElementById("download");
 const btn = document.getElementById("run");
 
 let ffmpeg = null;
+let outputUrl = null;
 
 function log(m){ logEl.textContent += "\n" + m; }
+
+async function headOk(url) {
+  try {
+    const r = await fetch(url, { method: "HEAD", cache: "no-store" });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function chooseCoreSource() {
+  // Prefer local files (same origin) to avoid CDN/worker/CORS "Load failed"
+  const local = {
+    label: "local",
+    coreURL: "../ffmpeg/ffmpeg-core.js",
+    wasmURL: "../ffmpeg/ffmpeg-core.wasm",
+    workerURL: "../ffmpeg/ffmpeg-core.worker.js",
+  };
+
+  const cdnBase = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
+  const cdn = {
+    label: "cdn",
+    coreURL: `${cdnBase}/ffmpeg-core.js`,
+    wasmURL: `${cdnBase}/ffmpeg-core.wasm`,
+    workerURL: `${cdnBase}/ffmpeg-core.worker.js`,
+  };
+
+  log("Checking local ffmpeg core files...");
+  const localCoreOk = await headOk(local.coreURL);
+  const localWasmOk = await headOk(local.wasmURL);
+
+  if (localCoreOk && localWasmOk) {
+    log("Using local ffmpeg core files (../ffmpeg/).");
+    return local;
+  }
+
+  log("Local ffmpeg core files not found. Falling back to CDN (unpkg).");
+  return cdn;
+}
 
 async function ensureFfmpegLoaded() {
   if (ffmpeg) return ffmpeg;
@@ -67,17 +107,16 @@ async function ensureFfmpegLoaded() {
   ffmpeg = new FFmpeg();
 
   ffmpeg.on("log", ({ message }) => {
-    // Uncomment for verbose ffmpeg output:
+    // Uncomment if you want verbose ffmpeg output:
     // log(message);
   });
 
-  log("Preparing ffmpeg core files...");
-  const base = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
+  const source = await chooseCoreSource();
 
+  log("Loading ffmpeg core (" + source.label + ")...");
   await ffmpeg.load({
-    coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, "text/javascript"),
-    wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, "application/wasm"),
-    workerURL: await toBlobURL(`${base}/ffmpeg-core.worker.js`, "text/javascript"),
+    coreURL: source.coreURL,
+    wasmURL: source.wasmURL,
   });
 
   log("ffmpeg loaded.");
@@ -89,6 +128,10 @@ btn.onclick = async () => {
   logEl.textContent = "Loading ffmpeg...";
 
   try {
+    if (location.protocol === "file:") {
+      log("WARNING: file:// may fail. Prefer http://localhost or your website URL.");
+    }
+
     const ff = await ensureFfmpegLoaded();
 
     log("Fetching source MP3s...");
@@ -123,17 +166,32 @@ btn.onclick = async () => {
 
     const out = await ff.readFile(OUTPUT);
     const bytes = out instanceof Uint8Array ? out : new Uint8Array(out);
-    const blob = new Blob([bytes], { type:"audio/mpeg" });
-    const url = URL.createObjectURL(blob);
 
-    player.src = url;
-    dl.href = url;
+    if (outputUrl) {
+      try { URL.revokeObjectURL(outputUrl); } catch {}
+      outputUrl = null;
+    }
+
+    const blob = new Blob([bytes], { type:"audio/mpeg" });
+    outputUrl = URL.createObjectURL(blob);
+
+    player.src = outputUrl;
+    dl.href = outputUrl;
     dl.style.display = "inline";
 
     log("Done ✅ baal.mp3 ready");
   } catch (e) {
     log("ERROR: " + (e?.message || String(e)));
     console.error(e);
+
+    log("");
+    log("Troubleshooting:");
+    log("1. Open page via http://localhost or your site (not file://)");
+    log("2. Put local ffmpeg core files in ../ffmpeg/ (relative to api-elevenlabs/merge.html):");
+    log("   - ffmpeg-core.js");
+    log("   - ffmpeg-core.wasm");
+    log("   - ffmpeg-core.worker.js");
+    log("3. If using Safari, test Chrome/Edge to compare");
   } finally {
     btn.disabled = false;
   }
