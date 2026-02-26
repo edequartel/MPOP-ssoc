@@ -141,7 +141,8 @@
             <div class="inlineRow">
               <input id="story_audio_path" placeholder="/sounds/nl/stories/bal-001.mp3" />
               <button id="btnPlayStoryAudio" disabled>Play</button>
-              <button id="btnRecordStoryAudio" type="button">Record</button>
+              <button id="btnProduceStoryAudio" type="button">Produce</button>
+              <span id="storyAudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Story audio online status unknown" aria-label="Story audio online status"></span>
             </div>
           </div>
           <div>
@@ -364,6 +365,8 @@
       outputFormat: "elevenlabs.outputFormat",
     };
     const ELEVENLABS_DEFAULT_OUTPUT_FORMAT = "mp3_44100_128";
+    const STORY_MP3_UPLOAD_URL = "https://www.tastenbraille.com/upload_mp3.php";
+    const STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY = "storyMp3Upload.token";
 
     const supabaseInit = async () => {
       try {
@@ -1203,7 +1206,7 @@ function scheduleAutosave() {
       setVal("image2_path", row.image2_path || "");
       setVal("image3_path", row.image3_path || "");
 
-      setPlayButton("btnPlayStoryAudio", val("story_audio_path"));
+      refreshStoryPlayButton();
       setPlayButton("btnPlayAudioObject1", val("object1_audio_path"));
       setPlayButton("btnPlayOpdracht1Audio", val("opdracht1_audio_path"));
       setPlayButton("btnPlayOpdracht2Audio", val("opdracht2_audio_path"));
@@ -1458,8 +1461,94 @@ function scheduleAutosave() {
       return "temp.mp3";
     }
 
-    function setRecordStoryButtonState(state) {
-      const btn = $("btnRecordStoryAudio");
+    function sanitizeStoryUploadFilename(title) {
+      const base = (title || "")
+        .toString()
+        .trim()
+        .replace(/\s+/g, "_")
+        .replace(/[^a-zA-Z0-9._-]/g, "");
+      return `${base || "story"}-story.mp3`;
+    }
+
+    function getStoryUploadTarget() {
+      const rawStoryPath = (val("story_audio_path") || "").trim();
+      if (!rawStoryPath) throw new Error("story_audio_path is empty.");
+
+      let normalized = rawStoryPath.replace(/\\/g, "/");
+      try {
+        if (/^https?:\/\//i.test(normalized)) {
+          const u = new URL(normalized);
+          normalized = u.pathname || "";
+        }
+      } catch {}
+
+      const brailleStudioPrefix = "/braillestudio/";
+      const idx = normalized.indexOf(brailleStudioPrefix);
+      if (idx >= 0) normalized = normalized.slice(idx + brailleStudioPrefix.length);
+
+      normalized = normalized.replace(/^\/+/, "");
+      const parts = normalized.split("/").filter(Boolean);
+      if (!parts.length) throw new Error("story_audio_path has no target path.");
+
+      // If a filename is present in the field, use only the directory part.
+      if (/\.[a-z0-9]+$/i.test(parts[parts.length - 1])) parts.pop();
+      if (!parts.length) throw new Error("story_audio_path must include a folder path.");
+
+      const path = parts.join("/");
+      const audiofile = sanitizeStoryUploadFilename(val("title"));
+      return { path, audiofile };
+    }
+
+    function getStoryPlaybackPath() {
+      try {
+        const target = getStoryUploadTarget();
+        return `/${target.path}/${target.audiofile}`;
+      } catch {
+        return "";
+      }
+    }
+
+    function refreshStoryPlayButton() {
+      setPlayButton("btnPlayStoryAudio", getStoryPlaybackPath());
+    }
+
+    function getStoryUploadToken() {
+      try {
+        return (localStorage.getItem(STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY) || "").trim();
+      } catch {
+        return "";
+      }
+    }
+
+    async function uploadStoryMp3Blob(blob, target) {
+      const token = getStoryUploadToken();
+      if (!token) {
+        throw new Error(`Upload token missing in localStorage (${STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY}).`);
+      }
+      const form = new FormData();
+      form.append("token", token);
+      form.append("path", target.path);
+      form.append("audiofile", target.audiofile);
+      form.append("file", blob, target.audiofile);
+
+      const res = await fetch(STORY_MP3_UPLOAD_URL, {
+        method: "POST",
+        body: form,
+      });
+
+      const body = await res.text().catch(() => "");
+      if (!res.ok) {
+        throw new Error(`MP3 upload failed (${res.status}). ${body}`.trim());
+      }
+      try {
+        return JSON.parse(body);
+      } catch {
+        return { ok: true, raw: body };
+      }
+    }
+
+    function setProduceStoryButtonState(state) {
+      const btn = $("btnProduceStoryAudio");
       if (!btn) return;
       if (btn._recordStateTimer) {
         window.clearTimeout(btn._recordStateTimer);
@@ -1469,13 +1558,19 @@ function scheduleAutosave() {
       if (state === "idle") {
         btn.disabled = false;
         btn.classList.remove("busy");
-        btn.textContent = "Record";
+        btn.textContent = "Produce";
         return;
       }
       if (state === "producing") {
         btn.disabled = true;
         btn.classList.add("busy");
         btn.textContent = "Producing MP3...";
+        return;
+      }
+      if (state === "uploading") {
+        btn.disabled = true;
+        btn.classList.add("busy");
+        btn.textContent = "Uploading...";
         return;
       }
       if (state === "downloading") {
@@ -1487,22 +1582,22 @@ function scheduleAutosave() {
       if (state === "downloaded") {
         btn.disabled = false;
         btn.classList.remove("busy");
-        btn.textContent = "Downloaded";
-        btn._recordStateTimer = window.setTimeout(() => setRecordStoryButtonState("idle"), 4000);
+        btn.textContent = "Produced";
+        btn._recordStateTimer = window.setTimeout(() => setProduceStoryButtonState("idle"), 4000);
         return;
       }
       if (state === "error") {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Error";
-        btn._recordStateTimer = window.setTimeout(() => setRecordStoryButtonState("idle"), 4000);
+        btn._recordStateTimer = window.setTimeout(() => setProduceStoryButtonState("idle"), 4000);
       }
     }
 
-    async function recordStoryAudioWithElevenLabs() {
+    async function produceStoryAudioWithElevenLabs() {
       const text = val("story_text").trim();
       if (!text) {
-        setRecordStoryButtonState("error");
+        setProduceStoryButtonState("error");
         throw new Error("story_text is empty.");
       }
       let downloadOk = false;
@@ -1513,11 +1608,11 @@ function scheduleAutosave() {
       const outputFormat = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.outputFormat) || ELEVENLABS_DEFAULT_OUTPUT_FORMAT;
 
       if (!apiKey || !voiceId) {
-        setRecordStoryButtonState("error");
+        setProduceStoryButtonState("error");
         throw new Error("ElevenLabs API key/Voice ID not found in localStorage. Open ./api-elevenlabs/elevenlabs.html first and save them there.");
       }
 
-      setRecordStoryButtonState("producing");
+      setProduceStoryButtonState("producing");
       try {
         msg($("saveMsg"), "Generating story audio via ElevenLabs...");
         const res = await fetch(getElevenLabsEndpoint(voiceId, outputFormat), {
@@ -1535,16 +1630,26 @@ function scheduleAutosave() {
           throw new Error(`ElevenLabs failed (${res.status}). ${body}`.trim());
         }
 
-        setRecordStoryButtonState("downloading");
         const blob = await res.blob();
+
+        const target = getStoryUploadTarget();
+        setProduceStoryButtonState("uploading");
+        msg($("saveMsg"), "Uploading story audio MP3...");
+        const result = await uploadStoryMp3Blob(blob, target);
+        const savedRelativePath = `/${target.path}/${target.audiofile}`;
+        setVal("story_audio_path", savedRelativePath);
+        refreshStoryPlayButton();
+
+        setProduceStoryButtonState("downloading");
         triggerBlobDownload(blob, storyRecordFilename());
         downloadOk = true;
-        msg($("saveMsg"), "Story audio MP3 downloaded.");
+        const savedLocation = result?.url || savedRelativePath;
+        msg($("saveMsg"), `Story audio MP3 uploaded to: ${savedLocation}`);
       } catch (e) {
-        setRecordStoryButtonState("error");
+        setProduceStoryButtonState("error");
         throw e;
       } finally {
-        if (downloadOk) setRecordStoryButtonState("downloaded");
+        if (downloadOk) setProduceStoryButtonState("downloaded");
       }
     }
 
@@ -1889,11 +1994,15 @@ function scheduleAutosave() {
     }
 
     $("btnPlayStoryAudio").onclick = () => {
-      try { toggleAudio($("btnPlayStoryAudio"), val("story_audio_path")); }
+      try {
+        const storyPlaybackPath = getStoryPlaybackPath();
+        if (!storyPlaybackPath) throw new Error("No story audio path/title available yet.");
+        toggleAudio($("btnPlayStoryAudio"), storyPlaybackPath);
+      }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
-    $("btnRecordStoryAudio").onclick = async () => {
-      try { await recordStoryAudioWithElevenLabs(); }
+    $("btnProduceStoryAudio").onclick = async () => {
+      try { await produceStoryAudioWithElevenLabs(); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
     $("btnPlayAudioObject1").onclick = () => {
@@ -1942,6 +2051,9 @@ function scheduleAutosave() {
     };
 
     wireAudioInput("story_audio_path", "btnPlayStoryAudio");
+    $("story_audio_path").addEventListener("input", refreshStoryPlayButton);
+    $("title").addEventListener("input", refreshStoryPlayButton);
+    refreshStoryPlayButton();
     wireAudioInput("object1_audio_path", "btnPlayAudioObject1");
     wireAudioInput("klankzuiver_letters", "btnPlayKlankzuiverAudio");
     wireAudioInput("opdracht1_audio_path", "btnPlayOpdracht1Audio");

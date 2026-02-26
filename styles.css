@@ -56,6 +56,19 @@ button.busy::after {
 .inlineRow { display:flex; gap:8px; align-items:center; }
 .inlineRow input { flex:1; }
 .inlineRow button { width:auto; padding:8px 10px; }
+.remote-file-dot {
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  display:inline-block;
+  flex:0 0 auto;
+  background:#7b8798;
+  box-shadow:0 0 0 1px rgba(255,255,255,.18) inset;
+}
+.remote-file-dot[data-state="checking"] { background:#f2a14a; }
+.remote-file-dot[data-state="exists"] { background:#58d68d; }
+.remote-file-dot[data-state="missing"] { background:#ff6b6b; }
+.remote-file-dot[data-state="unknown"] { background:#7b8798; }
 .list { display:flex; flex-direction:column; gap:8px; }
 .itembtn { display:flex; align-items:center; justify-content:space-between; gap:10px; text-align:left; }
 .itembtn[data-woord-groep="1"] { background:var(--wg1-bg); border-color:var(--wg1-border); }

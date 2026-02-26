@@ -10,6 +10,7 @@
     text: $("text"),
     modelId: $("modelId"),
     outputFormat: $("outputFormat"),
+    storyUploadToken: $("storyUploadToken"),
     chkRememberVoice: $("chkRememberVoice"),
     chkRememberKey: $("chkRememberKey"),
     chkRememberModel: $("chkRememberModel"),
@@ -36,6 +37,7 @@
     voiceId: "elevenlabs.voiceId",
     apiKey: "elevenlabs.apiKey",
     modelId: "elevenlabs.modelId",
+    storyUploadToken: "storyMp3Upload.token",
   });
 
   function storageGet(key) {
@@ -108,6 +110,13 @@
     else storageSet(STORAGE.modelId, value);
   }
 
+  function persistStoryUploadToken(valueRaw) {
+    if (!els.storyUploadToken) return;
+    const value = (valueRaw ?? els.storyUploadToken.value ?? "").trim();
+    if (!value) storageDel(STORAGE.storyUploadToken);
+    else storageSet(STORAGE.storyUploadToken, value);
+  }
+
   function loadPrefs() {
     const rememberVoice = storageGet(STORAGE.rememberVoice);
     const rememberKey = storageGet(STORAGE.rememberKey);
@@ -136,6 +145,11 @@
     if (isRememberModelEnabled()) {
       const savedModelId = storageGet(STORAGE.modelId);
       if (savedModelId && els.modelId) els.modelId.value = savedModelId;
+    }
+
+    const savedStoryUploadToken = storageGet(STORAGE.storyUploadToken);
+    if (savedStoryUploadToken && els.storyUploadToken) {
+      els.storyUploadToken.value = savedStoryUploadToken;
     }
   }
 
@@ -574,6 +588,7 @@
   els.apiKey?.addEventListener("change", () => persistApiKey());
   els.voiceId?.addEventListener("change", () => persistVoiceId());
   els.modelId?.addEventListener("change", () => persistModelId());
+  els.storyUploadToken?.addEventListener("change", () => persistStoryUploadToken());
 
   els.chkRememberKey?.addEventListener("change", () => {
     persistRememberFlags();
