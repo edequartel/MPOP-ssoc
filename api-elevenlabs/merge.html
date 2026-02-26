@@ -123,17 +123,27 @@ async function ensureFfmpegLoaded() {
 
   const source = await chooseCoreSource();
 
-  log("Preparing ffmpeg core URLs (" + source.label + ")...");
-  const coreBlobURL = await toBlobURL(source.coreURL, "text/javascript");
-  log("Preparing ffmpeg wasm URL (" + source.label + ")...");
-  const wasmBlobURL = await toBlobURL(source.wasmURL, "application/wasm");
-
-  log("Loading ffmpeg core (" + source.label + ")...");
-  await withTimeout(
-    ffmpeg.load({
+  let loadArgs;
+  if (source.label === "local") {
+    log("Loading ffmpeg core (" + source.label + ") with direct local URLs...");
+    loadArgs = {
+      coreURL: source.coreURL,
+      wasmURL: source.wasmURL,
+    };
+  } else {
+    log("Preparing ffmpeg core URLs (" + source.label + ")...");
+    const coreBlobURL = await toBlobURL(source.coreURL, "text/javascript");
+    log("Preparing ffmpeg wasm URL (" + source.label + ")...");
+    const wasmBlobURL = await toBlobURL(source.wasmURL, "application/wasm");
+    log("Loading ffmpeg core (" + source.label + ") via blob URLs...");
+    loadArgs = {
       coreURL: coreBlobURL,
       wasmURL: wasmBlobURL,
-    }),
+    };
+  }
+
+  await withTimeout(
+    ffmpeg.load(loadArgs),
     30000,
     "ffmpeg.load"
   );
