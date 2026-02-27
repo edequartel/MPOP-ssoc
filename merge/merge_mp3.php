@@ -4,34 +4,48 @@ declare(strict_types=1);
 /**
  * merge_mp3.php (server-side, shared-hosting friendly)
  *
- * - Accepts relative source paths under /braillestudio (restricted to /sounds/nl/speech/)
- * - Downloads MP3s server-to-server (no CORS issues)
- * - Merges into /braillestudio/sounds/nl/klankzuiver/<outputFilename>.mp3
- * - Robust mode: normalizes each MP3 -> WAV before concatenation (fixes "Invalid data" issues)
- * - Optional gapMs silence between clips
- * - Returns JSON with public output URL
+ * - Requires Bearer token (strict auth first)
+ * - Accepts relative source paths under /braillestudio
+ * - Client provides ONLY:
+ *     - outputDir (allow-listed)
+ *     - sources[] (relative paths, all in same allow-listed folder)
+ *     - outputFilename
+ *     - gapMs (optional)
+ *     - debug (optional)
+ *     - tryCopyFirst (optional)
+ *
+ * IMPORTANT CHANGE:
+ * - inputPrefix is NOT required from client anymore.
+ * - inputPrefix is derived from the FIRST source path (folder up to last "/").
+ * - Derived inputPrefix MUST be in $ALLOWED_INPUT_PREFIXES (allow-list).
  */
 
 header("Content-Type: application/json; charset=utf-8");
 
 // --------------------
-// CORS
+// CORS + preflight (must run before auth for browser OPTIONS)
 // --------------------
-header("Access-Control-Allow-Origin: *"); // tighten later if desired
+header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 if ($_SERVER["REQUEST_METHOD"] === "OPTIONS") { http_response_code(204); exit; }
 
 // --------------------
-// CONFIG
+// STRICT AUTH (required for POST)
 // --------------------
 $TOKEN = "een_heel_lang_random_token_hier";
+$auth = $_SERVER["HTTP_AUTHORIZATION"] ?? "";
+if ($auth !== "Bearer {$TOKEN}") {
+  http_response_code(401);
+  echo json_encode(["ok" => false, "error" => "Unauthorized"], JSON_UNESCAPED_SLASHES);
+  exit;
+}
 
+// --------------------
+// CONFIG (fixed roots)
+// --------------------
 $ROOT_URL = "https://www.tastenbraille.com/braillestudio";
 $ROOT_FS  = realpath(__DIR__ . "/../braillestudio"); // public_html/braillestudio
-
-$ALLOWED_INPUT_PREFIX = "/sounds/nl/speech/";
-$ALLOWED_OUTPUT_DIR   = "/sounds/nl/klankzuiver/";
 
 $FFMPEG   = __DIR__ . "/bin/ffmpeg";
 $TMP_BASE = __DIR__ . "/tmp";
@@ -40,6 +54,22 @@ $TMP_BASE = __DIR__ . "/tmp";
 $OUT_SAMPLE_RATE = 44100;
 $OUT_CHANNELS    = 1;
 $OUT_BITRATE     = "128k";
+
+// --------------------
+// Allow-lists for client-selectable directories
+// --------------------
+$ALLOWED_INPUT_PREFIXES = [
+  "/sounds/nl/speech/",
+  "/sounds/nl/alfabet/",
+  "/sounds/nl/stories/",
+];
+
+$ALLOWED_OUTPUT_DIRS = [
+  "/sounds/nl/klankzuiver/",
+  "/sounds/nl/objects/",
+  "/sounds/nl/stories/",
+  // "/sounds/nl/woorden/",
+];
 
 // --------------------
 // Helpers
@@ -85,64 +115,78 @@ function makeConcatListFile(array $paths, string $listFile): void {
 }
 
 // --------------------
-// Auth
-// --------------------
-$auth = $_SERVER["HTTP_AUTHORIZATION"] ?? "";
-if ($auth !== "Bearer {$TOKEN}") fail(401, "Unauthorized");
-
-// --------------------
 // Input
 // --------------------
 $raw = file_get_contents("php://input") ?: "";
 $data = json_decode($raw, true);
 if (!is_array($data)) fail(400, "Invalid JSON.");
 
-$sources = $data["sources"] ?? null; // relative paths under /braillestudio
+$outputDir = (string)($data["outputDir"] ?? "");
+$sources = $data["sources"] ?? null; // array of relative paths like "/sounds/nl/speech/b.mp3"
 $outputFilename = sanitizeOutputFilename((string)($data["outputFilename"] ?? "merged.mp3"));
 $gapMs = (int)($data["gapMs"] ?? 0);
 $debug = (bool)($data["debug"] ?? false);
-
-// Optional: if true, tries fast "-c copy" first; otherwise always robust encode.
-// For tiny MP3 clips, I recommend robust encode always.
 $tryCopyFirst = (bool)($data["tryCopyFirst"] ?? false);
+
+if (!in_array($outputDir, $ALLOWED_OUTPUT_DIRS, true)) {
+  fail(400, "Invalid outputDir", ["allowed" => $ALLOWED_OUTPUT_DIRS]);
+}
 
 if (!is_array($sources) || count($sources) < 2) {
   fail(400, "Provide sources[] with at least 2 items.", [
     "example" => [
+      "outputDir" => "/sounds/nl/klankzuiver/",
       "sources" => [
         "/sounds/nl/speech/b.mp3",
         "/sounds/nl/speech/a.mp3",
         "/sounds/nl/speech/l.mp3"
       ],
       "outputFilename" => "bal.mp3",
-      "gapMs" => 0
+      "gapMs" => 500
     ]
   ]);
 }
 if ($gapMs < 0 || $gapMs > 5000) fail(400, "gapMs must be 0..5000.");
+
+// Derive inputPrefix from FIRST source (folder up to last "/")
+$first = $sources[0];
+if (!is_string($first) || $first === "") fail(400, "First source is invalid.");
+if (!isSafeRelativePath($first)) fail(400, "Unsafe first source path.");
+
+$pos = strrpos($first, "/");
+if ($pos === false) fail(400, "Cannot derive inputPrefix.");
+$inputPrefix = substr($first, 0, $pos + 1);
+
+if (!in_array($inputPrefix, $ALLOWED_INPUT_PREFIXES, true)) {
+  fail(400, "Derived inputPrefix is not allowed", [
+    "derived" => $inputPrefix,
+    "allowed" => $ALLOWED_INPUT_PREFIXES
+  ]);
+}
 
 // Server prerequisites
 if (!$ROOT_FS) fail(500, "Cannot resolve ROOT_FS");
 if (!is_file($FFMPEG) || !is_executable($FFMPEG)) fail(500, "ffmpeg missing/not executable");
 if (!is_dir($TMP_BASE) && !mkdir($TMP_BASE, 0775, true)) fail(500, "Cannot create tmp base");
 
-// Output dir
-$outDirFs = $ROOT_FS . $ALLOWED_OUTPUT_DIR;
+// Output dir (client selected, allow-listed)
+$outDirFs = $ROOT_FS . $outputDir;
 if (!is_dir($outDirFs) && !mkdir($outDirFs, 0775, true)) fail(500, "Cannot create output dir");
 $outDirFsReal = realpath($outDirFs);
 if (!$outDirFsReal) fail(500, "Cannot resolve output dir");
 
-// Validate sources
+// Validate all sources: safe + same derived inputPrefix
 $srcPaths = [];
 foreach ($sources as $p) {
   $p = (string)$p;
-
   if (!isSafeRelativePath($p)) fail(400, "Unsafe source path: {$p}");
-  if (!str_starts_with($p, $ALLOWED_INPUT_PREFIX)) {
-    fail(400, "Source must start with {$ALLOWED_INPUT_PREFIX}", ["got" => $p]);
+  if (!str_starts_with($p, $inputPrefix)) {
+    fail(400, "All sources must be in the same folder as the first source.", [
+      "expectedPrefix" => $inputPrefix,
+      "badSource" => $p
+    ]);
   }
   if (!preg_match('/\.mp3$/i', $p)) fail(400, "Only .mp3 sources allowed", ["got" => $p]);
-
   $srcPaths[] = $p;
 }
 
@@ -157,9 +201,7 @@ $ffmpegEncodeStderr = "";
 $mode = "encode";
 
 try {
-  // --------------------
   // Download MP3s server-to-server
-  // --------------------
   foreach ($srcPaths as $i => $relPath) {
     $url  = rtrim($ROOT_URL, "/") . $relPath;
     $dest = $tmpDir . "/part_" . str_pad((string)$i, 3, "0", STR_PAD_LEFT) . ".mp3";
@@ -174,7 +216,7 @@ try {
       CURLOPT_MAXREDIRS => 5,
       CURLOPT_CONNECTTIMEOUT => 10,
       CURLOPT_TIMEOUT => 30,
-      CURLOPT_USERAGENT => "merge_mp3.php/5.0",
+      CURLOPT_USERAGENT => "merge_mp3.php/7.0",
     ]);
     $ok   = curl_exec($ch);
     $http = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -197,9 +239,7 @@ try {
 
   $outPath = $outDirFsReal . "/" . $outputFilename;
 
-  // --------------------
-  // Optional: try FAST concat copy first
-  // --------------------
+  // Optional fast copy (only if no gap)
   if ($tryCopyFirst && $gapMs === 0) {
     $mode = "copy";
     $listFile = $tmpDir . "/list_mp3.txt";
@@ -212,24 +252,15 @@ try {
       . " 2>&1";
 
     $ffmpegCopyStderr = shell_exec($cmdCopy) ?? "";
-
-    $copyOk = (is_file($outPath) && filesize($outPath) >= 500);
-    if (!$copyOk) {
-      // fall back to robust encode
+    if (!is_file($outPath) || filesize($outPath) < 500) {
       @unlink($outPath);
       $mode = "encode";
     }
   }
 
-  // --------------------
   // Robust encode pipeline (recommended)
-  // - normalize each MP3 -> WAV
-  // - interleave silence WAV if gapMs > 0
-  // - concat WAVs
-  // - encode final MP3
-  // --------------------
   if ($mode === "encode") {
-    // 1) Normalize MP3 -> WAV
+    // Normalize MP3 -> WAV
     $wavParts = [];
     foreach ($localMp3Parts as $idx => $mp3Path) {
       $wavPath = $tmpDir . "/norm_" . str_pad((string)$idx, 3, "0", STR_PAD_LEFT) . ".wav";
@@ -249,7 +280,7 @@ try {
       $wavParts[] = $wavPath;
     }
 
-    // 2) Optional silence WAV
+    // Optional silence
     $sequence = $wavParts;
     if ($gapMs > 0) {
       $silencePath = $tmpDir . "/silence.wav";
@@ -274,11 +305,11 @@ try {
       }
     }
 
-    // 3) Concat WAVs
+    // Concat WAVs
     $listFile = $tmpDir . "/list_wav.txt";
     makeConcatListFile($sequence, $listFile);
 
-    // 4) Encode MP3
+    // Encode MP3
     $cmdEnc = escapeshellarg($FFMPEG)
       . " -hide_banner -loglevel error -y"
       . " -f concat -safe 0 -i " . escapeshellarg($listFile)
@@ -290,17 +321,18 @@ try {
       . " 2>&1";
 
     $ffmpegEncodeStderr = shell_exec($cmdEnc) ?? "";
-
     if (!is_file($outPath) || filesize($outPath) < 500) {
       throw new RuntimeException("ffmpeg encode failed: " . ($ffmpegEncodeStderr ?: "unknown error"));
     }
   }
 
-  $publicUrl = rtrim($ROOT_URL, "/") . $ALLOWED_OUTPUT_DIR . $outputFilename;
+  $publicUrl = rtrim($ROOT_URL, "/") . $outputDir . $outputFilename;
 
   $resp = [
     "ok" => true,
     "mode" => $mode,
+    "derivedInputPrefix" => $inputPrefix,
+    "outputDir" => $outputDir,
     "outputFilename" => $outputFilename,
     "outputUrl" => $publicUrl,
     "bytes" => filesize($outPath),
