@@ -15,6 +15,7 @@
     chkRememberKey: $("chkRememberKey"),
     chkRememberModel: $("chkRememberModel"),
     chkTryMSE: $("chkTryMSE"),
+    btnVoiceInfo: $("btnVoiceInfo"),
     btnPlay: $("btnPlay"),
     btnStop: $("btnStop"),
     btnClear: $("btnClear"),
@@ -29,6 +30,10 @@
   let currentAbort = null;
   let lastAudioBlob = null;
   let lastAudioFilename = null;
+  let sb = null;
+  let savedVoiceIdPref = "";
+  const voiceLinkById = new Map();
+  const FIXED_OUTPUT_FORMAT = "mp3_44100_128";
 
   const STORAGE = Object.freeze({
     rememberVoice: "elevenlabs.remember.voiceId",
@@ -48,6 +53,109 @@
   }
   function storageDel(key) {
     try { localStorage.removeItem(key); } catch {}
+  }
+
+  async function initSupabaseClient() {
+    const CONFIG_URL_LOCAL = "../supabase-config.js";
+    const CONFIG_URL_REMOTE = "https://www.tastenbraille.com/braillestudio/api/supabase-config";
+    let cfg = null;
+    try {
+      const mod = await import(CONFIG_URL_LOCAL);
+      cfg = mod?.supabaseConfig || mod?.default || null;
+    } catch {
+      // fallback below
+    }
+    if (!cfg?.url || !cfg?.anonKey) {
+      const res = await fetch(CONFIG_URL_REMOTE);
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`Failed to load supabase-config (${res.status}). ${body}`.trim());
+      }
+      cfg = await res.json();
+    }
+    if (!cfg?.url || !cfg?.anonKey) {
+      throw new Error("Supabase config missing url/anonKey.");
+    }
+    const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
+    return createClient(cfg.url, cfg.anonKey);
+  }
+
+  function setVoiceOptions(rows) {
+    if (!els.voiceId) return;
+    voiceLinkById.clear();
+    els.voiceId.innerHTML = "";
+    if (!rows.length) {
+      const option = document.createElement("option");
+      option.value = "";
+      option.textContent = "No voices found";
+      els.voiceId.appendChild(option);
+      refreshVoiceInfoButton();
+      return;
+    }
+    for (const row of rows) {
+      const option = document.createElement("option");
+      option.value = (row.voice_id || "").trim();
+      const labelName = (row.name || row.voice_id || "").trim();
+      const labelLanguage = (row.language || "").trim();
+      option.textContent = `${labelName}${labelLanguage ? ` - ${labelLanguage}` : ""}`;
+      if (!option.value || !option.textContent) continue;
+       voiceLinkById.set(option.value, (row.voice_link || "").trim());
+      els.voiceId.appendChild(option);
+    }
+    refreshVoiceInfoButton();
+  }
+
+  function applySavedVoiceSelection() {
+    if (!els.voiceId) return;
+    const options = Array.from(els.voiceId.options);
+    if (!options.length) return;
+    if (savedVoiceIdPref && options.some((opt) => opt.value === savedVoiceIdPref)) {
+      els.voiceId.value = savedVoiceIdPref;
+    } else {
+      els.voiceId.selectedIndex = 0;
+    }
+    refreshVoiceInfoButton();
+  }
+
+  function getSelectedVoiceLink() {
+    const voiceId = (els.voiceId?.value || "").trim();
+    if (!voiceId) return "";
+    return (voiceLinkById.get(voiceId) || "").trim();
+  }
+
+  function refreshVoiceInfoButton() {
+    if (!els.btnVoiceInfo) return;
+    const link = getSelectedVoiceLink();
+    els.btnVoiceInfo.disabled = !link;
+    els.btnVoiceInfo.title = link || "No info link for selected voice";
+  }
+
+  function onVoiceInfoClick() {
+    const link = getSelectedVoiceLink();
+    if (!link) return;
+    window.open(link, "_blank", "noreferrer");
+  }
+
+  async function loadVoicesFromSupabase() {
+    if (!els.voiceId) return;
+    els.voiceId.innerHTML = "<option value=\"\">Loading voices...</option>";
+    try {
+      if (!sb) sb = await initSupabaseClient();
+      const { data, error } = await sb
+        .from("voices")
+        .select("name, language, voice_id, voice_link")
+        .order("name", { ascending: true });
+      if (error) throw error;
+      const rows = (data || []).filter((r) => (r?.voice_id || "").trim());
+      setVoiceOptions(rows);
+      applySavedVoiceSelection();
+      persistVoiceId();
+      log(`Loaded ${rows.length} voices from Supabase.`);
+    } catch (e) {
+      els.voiceId.innerHTML = "<option value=\"\">Could not load voices</option>";
+      refreshVoiceInfoButton();
+      log(`ERROR loading voices: ${e?.message || e}`);
+    }
   }
 
   function isRememberVoiceEnabled() {
@@ -133,8 +241,7 @@
     }
 
     if (isRememberVoiceEnabled()) {
-      const savedVoiceId = storageGet(STORAGE.voiceId);
-      if (savedVoiceId && els.voiceId) els.voiceId.value = savedVoiceId;
+      savedVoiceIdPref = (storageGet(STORAGE.voiceId) || "").trim();
     }
 
     if (isRememberKeyEnabled()) {
@@ -451,8 +558,8 @@
     const apiKey = (els.apiKey?.value || "").trim();
     const voiceId = (els.voiceId?.value || "").trim();
     const text = (els.text?.value || "").trim();
-    const modelId = (els.modelId?.value || "").trim();
-    const outputFormat = (els.outputFormat?.value || "").trim();
+    const modelId = "eleven_v3";
+    const outputFormat = FIXED_OUTPUT_FORMAT;
 
     persistRememberFlags();
     persistApiKey(apiKey);
@@ -585,8 +692,12 @@
   els.btnClear?.addEventListener("click", onClear);
   els.btnClearText?.addEventListener("click", onClearText); // <-- added
   els.btnDownload?.addEventListener("click", onDownload);
+  els.btnVoiceInfo?.addEventListener("click", onVoiceInfoClick);
   els.apiKey?.addEventListener("change", () => persistApiKey());
-  els.voiceId?.addEventListener("change", () => persistVoiceId());
+  els.voiceId?.addEventListener("change", () => {
+    persistVoiceId();
+    refreshVoiceInfoButton();
+  });
   els.modelId?.addEventListener("change", () => persistModelId());
   els.storyUploadToken?.addEventListener("change", () => persistStoryUploadToken());
 
@@ -608,6 +719,7 @@
   if (els.btnDownload) els.btnDownload.disabled = true;
 
   loadPrefs();
+  void loadVoicesFromSupabase();
 
   // If MSE isn't possible, auto-uncheck
   if (els.chkTryMSE && !browserCanUseMSE()) {

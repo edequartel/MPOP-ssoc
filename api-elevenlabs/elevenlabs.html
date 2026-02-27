@@ -4,48 +4,30 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ElevenLabs Streaming TTS (Howler)</title>
+  <title>ElevenLabs Voice Settings</title>
   <link rel="stylesheet" href="./elevenlabs-howler.css" />
 </head>
 <body>
   <main class="wrap">
     <header class="header">
-      <h1>ElevenLabs Streaming TTS</h1>
-      <p class="sub">
-        Uses <code>POST /v1/text-to-speech/{voice_id}/stream</code> and plays via Howler.
-      </p>
+      <h1>ElevenLabs Voice Settings</h1>
     </header>
 
     <section class="panel">
       <div class="grid">
         <label class="field">
-          <span>API key</span>
-          <input id="apiKey" type="password" placeholder="xi-api-key…" autocomplete="off" />
-        </label>
-
-        <label class="field">
-          <span>Voice ID</span>
-          <input id="voiceId" type="text" placeholder="e.g. nPczCjzI2devNBz1zQrb" />
+          <span>Voice</span>
+          <div class="voice-select-row">
+            <select id="voiceId">
+              <option value="">Loading voices...</option>
+            </select>
+            <button id="btnVoiceInfo" type="button" class="btn" disabled>Info</button>
+          </div>
         </label>
 
         <label class="field full">
           <span>Text</span>
           <textarea id="text" rows="5" placeholder="Type text to speak…"></textarea>
-        </label>
-
-        <label class="field">
-          <span>Model (optional)</span>
-          <input id="modelId" type="text" placeholder="e.g. eleven_multilingual_v2" />
-        </label>
-
-        <label class="field">
-          <span>Output format (optional)</span>
-          <input id="outputFormat" type="text" placeholder="e.g. mp3_44100_128" />
-        </label>
-
-        <label class="field full">
-          <span>Story Upload Token (local)</span>
-          <input id="storyUploadToken" type="password" placeholder="Used for story MP3 upload in index.html" autocomplete="off" />
         </label>
 
         <div class="actions full">
@@ -63,11 +45,7 @@
           <div class="toggles" role="group" aria-label="Preferences">
             <label class="toggle">
               <input id="chkRememberVoice" type="checkbox" checked />
-              <span>Remember Voice ID</span>
-            </label>
-            <label class="toggle">
-              <input id="chkRememberModel" type="checkbox" checked />
-              <span>Remember Model</span>
+              <span>Remember selected voice</span>
             </label>
             <label class="toggle">
               <input id="chkRememberKey" type="checkbox" />
@@ -79,6 +57,20 @@
             </label>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="grid">
+        <label class="field">
+          <span>API key</span>
+          <input id="apiKey" type="password" placeholder="xi-api-key…" autocomplete="off" />
+        </label>
+
+        <label class="field">
+          <span>Upload token</span>
+          <input id="storyUploadToken" type="password" placeholder="Used for story MP3 upload in index.html" autocomplete="off" />
+        </label>
       </div>
     </section>
 
