@@ -1,0 +1,15 @@
+curl --location 'https://www.tastenbraille.com/api/merge_mp3.php' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer een_heel_lang_random_token_hier' \
+--data '{
+    "sources": [
+      "/sounds/nl/speech/b.mp3",
+      "/sounds/nl/speech/a.mp3",
+      "/sounds/nl/speech/l.mp3",
+      "/sounds/nl/speech/bal.mp3"
+    ],
+    "outputFilename": "ballbal.mp3",
+    "gapMs": 500,
+    "debug": true,
+    "tryCopyFirst": false
+  }'
