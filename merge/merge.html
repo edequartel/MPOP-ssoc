@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Make bal (b+a+l)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; padding:16px; }
+    button { font-size:16px; padding:10px 14px; }
+    #status { margin-top:12px; color:#444; white-space:pre-wrap; }
+  </style>
+</head>
+<body>
+  <h3>Merge: b.mp3 + a.mp3 + l.mp3 → bal.wav</h3>
+  <button id="go">Make bal</button>
+  <div id="status"></div>
+
+<script>
+const BASE = "https://www.tastenbraille.com/braillestudio/sounds/nl/alfabet/";
+const URLS = [BASE + "b.mp3", BASE + "a.mp3", BASE + "l.mp3"];
+const GAP_MS = 0; // set e.g. 120 for a short pause between letters
+
+async function fetchDecode(ctx, url) {
+  const res = await fetch(url, { mode: "cors" });
+  if (!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}`);
+  const ab = await res.arrayBuffer();
+  return await ctx.decodeAudioData(ab);
+}
+
+function silenceBuffer(ctx, ms, sampleRate) {
+  const frames = Math.round((ms / 1000) * sampleRate);
+  return ctx.createBuffer(1, Math.max(0, frames), sampleRate);
+}
+
+function concatMono(ctx, buffers, gapMs) {
+  const sr = buffers[0].sampleRate;
+  for (const b of buffers) {
+    if (b.sampleRate !== sr) throw new Error(`Sample rate mismatch: ${b.sampleRate} vs ${sr}`);
+  }
+
+  const gap = gapMs > 0 ? silenceBuffer(ctx, gapMs, sr) : null;
+
+  const seq = [];
+  for (let i = 0; i < buffers.length; i++) {
+    seq.push(buffers[i]);
+    if (gap && i !== buffers.length - 1) seq.push(gap);
+  }
+
+  const total = seq.reduce((s, b) => s + b.length, 0);
+  const out = ctx.createBuffer(1, total, sr);
+
+  let offset = 0;
+  const outData = out.getChannelData(0);
+
+  for (const b of seq) {
+    outData.set(b.getChannelData(0), offset);
+    offset += b.length;
+  }
+
+  return out;
+}
+
+// AudioBuffer -> WAV (16-bit PCM)
+function audioBufferToWavBlob(buffer) {
+  const numChannels = 1;
+  const sampleRate = buffer.sampleRate;
+  const numFrames = buffer.length;
+  const bytesPerSample = 2;
+  const blockAlign = numChannels * bytesPerSample;
+  const byteRate = sampleRate * blockAlign;
+  const dataSize = numFrames * blockAlign;
+
+  const ab = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(ab);
+  const writeStr = (o, s) => { for (let i=0;i<s.length;i++) view.setUint8(o+i, s.charCodeAt(i)); };
+
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, "data");
+  view.setUint32(40, dataSize, true);
+
+  let offset = 44;
+  const data = buffer.getChannelData(0);
+  for (let i=0; i<data.length; i++, offset += 2) {
+    const s = Math.max(-1, Math.min(1, data[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+
+  return new Blob([view], { type: "audio/wav" });
+}
+
+function downloadBlob(blob, filename) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+document.getElementById("go").onclick = async () => {
+  const status = document.getElementById("status");
+  status.textContent = "Starting…";
+
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    status.textContent = "Downloading & decoding:\n" + URLS.join("\n");
+    const buffers = [];
+    for (let i=0;i<URLS.length;i++) {
+      status.textContent = `Downloading & decoding ${i+1}/${URLS.length}…`;
+      buffers.push(await fetchDecode(ctx, URLS[i]));
+    }
+
+    status.textContent = "Concatenating…";
+    const merged = concatMono(ctx, buffers, GAP_MS);
+
+    status.textContent = "Encoding WAV…";
+    const wav = audioBufferToWavBlob(merged);
+
+    status.textContent = "Downloading bal.wav…";
+    downloadBlob(wav, "bal.wav");
+
+    status.textContent = "Done.";
+    ctx.close?.();
+  } catch (e) {
+    status.textContent = "Error:\n" + e.message +
+      "\n\nIf this is a CORS error, your server must send Access-Control-Allow-Origin.";
+  }
+};
+</script>
+</body>
+</html>

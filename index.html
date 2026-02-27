@@ -1460,7 +1460,11 @@ function scheduleAutosave() {
     }
 
     function storyRecordFilename() {
-      return "temp.mp3";
+      try {
+        return getStoryUploadTarget().audiofile || "temp.mp3";
+      } catch {
+        return "temp.mp3";
+      }
     }
 
     function sanitizeStoryUploadFilename(title) {
