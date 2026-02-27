@@ -73,7 +73,10 @@
 
   async function initSupabaseClient() {
     const CONFIG_URL_LOCAL = "../supabase-config.js";
-    const CONFIG_URL_REMOTE = "https://www.tastenbraille.com/braillestudio/api/supabase-config";
+    const CONFIG_URLS_REMOTE = [
+      "https://mpop-ssoc.vercel.app/api/supabase-config.js",
+      "https://www.tastenbraille.com/braillestudio/api/supabase-config",
+    ];
     let cfg = null;
     try {
       const mod = await import(CONFIG_URL_LOCAL);
@@ -82,15 +85,27 @@
       // fallback below
     }
     if (!cfg?.url || !cfg?.anonKey) {
-      const res = await fetch(CONFIG_URL_REMOTE);
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(`Failed to load supabase-config (${res.status}). ${body}`.trim());
+      let lastError = null;
+      for (const url of CONFIG_URLS_REMOTE) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) {
+            const body = await res.text().catch(() => "");
+            throw new Error(`Failed to load supabase-config from ${url} (${res.status}). ${body}`.trim());
+          }
+          const json = await res.json();
+          if (json?.url && json?.anonKey) {
+            cfg = json;
+            break;
+          }
+          throw new Error(`Supabase config missing url/anonKey from ${url}.`);
+        } catch (e) {
+          lastError = e;
+        }
       }
-      cfg = await res.json();
-    }
-    if (!cfg?.url || !cfg?.anonKey) {
-      throw new Error("Supabase config missing url/anonKey.");
+      if (!cfg?.url || !cfg?.anonKey) {
+        throw lastError || new Error("Supabase config missing url/anonKey.");
+      }
     }
     const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
     return createClient(cfg.url, cfg.anonKey);
@@ -170,7 +185,13 @@
     } catch (e) {
       els.voiceId.innerHTML = "<option value=\"\">Could not load voices</option>";
       refreshVoiceInfoButton();
-      log(`ERROR loading voices: ${e?.message || e}`);
+      const msgParts = [
+        e?.message || String(e || "Unknown error"),
+        e?.code ? `code=${e.code}` : "",
+        e?.hint ? `hint=${e.hint}` : "",
+        e?.details ? `details=${e.details}` : "",
+      ].filter(Boolean);
+      log(`ERROR loading voices: ${msgParts.join(" | ")}`);
     }
   }
 
