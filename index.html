@@ -189,6 +189,7 @@
             <div class="inlineRow">
               <input id="woord_audio_path" class="extra-pad" placeholder="/sounds/general/" />
               <button id="btnPlayWoordAudio" disabled>Play</button>
+              <span id="woordAudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Woord audio online status unknown" aria-label="Woord audio online status"></span>
             </div>
           </div>
         </div>
@@ -218,6 +219,8 @@
             <div class="inlineRow">
               <input id="opdracht2_audio_path" placeholder="/sounds/nl/opdracht/" />
               <button id="btnPlayOpdracht2Audio" disabled>Play</button>
+              <button id="btnProduceOpdracht2Audio" type="button">Produce</button>
+              <span id="opdracht2AudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Opdracht2 audio online status unknown" aria-label="Opdracht2 audio online status"></span>
             </div>
           </div>
         </div>
@@ -239,6 +242,8 @@
             <div class="inlineRow">
               <input id="object2_audio_path" placeholder="/sounds/nl/objects/" />
               <button id="btnPlayAudioObject2" disabled>Play</button>
+              <button id="btnProduceObject2Audio" type="button">Produce</button>
+              <span id="object2AudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Object2 audio online status unknown" aria-label="Object2 audio online status"></span>
             </div>
           </div>
           <div>
@@ -247,6 +252,8 @@
             <div class="inlineRow">
               <input id="opdracht3_audio_path" placeholder="/sounds/nl/opdracht/" />
               <button id="btnPlayOpdracht3Audio" disabled>Play</button>
+              <button id="btnProduceOpdracht3Audio" type="button">Produce</button>
+              <span id="opdracht3AudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Opdracht3 audio online status unknown" aria-label="Opdracht3 audio online status"></span>
             </div>
           </div>
         </div>
@@ -264,6 +271,8 @@
             <div class="inlineRow">
               <input id="opdracht4_audio_path" placeholder="/sounds/nl/opdracht/" />
               <button id="btnPlayOpdracht4Audio" disabled>Play</button>
+              <button id="btnProduceOpdracht4Audio" type="button">Produce</button>
+              <span id="opdracht4AudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Opdracht4 audio online status unknown" aria-label="Opdracht4 audio online status"></span>
             </div>
           </div>
           <div>
@@ -272,6 +281,8 @@
             <div class="inlineRow">
               <input id="opdracht5_audio_path" placeholder="/sounds/nl/opdracht/" />
               <button id="btnPlayOpdracht5Audio" disabled>Play</button>
+              <button id="btnProduceOpdracht5Audio" type="button">Produce</button>
+              <span id="opdracht5AudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Opdracht5 audio online status unknown" aria-label="Opdracht5 audio online status"></span>
             </div>
           </div>
         </div>
@@ -287,6 +298,8 @@
             <div class="inlineRow">
               <input id="object3_audio_path" placeholder="/sounds/nl/" />
               <button id="btnPlayAudioObject3" disabled>Play</button>
+              <button id="btnProduceObject3Audio" type="button">Produce</button>
+              <span id="object3AudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Object3 audio online status unknown" aria-label="Object3 audio online status"></span>
             </div>
           </div>
           <div>
@@ -295,6 +308,8 @@
             <div class="inlineRow">
               <input id="opdracht6_audio_path" placeholder="/sounds/nl/opdracht/" />
               <button id="btnPlayOpdracht6Audio" disabled>Play</button>
+              <button id="btnProduceOpdracht6Audio" type="button">Produce</button>
+              <span id="opdracht6AudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Opdracht6 audio online status unknown" aria-label="Opdracht6 audio online status"></span>
             </div>
           </div>
         </div>
@@ -421,8 +436,11 @@
     let isViewerRole = false;
     let storyAudioExistsCheckSeq = 0;
     let object1AudioExistsCheckSeq = 0;
+    let object2AudioExistsCheckSeq = 0;
+    let object3AudioExistsCheckSeq = 0;
+    let woordAudioExistsCheckSeq = 0;
     let klankzuiverAudioExistsCheckSeq = 0;
-    let opdracht1AudioExistsCheckSeq = 0;
+    const opdrachtAudioExistsCheckSeqByNo = new Map([[1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0]]);
     const audioPathVersionByPath = new Map();
     const audioPlayers = new Map();
     const AUDIO_ENDPOINT = "https://www.tastenbraille.com/braillestudio";
@@ -1283,15 +1301,12 @@ function scheduleAutosave() {
 
       refreshStoryAudioUiState();
       refreshObject1AudioUiState();
-      refreshOpdracht1AudioUiState();
-      setPlayButton("btnPlayOpdracht2Audio", val("opdracht2_audio_path"));
-      setPlayButton("btnPlayOpdracht3Audio", val("opdracht3_audio_path"));
-      setPlayButton("btnPlayOpdracht4Audio", val("opdracht4_audio_path"));
-      setPlayButton("btnPlayAudioObject3", val("object3_audio_path"));
-      setPlayButton("btnPlayOpdracht5Audio", val("opdracht5_audio_path"));
-      setPlayButton("btnPlayOpdracht6Audio", val("opdracht6_audio_path"));
-      setPlayButton("btnPlayWoordAudio", val("woord_audio_path"));
-      setPlayButton("btnPlayAudioObject2", val("object2_audio_path"));
+      for (const no of [1, 2, 3, 4, 5, 6]) {
+        refreshOpdrachtAudioUiState(no);
+      }
+      refreshObject3AudioUiState();
+      refreshWoordAudioUiState();
+      refreshObject2AudioUiState();
       refreshKlankzuiverAudioUiState();
       updateImagePreview("image1_path", "image1_preview");
       updateImagePreview("image2_path", "image2_preview");
@@ -1733,30 +1748,22 @@ function scheduleAutosave() {
       return parseMixedDescriptionSegments(val("object1_description"), "object1_description");
     }
 
-    function parseKlankzuiverTextSegments() {
-      return parseMixedDescriptionSegments(val("klankzuiver_text"), "klankzuiver_text");
-    }
-
-    function parseStoryTextSegments() {
-      return parseMixedDescriptionSegments(val("story_text"), "story_text");
-    }
-
-    function sanitizeOpdracht1OutputFilename(title) {
+    function sanitizeObject2OutputFilename(title) {
       const base = (title || "")
         .toString()
         .trim()
         .replace(/\s+/g, "_")
         .replace(/[^a-zA-Z0-9._-]/g, "");
-      return `${base || "story"}-opdracht1.mp3`;
+      return `${base || "story"}-object2.mp3`;
     }
 
-    function getOpdracht1OutputFilename() {
-      return sanitizeOpdracht1OutputFilename(val("title"));
+    function getObject2OutputFilename() {
+      return sanitizeObject2OutputFilename(val("title"));
     }
 
-    function getOpdracht1OutputDirFromField() {
-      const raw = (val("opdracht1_audio_path") || "").trim();
-      if (!raw) throw new Error("opdracht1_audio_path is empty.");
+    function getObject2OutputDirFromField() {
+      const raw = (val("object2_audio_path") || "").trim();
+      if (!raw) throw new Error("object2_audio_path is empty.");
 
       let normalized = raw.replace(/\\/g, "/");
       try {
@@ -1772,19 +1779,141 @@ function scheduleAutosave() {
 
       normalized = normalized.replace(/^\/+/, "");
       const parts = normalized.split("/").filter(Boolean);
-      if (!parts.length) throw new Error("opdracht1_audio_path has no target path.");
+      if (!parts.length) throw new Error("object2_audio_path has no target path.");
       if (/\.[a-z0-9]+$/i.test(parts[parts.length - 1])) parts.pop();
-      if (!parts.length) throw new Error("opdracht1_audio_path must include a folder path.");
+      if (!parts.length) throw new Error("object2_audio_path must include a folder path.");
 
       return `/${parts.join("/")}/`;
     }
 
+    function getObject2PlaybackPath() {
+      return `${getObject2OutputDirFromField()}${getObject2OutputFilename()}`;
+    }
+
+    function parseObject2DescriptionSegments() {
+      return parseMixedDescriptionSegments(val("object2_description"), "object2_description");
+    }
+
+    function sanitizeObject3OutputFilename(title) {
+      const base = (title || "")
+        .toString()
+        .trim()
+        .replace(/\s+/g, "_")
+        .replace(/[^a-zA-Z0-9._-]/g, "");
+      return `${base || "story"}-object3.mp3`;
+    }
+
+    function getObject3OutputFilename() {
+      return sanitizeObject3OutputFilename(val("title"));
+    }
+
+    function getObject3OutputDirFromField() {
+      const raw = (val("object3_audio_path") || "").trim();
+      if (!raw) throw new Error("object3_audio_path is empty.");
+
+      let normalized = raw.replace(/\\/g, "/");
+      try {
+        if (/^https?:\/\//i.test(normalized)) {
+          const u = new URL(normalized);
+          normalized = u.pathname || "";
+        }
+      } catch {}
+
+      const brailleStudioPrefix = "/braillestudio/";
+      const idx = normalized.indexOf(brailleStudioPrefix);
+      if (idx >= 0) normalized = normalized.slice(idx + brailleStudioPrefix.length);
+
+      normalized = normalized.replace(/^\/+/, "");
+      const parts = normalized.split("/").filter(Boolean);
+      if (!parts.length) throw new Error("object3_audio_path has no target path.");
+      if (/\.[a-z0-9]+$/i.test(parts[parts.length - 1])) parts.pop();
+      if (!parts.length) throw new Error("object3_audio_path must include a folder path.");
+
+      return `/${parts.join("/")}/`;
+    }
+
+    function getObject3PlaybackPath() {
+      return `${getObject3OutputDirFromField()}${getObject3OutputFilename()}`;
+    }
+
+    function parseObject3DescriptionSegments() {
+      return parseMixedDescriptionSegments(val("object3_description"), "object3_description");
+    }
+
+    function parseKlankzuiverTextSegments() {
+      return parseMixedDescriptionSegments(val("klankzuiver_text"), "klankzuiver_text");
+    }
+
+    function parseStoryTextSegments() {
+      return parseMixedDescriptionSegments(val("story_text"), "story_text");
+    }
+
+    function sanitizeOpdrachtOutputFilename(no, title) {
+      const base = (title || "")
+        .toString()
+        .trim()
+        .replace(/\s+/g, "_")
+        .replace(/[^a-zA-Z0-9._-]/g, "");
+      return `${base || "story"}-opdracht${no}.mp3`;
+    }
+
+    function getOpdrachtOutputFilename(no) {
+      return sanitizeOpdrachtOutputFilename(no, val("title"));
+    }
+
+    function getOpdrachtOutputDirFromField(no) {
+      const fieldId = `opdracht${no}_audio_path`;
+      const raw = (val(fieldId) || "").trim();
+      if (!raw) throw new Error(`${fieldId} is empty.`);
+
+      let normalized = raw.replace(/\\/g, "/");
+      try {
+        if (/^https?:\/\//i.test(normalized)) {
+          const u = new URL(normalized);
+          normalized = u.pathname || "";
+        }
+      } catch {}
+
+      const brailleStudioPrefix = "/braillestudio/";
+      const idx = normalized.indexOf(brailleStudioPrefix);
+      if (idx >= 0) normalized = normalized.slice(idx + brailleStudioPrefix.length);
+
+      normalized = normalized.replace(/^\/+/, "");
+      const parts = normalized.split("/").filter(Boolean);
+      if (!parts.length) throw new Error(`${fieldId} has no target path.`);
+      if (/\.[a-z0-9]+$/i.test(parts[parts.length - 1])) parts.pop();
+      if (!parts.length) throw new Error(`${fieldId} must include a folder path.`);
+
+      return `/${parts.join("/")}/`;
+    }
+
+    function getOpdrachtPlaybackPath(no) {
+      return `${getOpdrachtOutputDirFromField(no)}${getOpdrachtOutputFilename(no)}`;
+    }
+
+    function parseOpdrachtTextSegments(no) {
+      const fieldId = `opdracht${no}_text`;
+      return parseMixedDescriptionSegments(val(fieldId), fieldId);
+    }
+
+    function sanitizeOpdracht1OutputFilename(title) {
+      return sanitizeOpdrachtOutputFilename(1, title);
+    }
+
+    function getOpdracht1OutputFilename() {
+      return getOpdrachtOutputFilename(1);
+    }
+
+    function getOpdracht1OutputDirFromField() {
+      return getOpdrachtOutputDirFromField(1);
+    }
+
     function getOpdracht1PlaybackPath() {
-      return `${getOpdracht1OutputDirFromField()}${getOpdracht1OutputFilename()}`;
+      return getOpdrachtPlaybackPath(1);
     }
 
     function parseOpdracht1TextSegments() {
-      return parseMixedDescriptionSegments(val("opdracht1_text"), "opdracht1_text");
+      return parseOpdrachtTextSegments(1);
     }
 
     async function synthesizeTextSegmentToMp3Blob(text) {
@@ -1812,6 +1941,27 @@ function scheduleAutosave() {
         throw new Error(`ElevenLabs failed (${res.status}). ${body}`.trim());
       }
       return res.blob();
+    }
+
+    async function fetchSpeechTokenMp3Blob(token) {
+      const normalized = (token || "").replace(/\.mp3$/i, "").trim();
+      if (!normalized) throw new Error("Speech token is empty.");
+      const relPath = `${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`;
+      const res = await fetch(buildAudioUrl(relPath), { cache: "no-store" });
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`Speech token fetch failed (${res.status}) for ${relPath}. ${body}`.trim());
+      }
+      return res.blob();
+    }
+
+    async function produceSingleSegmentToTarget(segment, outputDir, outputFilename) {
+      const blob = segment.type === "speech"
+        ? await fetchSpeechTokenMp3Blob(segment.value)
+        : await synthesizeTextSegmentToMp3Blob(segment.value);
+      const uploadPath = outputDir.replace(/^\/+|\/+$/g, "");
+      const result = await uploadStoryMp3Blob(blob, { path: uploadPath, audiofile: outputFilename });
+      return result?.url || buildAudioUrl(`${outputDir}${outputFilename}`);
     }
 
     function refreshObject1PlayButton() {
@@ -1877,6 +2027,181 @@ function scheduleAutosave() {
       void refreshObject1AudioOnlineIndicator();
     }
 
+    function refreshObject2PlayButton() {
+      try {
+        setPlayButton("btnPlayAudioObject2", getObject2PlaybackPath());
+      } catch {
+        setPlayButton("btnPlayAudioObject2", "");
+      }
+    }
+
+    function setObject2AudioOnlineDot(state, titleText) {
+      const dot = $("object2AudioOnlineDot");
+      if (!dot) return;
+      dot.dataset.state = state || "unknown";
+      dot.title = titleText || "Object2 audio online status unknown";
+      dot.setAttribute("aria-label", dot.title);
+    }
+
+    async function refreshObject2AudioOnlineIndicator() {
+      let relPath = "";
+      try {
+        relPath = getObject2PlaybackPath();
+      } catch {
+        setObject2AudioOnlineDot("unknown", "Object2 audio path/title incomplete");
+        return;
+      }
+      if (!relPath) {
+        setObject2AudioOnlineDot("unknown", "Object2 audio path/title incomplete");
+        return;
+      }
+      const url = buildAudioUrl(relPath);
+      const relPathNoLeadingSlash = relPath.replace(/^\/+/, "");
+      const checkId = ++object2AudioExistsCheckSeq;
+      setObject2AudioOnlineDot("checking", `Checking: ${url}`);
+      try {
+        const checkUrl = new URL(STORY_AUDIO_EXISTS_CHECK_URL);
+        checkUrl.searchParams.set("path", relPathNoLeadingSlash);
+        const res = await fetch(checkUrl.toString(), { method: "GET", cache: "no-store" });
+        if (checkId !== object2AudioExistsCheckSeq) return;
+
+        if (!res.ok) {
+          setObject2AudioOnlineDot("unknown", `Could not confirm file (${res.status}): ${url}`);
+          return;
+        }
+
+        const data = await res.json().catch(() => null);
+        if (checkId !== object2AudioExistsCheckSeq) return;
+        if (data?.exists === true) {
+          setObject2AudioOnlineDot("exists", `Online file exists: ${data?.url || url}`);
+        } else if (data?.exists === false) {
+          setObject2AudioOnlineDot("missing", `Online file not found: ${data?.url || url}`);
+        } else {
+          setObject2AudioOnlineDot("unknown", `Could not confirm file: ${url}`);
+        }
+      } catch {
+        if (checkId !== object2AudioExistsCheckSeq) return;
+        setObject2AudioOnlineDot("unknown", `Could not check file via server script: ${url}`);
+      }
+    }
+
+    function refreshObject2AudioUiState() {
+      refreshObject2PlayButton();
+      void refreshObject2AudioOnlineIndicator();
+    }
+
+    function refreshObject3PlayButton() {
+      try {
+        setPlayButton("btnPlayAudioObject3", getObject3PlaybackPath());
+      } catch {
+        setPlayButton("btnPlayAudioObject3", "");
+      }
+    }
+
+    function setObject3AudioOnlineDot(state, titleText) {
+      const dot = $("object3AudioOnlineDot");
+      if (!dot) return;
+      dot.dataset.state = state || "unknown";
+      dot.title = titleText || "Object3 audio online status unknown";
+      dot.setAttribute("aria-label", dot.title);
+    }
+
+    async function refreshObject3AudioOnlineIndicator() {
+      let relPath = "";
+      try {
+        relPath = getObject3PlaybackPath();
+      } catch {
+        setObject3AudioOnlineDot("unknown", "Object3 audio path/title incomplete");
+        return;
+      }
+      if (!relPath) {
+        setObject3AudioOnlineDot("unknown", "Object3 audio path/title incomplete");
+        return;
+      }
+      const url = buildAudioUrl(relPath);
+      const relPathNoLeadingSlash = relPath.replace(/^\/+/, "");
+      const checkId = ++object3AudioExistsCheckSeq;
+      setObject3AudioOnlineDot("checking", `Checking: ${url}`);
+      try {
+        const checkUrl = new URL(STORY_AUDIO_EXISTS_CHECK_URL);
+        checkUrl.searchParams.set("path", relPathNoLeadingSlash);
+        const res = await fetch(checkUrl.toString(), { method: "GET", cache: "no-store" });
+        if (checkId !== object3AudioExistsCheckSeq) return;
+
+        if (!res.ok) {
+          setObject3AudioOnlineDot("unknown", `Could not confirm file (${res.status}): ${url}`);
+          return;
+        }
+
+        const data = await res.json().catch(() => null);
+        if (checkId !== object3AudioExistsCheckSeq) return;
+        if (data?.exists === true) {
+          setObject3AudioOnlineDot("exists", `Online file exists: ${data?.url || url}`);
+        } else if (data?.exists === false) {
+          setObject3AudioOnlineDot("missing", `Online file not found: ${data?.url || url}`);
+        } else {
+          setObject3AudioOnlineDot("unknown", `Could not confirm file: ${url}`);
+        }
+      } catch {
+        if (checkId !== object3AudioExistsCheckSeq) return;
+        setObject3AudioOnlineDot("unknown", `Could not check file via server script: ${url}`);
+      }
+    }
+
+    function refreshObject3AudioUiState() {
+      refreshObject3PlayButton();
+      void refreshObject3AudioOnlineIndicator();
+    }
+
+    function setWoordAudioOnlineDot(state, titleText) {
+      const dot = $("woordAudioOnlineDot");
+      if (!dot) return;
+      dot.dataset.state = state || "unknown";
+      dot.title = titleText || "Woord audio online status unknown";
+      dot.setAttribute("aria-label", dot.title);
+    }
+
+    async function refreshWoordAudioOnlineIndicator() {
+      const relPath = (val("woord_audio_path") || "").trim();
+      if (!relPath) {
+        setWoordAudioOnlineDot("unknown", "Woord audio path is empty");
+        return;
+      }
+      const url = buildAudioUrl(relPath);
+      const relPathNoLeadingSlash = relPath.replace(/^\/+/, "");
+      const checkId = ++woordAudioExistsCheckSeq;
+      setWoordAudioOnlineDot("checking", `Checking: ${url}`);
+      try {
+        const checkUrl = new URL(STORY_AUDIO_EXISTS_CHECK_URL);
+        checkUrl.searchParams.set("path", relPathNoLeadingSlash);
+        const res = await fetch(checkUrl.toString(), { method: "GET", cache: "no-store" });
+        if (checkId !== woordAudioExistsCheckSeq) return;
+
+        if (!res.ok) {
+          setWoordAudioOnlineDot("unknown", `Could not confirm file (${res.status}): ${url}`);
+          return;
+        }
+
+        const data = await res.json().catch(() => null);
+        if (checkId !== woordAudioExistsCheckSeq) return;
+        if (data?.exists === true) {
+          setWoordAudioOnlineDot("exists", `Online file exists: ${data?.url || url}`);
+        } else if (data?.exists === false) {
+          setWoordAudioOnlineDot("missing", `Online file not found: ${data?.url || url}`);
+        } else {
+          setWoordAudioOnlineDot("unknown", `Could not confirm file: ${url}`);
+        }
+      } catch {
+        if (checkId !== woordAudioExistsCheckSeq) return;
+        setWoordAudioOnlineDot("unknown", `Could not check file via server script: ${url}`);
+      }
+    }
+
+    function refreshWoordAudioUiState() {
+      setPlayButton("btnPlayWoordAudio", val("woord_audio_path"));
+      void refreshWoordAudioOnlineIndicator();
+    }
+
     function setProduceObject1ButtonState(state) {
       const btn = $("btnProduceObject1Audio");
       if (!btn) return;
@@ -1923,6 +2248,15 @@ function scheduleAutosave() {
       setProduceObject1ButtonState("producing");
       try {
         msg($("saveMsg"), "Producing object1 audio...");
+        if (segments.length === 1) {
+          const savedUrl = await produceSingleSegmentToTarget(segments[0], outputDir, outputFilename);
+          markAudioPathUpdated(getObject1PlaybackPath());
+          refreshObject1AudioUiState();
+          msg($("saveMsg"), `Object1 audio produced: ${savedUrl}`);
+          setProduceObject1ButtonState("done");
+          return;
+        }
+
         const sources = [];
         let partNo = 1;
         const outputStem = outputFilename.replace(/\.mp3$/i, "");
@@ -1988,6 +2322,246 @@ function scheduleAutosave() {
       }
     }
 
+    function setProduceObject2ButtonState(state) {
+      const btn = $("btnProduceObject2Audio");
+      if (!btn) return;
+      if (btn._produceStateTimer) {
+        window.clearTimeout(btn._produceStateTimer);
+        btn._produceStateTimer = null;
+      }
+      if (state === "idle") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Produce";
+        return;
+      }
+      if (state === "producing") {
+        btn.disabled = true;
+        btn.classList.add("busy");
+        btn.textContent = "Producing...";
+        return;
+      }
+      if (state === "done") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Produced";
+        btn._produceStateTimer = window.setTimeout(() => setProduceObject2ButtonState("idle"), 4000);
+        return;
+      }
+      if (state === "error") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Error";
+        btn._produceStateTimer = window.setTimeout(() => setProduceObject2ButtonState("idle"), 4000);
+      }
+    }
+
+    async function produceObject2AudioViaMergeApi() {
+      const outputDir = getObject2OutputDirFromField();
+      const outputFilename = getObject2OutputFilename();
+      const segments = parseObject2DescriptionSegments();
+      const token = getStoryUploadToken();
+      if (!token) {
+        throw new Error(`Upload token missing in localStorage (${STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY}).`);
+      }
+
+      setProduceObject2ButtonState("producing");
+      try {
+        msg($("saveMsg"), "Producing object2 audio...");
+        if (segments.length === 1) {
+          const savedUrl = await produceSingleSegmentToTarget(segments[0], outputDir, outputFilename);
+          markAudioPathUpdated(getObject2PlaybackPath());
+          refreshObject2AudioUiState();
+          msg($("saveMsg"), `Object2 audio produced: ${savedUrl}`);
+          setProduceObject2ButtonState("done");
+          return;
+        }
+
+        const sources = [];
+        let partNo = 1;
+        const outputStem = outputFilename.replace(/\.mp3$/i, "");
+
+        for (const seg of segments) {
+          if (seg.type === "speech") {
+            const normalized = seg.value.replace(/\.mp3$/i, "");
+            sources.push(`${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`);
+            continue;
+          }
+
+          const blob = await synthesizeTextSegmentToMp3Blob(seg.value);
+          const partFilename = `${outputStem}-part-${String(partNo).padStart(3, "0")}.mp3`;
+          await uploadStoryMp3Blob(blob, { path: OBJECT1_TTS_PARTS_PATH, audiofile: partFilename });
+          sources.push(`/${OBJECT1_TTS_PARTS_PATH}/${partFilename}`);
+          partNo += 1;
+        }
+
+        if (sources.length < 2) {
+          throw new Error("Need at least 2 audio segments to merge for object2.");
+        }
+
+        let res;
+        try {
+          res = await fetch(KLANKZUIVER_MERGE_API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              outputDir,
+              sources,
+              outputFilename,
+              gapMs: getMixedMergeGapMs(),
+              debug: true,
+              tryCopyFirst: false,
+            }),
+          });
+        } catch (networkError) {
+          const raw = networkError?.message || String(networkError);
+          throw new Error(
+            `Object2 merge request did not reach the server (${raw}). ` +
+            `Check CORS, SSL/certificate, endpoint availability, and network for ${KLANKZUIVER_MERGE_API_URL}.`
+          );
+        }
+
+        const bodyText = await res.text().catch(() => "");
+        let bodyJson = null;
+        try { bodyJson = bodyText ? JSON.parse(bodyText) : null; } catch {}
+        if (!res.ok || bodyJson?.ok === false) {
+          throw new Error(`Object2 merge failed (${res.status}). ${bodyText}`.trim());
+        }
+
+        const savedUrl = bodyJson?.outputUrl || bodyJson?.url || buildAudioUrl(`${outputDir}${outputFilename}`);
+        markAudioPathUpdated(getObject2PlaybackPath());
+        refreshObject2AudioUiState();
+        msg($("saveMsg"), `Object2 audio produced: ${savedUrl}`);
+        setProduceObject2ButtonState("done");
+      } catch (e) {
+        setProduceObject2ButtonState("error");
+        throw e;
+      }
+    }
+
+    function setProduceObject3ButtonState(state) {
+      const btn = $("btnProduceObject3Audio");
+      if (!btn) return;
+      if (btn._produceStateTimer) {
+        window.clearTimeout(btn._produceStateTimer);
+        btn._produceStateTimer = null;
+      }
+      if (state === "idle") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Produce";
+        return;
+      }
+      if (state === "producing") {
+        btn.disabled = true;
+        btn.classList.add("busy");
+        btn.textContent = "Producing...";
+        return;
+      }
+      if (state === "done") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Produced";
+        btn._produceStateTimer = window.setTimeout(() => setProduceObject3ButtonState("idle"), 4000);
+        return;
+      }
+      if (state === "error") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Error";
+        btn._produceStateTimer = window.setTimeout(() => setProduceObject3ButtonState("idle"), 4000);
+      }
+    }
+
+    async function produceObject3AudioViaMergeApi() {
+      const outputDir = getObject3OutputDirFromField();
+      const outputFilename = getObject3OutputFilename();
+      const segments = parseObject3DescriptionSegments();
+      const token = getStoryUploadToken();
+      if (!token) {
+        throw new Error(`Upload token missing in localStorage (${STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY}).`);
+      }
+
+      setProduceObject3ButtonState("producing");
+      try {
+        msg($("saveMsg"), "Producing object3 audio...");
+        if (segments.length === 1) {
+          const savedUrl = await produceSingleSegmentToTarget(segments[0], outputDir, outputFilename);
+          markAudioPathUpdated(getObject3PlaybackPath());
+          refreshObject3AudioUiState();
+          msg($("saveMsg"), `Object3 audio produced: ${savedUrl}`);
+          setProduceObject3ButtonState("done");
+          return;
+        }
+
+        const sources = [];
+        let partNo = 1;
+        const outputStem = outputFilename.replace(/\.mp3$/i, "");
+
+        for (const seg of segments) {
+          if (seg.type === "speech") {
+            const normalized = seg.value.replace(/\.mp3$/i, "");
+            sources.push(`${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`);
+            continue;
+          }
+
+          const blob = await synthesizeTextSegmentToMp3Blob(seg.value);
+          const partFilename = `${outputStem}-part-${String(partNo).padStart(3, "0")}.mp3`;
+          await uploadStoryMp3Blob(blob, { path: OBJECT1_TTS_PARTS_PATH, audiofile: partFilename });
+          sources.push(`/${OBJECT1_TTS_PARTS_PATH}/${partFilename}`);
+          partNo += 1;
+        }
+
+        if (sources.length < 2) {
+          throw new Error("Need at least 2 audio segments to merge for object3.");
+        }
+
+        let res;
+        try {
+          res = await fetch(KLANKZUIVER_MERGE_API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              outputDir,
+              sources,
+              outputFilename,
+              gapMs: getMixedMergeGapMs(),
+              debug: true,
+              tryCopyFirst: false,
+            }),
+          });
+        } catch (networkError) {
+          const raw = networkError?.message || String(networkError);
+          throw new Error(
+            `Object3 merge request did not reach the server (${raw}). ` +
+            `Check CORS, SSL/certificate, endpoint availability, and network for ${KLANKZUIVER_MERGE_API_URL}.`
+          );
+        }
+
+        const bodyText = await res.text().catch(() => "");
+        let bodyJson = null;
+        try { bodyJson = bodyText ? JSON.parse(bodyText) : null; } catch {}
+        if (!res.ok || bodyJson?.ok === false) {
+          throw new Error(`Object3 merge failed (${res.status}). ${bodyText}`.trim());
+        }
+
+        const savedUrl = bodyJson?.outputUrl || bodyJson?.url || buildAudioUrl(`${outputDir}${outputFilename}`);
+        markAudioPathUpdated(getObject3PlaybackPath());
+        refreshObject3AudioUiState();
+        msg($("saveMsg"), `Object3 audio produced: ${savedUrl}`);
+        setProduceObject3ButtonState("done");
+      } catch (e) {
+        setProduceObject3ButtonState("error");
+        throw e;
+      }
+    }
+
     function refreshKlankzuiverPlayButton() {
       const hasTitle = !!(val("title") || "").trim();
       setPlayButton("btnPlayKlankzuiverAudio", hasTitle ? getKlankzuiverPlaybackPath() : "");
@@ -2042,71 +2616,73 @@ function scheduleAutosave() {
       void refreshKlankzuiverAudioOnlineIndicator();
     }
 
-    function refreshOpdracht1PlayButton() {
+    function refreshOpdrachtPlayButton(no) {
+      const btnId = `btnPlayOpdracht${no}Audio`;
       try {
-        setPlayButton("btnPlayOpdracht1Audio", getOpdracht1PlaybackPath());
+        setPlayButton(btnId, getOpdrachtPlaybackPath(no));
       } catch {
-        setPlayButton("btnPlayOpdracht1Audio", "");
+        setPlayButton(btnId, "");
       }
     }
 
-    function setOpdracht1AudioOnlineDot(state, titleText) {
-      const dot = $("opdracht1AudioOnlineDot");
+    function setOpdrachtAudioOnlineDot(no, state, titleText) {
+      const dot = $(`opdracht${no}AudioOnlineDot`);
       if (!dot) return;
       dot.dataset.state = state || "unknown";
-      dot.title = titleText || "Opdracht1 audio online status unknown";
+      dot.title = titleText || `Opdracht${no} audio online status unknown`;
       dot.setAttribute("aria-label", dot.title);
     }
 
-    async function refreshOpdracht1AudioOnlineIndicator() {
+    async function refreshOpdrachtAudioOnlineIndicator(no) {
       let relPath = "";
       try {
-        relPath = getOpdracht1PlaybackPath();
+        relPath = getOpdrachtPlaybackPath(no);
       } catch {
-        setOpdracht1AudioOnlineDot("unknown", "Opdracht1 audio path/title incomplete");
+        setOpdrachtAudioOnlineDot(no, "unknown", `Opdracht${no} audio path/title incomplete`);
         return;
       }
       if (!relPath) {
-        setOpdracht1AudioOnlineDot("unknown", "Opdracht1 audio path/title incomplete");
+        setOpdrachtAudioOnlineDot(no, "unknown", `Opdracht${no} audio path/title incomplete`);
         return;
       }
       const url = buildAudioUrl(relPath);
       const relPathNoLeadingSlash = relPath.replace(/^\/+/, "");
-      const checkId = ++opdracht1AudioExistsCheckSeq;
-      setOpdracht1AudioOnlineDot("checking", `Checking: ${url}`);
+      const checkId = (opdrachtAudioExistsCheckSeqByNo.get(no) || 0) + 1;
+      opdrachtAudioExistsCheckSeqByNo.set(no, checkId);
+      setOpdrachtAudioOnlineDot(no, "checking", `Checking: ${url}`);
       try {
         const checkUrl = new URL(STORY_AUDIO_EXISTS_CHECK_URL);
         checkUrl.searchParams.set("path", relPathNoLeadingSlash);
         const res = await fetch(checkUrl.toString(), { method: "GET", cache: "no-store" });
-        if (checkId !== opdracht1AudioExistsCheckSeq) return;
+        if (checkId !== opdrachtAudioExistsCheckSeqByNo.get(no)) return;
 
         if (!res.ok) {
-          setOpdracht1AudioOnlineDot("unknown", `Could not confirm file (${res.status}): ${url}`);
+          setOpdrachtAudioOnlineDot(no, "unknown", `Could not confirm file (${res.status}): ${url}`);
           return;
         }
 
         const data = await res.json().catch(() => null);
-        if (checkId !== opdracht1AudioExistsCheckSeq) return;
+        if (checkId !== opdrachtAudioExistsCheckSeqByNo.get(no)) return;
         if (data?.exists === true) {
-          setOpdracht1AudioOnlineDot("exists", `Online file exists: ${data?.url || url}`);
+          setOpdrachtAudioOnlineDot(no, "exists", `Online file exists: ${data?.url || url}`);
         } else if (data?.exists === false) {
-          setOpdracht1AudioOnlineDot("missing", `Online file not found: ${data?.url || url}`);
+          setOpdrachtAudioOnlineDot(no, "missing", `Online file not found: ${data?.url || url}`);
         } else {
-          setOpdracht1AudioOnlineDot("unknown", `Could not confirm file: ${url}`);
+          setOpdrachtAudioOnlineDot(no, "unknown", `Could not confirm file: ${url}`);
         }
       } catch {
-        if (checkId !== opdracht1AudioExistsCheckSeq) return;
-        setOpdracht1AudioOnlineDot("unknown", `Could not check file via server script: ${url}`);
+        if (checkId !== opdrachtAudioExistsCheckSeqByNo.get(no)) return;
+        setOpdrachtAudioOnlineDot(no, "unknown", `Could not check file via server script: ${url}`);
       }
     }
 
-    function refreshOpdracht1AudioUiState() {
-      refreshOpdracht1PlayButton();
-      void refreshOpdracht1AudioOnlineIndicator();
+    function refreshOpdrachtAudioUiState(no) {
+      refreshOpdrachtPlayButton(no);
+      void refreshOpdrachtAudioOnlineIndicator(no);
     }
 
-    function setProduceOpdracht1ButtonState(state) {
-      const btn = $("btnProduceOpdracht1Audio");
+    function setProduceOpdrachtButtonState(no, state) {
+      const btn = $(`btnProduceOpdracht${no}Audio`);
       if (!btn) return;
       if (btn._produceStateTimer) {
         window.clearTimeout(btn._produceStateTimer);
@@ -2128,29 +2704,38 @@ function scheduleAutosave() {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Produced";
-        btn._produceStateTimer = window.setTimeout(() => setProduceOpdracht1ButtonState("idle"), 4000);
+        btn._produceStateTimer = window.setTimeout(() => setProduceOpdrachtButtonState(no, "idle"), 4000);
         return;
       }
       if (state === "error") {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Error";
-        btn._produceStateTimer = window.setTimeout(() => setProduceOpdracht1ButtonState("idle"), 4000);
+        btn._produceStateTimer = window.setTimeout(() => setProduceOpdrachtButtonState(no, "idle"), 4000);
       }
     }
 
-    async function produceOpdracht1AudioViaMergeApi() {
-      const outputDir = getOpdracht1OutputDirFromField();
-      const outputFilename = getOpdracht1OutputFilename();
-      const segments = parseOpdracht1TextSegments();
+    async function produceOpdrachtAudioViaMergeApi(no) {
+      const outputDir = getOpdrachtOutputDirFromField(no);
+      const outputFilename = getOpdrachtOutputFilename(no);
+      const segments = parseOpdrachtTextSegments(no);
       const token = getStoryUploadToken();
       if (!token) {
         throw new Error(`Upload token missing in localStorage (${STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY}).`);
       }
 
-      setProduceOpdracht1ButtonState("producing");
+      setProduceOpdrachtButtonState(no, "producing");
       try {
-        msg($("saveMsg"), "Producing opdracht1 audio...");
+        msg($("saveMsg"), `Producing opdracht${no} audio...`);
+        if (segments.length === 1) {
+          const savedUrl = await produceSingleSegmentToTarget(segments[0], outputDir, outputFilename);
+          markAudioPathUpdated(getOpdrachtPlaybackPath(no));
+          refreshOpdrachtAudioUiState(no);
+          msg($("saveMsg"), `Opdracht${no} audio produced: ${savedUrl}`);
+          setProduceOpdrachtButtonState(no, "done");
+          return;
+        }
+
         const sources = [];
         let partNo = 1;
         const outputStem = outputFilename.replace(/\.mp3$/i, "");
@@ -2170,7 +2755,7 @@ function scheduleAutosave() {
         }
 
         if (sources.length < 2) {
-          throw new Error("Need at least 2 audio segments to merge for opdracht1.");
+          throw new Error(`Need at least 2 audio segments to merge for opdracht${no}.`);
         }
 
         let res;
@@ -2193,7 +2778,7 @@ function scheduleAutosave() {
         } catch (networkError) {
           const raw = networkError?.message || String(networkError);
           throw new Error(
-            `Opdracht1 merge request did not reach the server (${raw}). ` +
+            `Opdracht${no} merge request did not reach the server (${raw}). ` +
             `Check CORS, SSL/certificate, endpoint availability, and network for ${KLANKZUIVER_MERGE_API_URL}.`
           );
         }
@@ -2202,18 +2787,42 @@ function scheduleAutosave() {
         let bodyJson = null;
         try { bodyJson = bodyText ? JSON.parse(bodyText) : null; } catch {}
         if (!res.ok || bodyJson?.ok === false) {
-          throw new Error(`Opdracht1 merge failed (${res.status}). ${bodyText}`.trim());
+          throw new Error(`Opdracht${no} merge failed (${res.status}). ${bodyText}`.trim());
         }
 
         const savedUrl = bodyJson?.outputUrl || bodyJson?.url || buildAudioUrl(`${outputDir}${outputFilename}`);
-        markAudioPathUpdated(getOpdracht1PlaybackPath());
-        refreshOpdracht1AudioUiState();
-        msg($("saveMsg"), `Opdracht1 audio produced: ${savedUrl}`);
-        setProduceOpdracht1ButtonState("done");
+        markAudioPathUpdated(getOpdrachtPlaybackPath(no));
+        refreshOpdrachtAudioUiState(no);
+        msg($("saveMsg"), `Opdracht${no} audio produced: ${savedUrl}`);
+        setProduceOpdrachtButtonState(no, "done");
       } catch (e) {
-        setProduceOpdracht1ButtonState("error");
+        setProduceOpdrachtButtonState(no, "error");
         throw e;
       }
+    }
+
+    function refreshOpdracht1PlayButton() {
+      refreshOpdrachtPlayButton(1);
+    }
+
+    function setOpdracht1AudioOnlineDot(state, titleText) {
+      setOpdrachtAudioOnlineDot(1, state, titleText);
+    }
+
+    async function refreshOpdracht1AudioOnlineIndicator() {
+      await refreshOpdrachtAudioOnlineIndicator(1);
+    }
+
+    function refreshOpdracht1AudioUiState() {
+      refreshOpdrachtAudioUiState(1);
+    }
+
+    function setProduceOpdracht1ButtonState(state) {
+      setProduceOpdrachtButtonState(1, state);
+    }
+
+    async function produceOpdracht1AudioViaMergeApi() {
+      await produceOpdrachtAudioViaMergeApi(1);
     }
 
     function setProduceKlankzuiverButtonState(state) {
@@ -2260,6 +2869,15 @@ function scheduleAutosave() {
       setProduceKlankzuiverButtonState("producing");
       try {
         msg($("saveMsg"), "Producing klankzuiver audio...");
+        if (segments.length === 1) {
+          const savedUrl = await produceSingleSegmentToTarget(segments[0], KLANKZUIVER_OUTPUT_DIR, outputFilename);
+          markAudioPathUpdated(getKlankzuiverPlaybackPath());
+          refreshKlankzuiverAudioUiState();
+          msg($("saveMsg"), `Klankzuiver audio produced: ${savedUrl}`);
+          setProduceKlankzuiverButtonState("done");
+          return;
+        }
+
         const sources = [];
         let partNo = 1;
         const outputStem = outputFilename.replace(/\.mp3$/i, "");
@@ -2426,6 +3044,16 @@ function scheduleAutosave() {
       setProduceStoryButtonState("producing");
       try {
         msg($("saveMsg"), "Producing story audio...");
+        if (segments.length === 1) {
+          const savedUrl = await produceSingleSegmentToTarget(segments[0], outputDir, outputFilename);
+          const savedRelativePath = `/${target.path}/${target.audiofile}`;
+          markAudioPathUpdated(savedRelativePath);
+          refreshStoryAudioUiState();
+          msg($("saveMsg"), `Story audio produced: ${savedUrl}`);
+          setProduceStoryButtonState("downloaded");
+          return;
+        }
+
         const sources = [];
         let partNo = 1;
         const outputStem = outputFilename.replace(/\.mp3$/i, "");
@@ -2853,6 +3481,14 @@ function scheduleAutosave() {
       try { await produceObject1AudioViaMergeApi(); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
+    $("btnPlayAudioObject2").onclick = () => {
+      try { toggleAudio($("btnPlayAudioObject2"), getObject2PlaybackPath()); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+    $("btnProduceObject2Audio").onclick = async () => {
+      try { await produceObject2AudioViaMergeApi(); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
     $("btnPlayKlankzuiverAudio").onclick = () => {
       try {
         const klankzuiverPlaybackPath = getKlankzuiverPlaybackPath();
@@ -2864,44 +3500,28 @@ function scheduleAutosave() {
       try { await produceKlankzuiverAudioViaMergeApi(); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
-    $("btnPlayOpdracht1Audio").onclick = () => {
-      try { toggleAudio($("btnPlayOpdracht1Audio"), getOpdracht1PlaybackPath()); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
-    $("btnProduceOpdracht1Audio").onclick = async () => {
-      try { await produceOpdracht1AudioViaMergeApi(); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
-    $("btnPlayOpdracht2Audio").onclick = () => {
-      try { toggleAudio($("btnPlayOpdracht2Audio"), val("opdracht2_audio_path")); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
-    $("btnPlayOpdracht3Audio").onclick = () => {
-      try { toggleAudio($("btnPlayOpdracht3Audio"), val("opdracht3_audio_path")); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
-    $("btnPlayOpdracht4Audio").onclick = () => {
-      try { toggleAudio($("btnPlayOpdracht4Audio"), val("opdracht4_audio_path")); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
+    for (const no of [1, 2, 3, 4, 5, 6]) {
+      const playBtnId = `btnPlayOpdracht${no}Audio`;
+      const produceBtnId = `btnProduceOpdracht${no}Audio`;
+      $(playBtnId).onclick = () => {
+        try { toggleAudio($(playBtnId), getOpdrachtPlaybackPath(no)); }
+        catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+      };
+      $(produceBtnId).onclick = async () => {
+        try { await produceOpdrachtAudioViaMergeApi(no); }
+        catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+      };
+    }
     $("btnPlayAudioObject3").onclick = () => {
-      try { toggleAudio($("btnPlayAudioObject3"), val("object3_audio_path")); }
+      try { toggleAudio($("btnPlayAudioObject3"), getObject3PlaybackPath()); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
-    $("btnPlayOpdracht5Audio").onclick = () => {
-      try { toggleAudio($("btnPlayOpdracht5Audio"), val("opdracht5_audio_path")); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
-    $("btnPlayOpdracht6Audio").onclick = () => {
-      try { toggleAudio($("btnPlayOpdracht6Audio"), val("opdracht6_audio_path")); }
+    $("btnProduceObject3Audio").onclick = async () => {
+      try { await produceObject3AudioViaMergeApi(); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
     $("btnPlayWoordAudio").onclick = () => {
       try { toggleAudio($("btnPlayWoordAudio"), val("woord_audio_path")); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
-    $("btnPlayAudioObject2").onclick = () => {
-      try { toggleAudio($("btnPlayAudioObject2"), val("object2_audio_path")); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
 
@@ -2913,18 +3533,20 @@ function scheduleAutosave() {
     $("object1_audio_path").addEventListener("input", refreshObject1AudioUiState);
     $("title").addEventListener("input", refreshObject1AudioUiState);
     refreshObject1AudioUiState();
+    $("object2_audio_path").addEventListener("input", refreshObject2AudioUiState);
+    $("title").addEventListener("input", refreshObject2AudioUiState);
+    refreshObject2AudioUiState();
+    $("object3_audio_path").addEventListener("input", refreshObject3AudioUiState);
+    $("title").addEventListener("input", refreshObject3AudioUiState);
+    refreshObject3AudioUiState();
+    $("woord_audio_path").addEventListener("input", refreshWoordAudioUiState);
+    refreshWoordAudioUiState();
     refreshKlankzuiverAudioUiState();
-    $("opdracht1_audio_path").addEventListener("input", refreshOpdracht1AudioUiState);
-    $("title").addEventListener("input", refreshOpdracht1AudioUiState);
-    refreshOpdracht1AudioUiState();
-    wireAudioInput("opdracht2_audio_path", "btnPlayOpdracht2Audio");
-    wireAudioInput("opdracht3_audio_path", "btnPlayOpdracht3Audio");
-    wireAudioInput("opdracht4_audio_path", "btnPlayOpdracht4Audio");
-    wireAudioInput("object3_audio_path", "btnPlayAudioObject3");
-    wireAudioInput("opdracht5_audio_path", "btnPlayOpdracht5Audio");
-    wireAudioInput("opdracht6_audio_path", "btnPlayOpdracht6Audio");
-    wireAudioInput("woord_audio_path", "btnPlayWoordAudio");
-    wireAudioInput("object2_audio_path", "btnPlayAudioObject2");
+    for (const no of [1, 2, 3, 4, 5, 6]) {
+      $(`opdracht${no}_audio_path`).addEventListener("input", () => refreshOpdrachtAudioUiState(no));
+      $("title").addEventListener("input", () => refreshOpdrachtAudioUiState(no));
+      refreshOpdrachtAudioUiState(no);
+    }
     wireImagePreview("image1_preview");
     wireImagePreview("image2_preview");
     wireImagePreview("image3_preview");
