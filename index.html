@@ -2168,5 +2168,11 @@ function scheduleAutosave() {
       }
     });
   </script>
+  <footer class="tiny muted" style="margin-top:24px; padding-top:12px; border-top:1px solid var(--line); text-align:center;">
+    © <span id="copyrightYear"></span> Bartiméus Onderwijs. Alle rechten op de inhoud voorbehouden.
+  </footer>
+  <script>
+    document.getElementById("copyrightYear").textContent = String(new Date().getFullYear());
+  </script>
 </body>
 </html>
