@@ -69,6 +69,7 @@ $ALLOWED_OUTPUT_DIRS = [
   "/sounds/nl/objects/",
   "/sounds/nl/stories/",
   "/sounds/nl/opdracht/",
+  "/sounds/nl/out/",
   // "/sounds/nl/woorden/",
 ];
 

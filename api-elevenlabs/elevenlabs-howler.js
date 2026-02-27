@@ -22,6 +22,9 @@
     btnClear: $("btnClear"),
     btnClearText: $("clearTextBtn"), // <-- added
     btnDownload: $("btnDownload"),
+    btnDownloadMerged: $("btnDownloadMerged"),
+    btnPlayMerged: $("btnPlayMerged"),
+    btnDownloadMergedFile: $("btnDownloadMergedFile"),
     status: $("status"),
     log: $("log"),
   };
@@ -31,10 +34,19 @@
   let currentAbort = null;
   let lastAudioBlob = null;
   let lastAudioFilename = null;
+  let mergedAudio = null;
+  let mergedAudioVersion = "";
   let sb = null;
   let savedVoiceIdPref = "";
   const voiceLinkById = new Map();
   const FIXED_OUTPUT_FORMAT = "mp3_44100_128";
+  const BRAILLE_AUDIO_BASE_URL = "https://www.tastenbraille.com/braillestudio";
+  const STORY_MP3_UPLOAD_URL = "https://www.tastenbraille.com/upload_mp3.php";
+  const MIXED_MERGE_API_URL = "https://www.tastenbraille.com/api/mixedmerge_mp3.php";
+  const MIXED_MERGE_OUTPUT_DIR = "/sounds/nl/out/";
+  const MIXED_MERGE_OUTPUT_FILENAME = "merged.mp3";
+  const MIXED_MERGE_PARTS_PATH = "sounds/nl/instruction/_parts";
+  const SPEECH_BASE_PATH = "/sounds/nl/speech/";
 
   const STORAGE = Object.freeze({
     rememberVoice: "elevenlabs.remember.voiceId",
@@ -352,6 +364,13 @@
     }
   }
 
+  function buildAudioUrl(path) {
+    const p = String(path || "").trim();
+    if (!p) return "";
+    if (/^https?:\/\//i.test(p)) return p;
+    return `${BRAILLE_AUDIO_BASE_URL}${p.startsWith("/") ? p : `/${p}`}`;
+  }
+
   function getEndpoint(voiceId, outputFormat) {
     const base = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/stream`;
     if (!outputFormat) return base;
@@ -412,6 +431,94 @@
     }
 
     return res;
+  }
+
+  async function synthesizeTextToMp3Blob({ apiKey, voiceId, text, modelId, outputFormat }) {
+    const res = await fetch(getEndpoint(voiceId, outputFormat), {
+      method: "POST",
+      headers: {
+        "xi-api-key": apiKey,
+        "Content-Type": "application/json",
+        "Accept": "audio/mpeg",
+      },
+      body: JSON.stringify(buildBody(text, modelId)),
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`ElevenLabs failed (${res.status}). ${body}`.trim());
+    }
+    return res.blob();
+  }
+
+  async function fetchSpeechTokenMp3Blob(token) {
+    const normalized = String(token || "").replace(/\.mp3$/i, "").trim();
+    if (!normalized) throw new Error("Speech token is empty.");
+    const relPath = `${SPEECH_BASE_PATH}${normalized}.mp3`;
+    const res = await fetch(buildAudioUrl(relPath), { cache: "no-store" });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Speech token fetch failed (${res.status}) for ${relPath}. ${body}`.trim());
+    }
+    return res.blob();
+  }
+
+  function parseMixedTextSegments(rawInput) {
+    const raw = String(rawInput || "").trim();
+    if (!raw) throw new Error("Text is empty.");
+
+    const segments = [];
+    const re = /<([^>]+)>/g;
+    let cursor = 0;
+    let match;
+
+    while ((match = re.exec(raw)) !== null) {
+      const textBefore = raw.slice(cursor, match.index).replace(/\s+/g, " ").trim();
+      if (textBefore) segments.push({ type: "tts", value: textBefore });
+
+      const tokenRaw = (match[1] || "").replace(/\s+/g, " ").trim();
+      if (tokenRaw) {
+        const tokenParts = tokenRaw.split(",").map((s) => s.trim()).filter(Boolean);
+        for (const token of tokenParts) segments.push({ type: "speech", value: token });
+      }
+      cursor = re.lastIndex;
+    }
+
+    const textAfter = raw.slice(cursor).replace(/\s+/g, " ").trim();
+    if (textAfter) segments.push({ type: "tts", value: textAfter });
+
+    if (!segments.length) {
+      throw new Error("No valid segments found. Use text and optionally <speech-token> tags.");
+    }
+    return segments;
+  }
+
+  function getMergeGapMs() {
+    const raw = (els.mergeGapMs?.value || storageGet(STORAGE.mergeGapMs) || "500").trim();
+    const n = Number.parseInt(raw, 10);
+    if (!Number.isFinite(n)) return 500;
+    return Math.min(5000, Math.max(0, n));
+  }
+
+  function getUploadToken() {
+    return (els.storyUploadToken?.value || storageGet(STORAGE.storyUploadToken) || "").trim();
+  }
+
+  async function uploadBlobToStoryEndpoint(blob, { path, audiofile, token }) {
+    const form = new FormData();
+    form.append("token", token);
+    form.append("path", path);
+    form.append("audiofile", audiofile);
+    form.append("file", blob, audiofile);
+
+    const res = await fetch(STORY_MP3_UPLOAD_URL, {
+      method: "POST",
+      body: form,
+    });
+
+    const body = await res.text().catch(() => "");
+    if (!res.ok) throw new Error(`MP3 upload failed (${res.status}). ${body}`.trim());
+    try { return JSON.parse(body); } catch { return { ok: true, raw: body }; }
   }
 
   async function playViaBlobBuffering(params) {
@@ -662,6 +769,7 @@
   function onStop() {
     log("Stop pressed.");
     cleanupAudio({ abortFetch: true });
+    stopMergedPlayback();
     setStatus("Idle");
     els.btnPlay && (els.btnPlay.disabled = false);
     els.btnStop && (els.btnStop.disabled = true);
@@ -669,6 +777,7 @@
 
   function onClear() {
     if (els.log) els.log.textContent = "";
+    stopMergedPlayback();
     log("Log cleared.");
   }
 
@@ -712,12 +821,188 @@
     }
   }
 
+  function setMergedButtonBusy(busy) {
+    if (!els.btnDownloadMerged) return;
+    els.btnDownloadMerged.disabled = !!busy;
+    els.btnDownloadMerged.textContent = busy ? "Producing..." : "Produce";
+  }
+
+  function getMergedAudioUrl() {
+    const base = buildAudioUrl(`${MIXED_MERGE_OUTPUT_DIR}${MIXED_MERGE_OUTPUT_FILENAME}`);
+    if (!mergedAudioVersion) return base;
+    return `${base}${base.includes("?") ? "&" : "?"}v=${encodeURIComponent(mergedAudioVersion)}`;
+  }
+
+  function setMergedPlayButtonText(isPlaying) {
+    if (!els.btnPlayMerged) return;
+    els.btnPlayMerged.textContent = isPlaying ? "Pause" : "Play";
+  }
+
+  function stopMergedPlayback() {
+    if (!mergedAudio) return;
+    try { mergedAudio.pause(); } catch {}
+    try { mergedAudio.currentTime = 0; } catch {}
+    setMergedPlayButtonText(false);
+  }
+
+  function ensureMergedAudio() {
+    if (mergedAudio) return mergedAudio;
+    mergedAudio = new Audio();
+    mergedAudio.preload = "none";
+    mergedAudio.addEventListener("ended", () => setMergedPlayButtonText(false));
+    return mergedAudio;
+  }
+
+  function onPlayMerged() {
+    const player = ensureMergedAudio();
+    const nextUrl = getMergedAudioUrl();
+    const currentNoHash = (player.src || "").split("#")[0];
+    if (!currentNoHash || currentNoHash !== nextUrl) {
+      player.src = nextUrl;
+    }
+    if (!player.paused) {
+      player.pause();
+      setMergedPlayButtonText(false);
+      return;
+    }
+    player.play()
+      .then(() => setMergedPlayButtonText(true))
+      .catch((e) => {
+        log(`Play merged failed: ${e?.message || e}`);
+        setStatus("Error");
+        setMergedPlayButtonText(false);
+      });
+  }
+
+  async function onDownloadMergedFile() {
+    try {
+      setStatus("Downloading merged…");
+      const url = buildAudioUrl(`${MIXED_MERGE_OUTPUT_DIR}${MIXED_MERGE_OUTPUT_FILENAME}`);
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status}. ${body}`.trim());
+      }
+      const blob = await res.blob();
+      await saveAudioBlobToFiles(blob, MIXED_MERGE_OUTPUT_FILENAME);
+      log(`Downloaded merged file: ${url}`);
+      setStatus("Idle");
+    } catch (e) {
+      log(`Download merged failed: ${e?.message || e}. No fallback to new tab is used.`);
+      setStatus("Error");
+    }
+  }
+
+  async function onDownloadMerged() {
+    const apiKey = (els.apiKey?.value || "").trim();
+    const voiceId = (els.voiceId?.value || "").trim();
+    const text = (els.text?.value || "").trim();
+    const modelId = "eleven_v3";
+    const outputFormat = FIXED_OUTPUT_FORMAT;
+    const token = getUploadToken();
+    const gapMs = getMergeGapMs();
+
+    persistStoryUploadToken(token);
+
+    if (!apiKey || !voiceId || !text) {
+      log("Missing required fields for merged download: API key, Voice, Text.");
+      setStatus("Missing input");
+      return;
+    }
+    if (!token) {
+      log("Upload token missing (storyMp3Upload.token).");
+      setStatus("Missing token");
+      return;
+    }
+
+    setMergedButtonBusy(true);
+    try {
+      setStatus("Preparing merge…");
+      const segments = parseMixedTextSegments(text);
+
+      if (segments.length === 1) {
+        const blob = segments[0].type === "speech"
+          ? await fetchSpeechTokenMp3Blob(segments[0].value)
+          : await synthesizeTextToMp3Blob({ apiKey, voiceId, text: segments[0].value, modelId, outputFormat });
+        const uploadPath = MIXED_MERGE_OUTPUT_DIR.replace(/^\/+|\/+$/g, "");
+        const singleResult = await uploadBlobToStoryEndpoint(blob, {
+          token,
+          path: uploadPath,
+          audiofile: MIXED_MERGE_OUTPUT_FILENAME,
+        });
+        const singleUrl = singleResult?.url || buildAudioUrl(`${MIXED_MERGE_OUTPUT_DIR}${MIXED_MERGE_OUTPUT_FILENAME}`);
+        mergedAudioVersion = String(Date.now());
+        stopMergedPlayback();
+        log(`Merged file produced: ${singleUrl}`);
+        setStatus("Idle");
+        return;
+      }
+
+      const sources = [];
+      const stem = `merged-${Date.now()}`;
+      let partNo = 1;
+      for (const seg of segments) {
+        if (seg.type === "speech") {
+          const normalized = seg.value.replace(/\.mp3$/i, "");
+          sources.push(`${SPEECH_BASE_PATH}${normalized}.mp3`);
+          continue;
+        }
+        const blob = await synthesizeTextToMp3Blob({ apiKey, voiceId, text: seg.value, modelId, outputFormat });
+        const partFilename = `${stem}-part-${String(partNo).padStart(3, "0")}.mp3`;
+        await uploadBlobToStoryEndpoint(blob, {
+          token,
+          path: MIXED_MERGE_PARTS_PATH,
+          audiofile: partFilename,
+        });
+        sources.push(`/${MIXED_MERGE_PARTS_PATH}/${partFilename}`);
+        partNo += 1;
+      }
+
+      const mergeRes = await fetch(MIXED_MERGE_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          outputDir: MIXED_MERGE_OUTPUT_DIR,
+          sources,
+          outputFilename: MIXED_MERGE_OUTPUT_FILENAME,
+          gapMs,
+          debug: true,
+          tryCopyFirst: false,
+        }),
+      });
+
+      const mergeBodyText = await mergeRes.text().catch(() => "");
+      let mergeBody = null;
+      try { mergeBody = mergeBodyText ? JSON.parse(mergeBodyText) : null; } catch {}
+      if (!mergeRes.ok || mergeBody?.ok === false) {
+        throw new Error(`Mixed merge failed (${mergeRes.status}). ${mergeBodyText}`.trim());
+      }
+
+      const outputUrl = mergeBody?.outputUrl || mergeBody?.url || buildAudioUrl(`${MIXED_MERGE_OUTPUT_DIR}${MIXED_MERGE_OUTPUT_FILENAME}`);
+      mergedAudioVersion = String(Date.now());
+      stopMergedPlayback();
+      log(`Merged file produced: ${outputUrl}`);
+      setStatus("Idle");
+    } catch (e) {
+      log(`Merged download failed: ${e?.message || e}`);
+      setStatus("Error");
+    } finally {
+      setMergedButtonBusy(false);
+    }
+  }
+
   // Wire up
   els.btnPlay?.addEventListener("click", onPlay);
   els.btnStop?.addEventListener("click", onStop);
   els.btnClear?.addEventListener("click", onClear);
   els.btnClearText?.addEventListener("click", onClearText); // <-- added
   els.btnDownload?.addEventListener("click", onDownload);
+  els.btnDownloadMerged?.addEventListener("click", onDownloadMerged);
+  els.btnPlayMerged?.addEventListener("click", onPlayMerged);
+  els.btnDownloadMergedFile?.addEventListener("click", onDownloadMergedFile);
   els.btnVoiceInfo?.addEventListener("click", onVoiceInfoClick);
   els.apiKey?.addEventListener("change", () => persistApiKey());
   els.voiceId?.addEventListener("change", () => {
