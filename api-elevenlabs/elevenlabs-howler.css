@@ -24,6 +24,7 @@
   --accent: #7aa2ff;
   --accent2: #4f6bed;
   --danger: #ff6b6b;
+  --control-h: 2.5rem;
 }
 
 * { box-sizing: border-box; }
@@ -78,16 +79,22 @@ body {
 }
 .voice-select-row select {
   flex: 1;
-  height: 2.5rem;
+  height: var(--control-h);
   padding-top: 0;
   padding-bottom: 0;
 }
 .voice-select-row .btn {
   width: auto;
   white-space: nowrap;
-  height: 2.5rem;
+  height: var(--control-h);
   display: inline-flex;
   align-items: center;
+}
+
+#mergeGapMs {
+  height: var(--control-h);
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .full { grid-column: 1 / -1; }

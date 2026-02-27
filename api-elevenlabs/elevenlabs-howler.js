@@ -11,6 +11,7 @@
     modelId: $("modelId"),
     outputFormat: $("outputFormat"),
     storyUploadToken: $("storyUploadToken"),
+    mergeGapMs: $("mergeGapMs"),
     chkRememberVoice: $("chkRememberVoice"),
     chkRememberKey: $("chkRememberKey"),
     chkRememberModel: $("chkRememberModel"),
@@ -40,9 +41,11 @@
     rememberKey: "elevenlabs.remember.apiKey",
     rememberModel: "elevenlabs.remember.modelId",
     voiceId: "elevenlabs.voiceId",
+    voiceName: "elevenlabs.voiceName",
     apiKey: "elevenlabs.apiKey",
     modelId: "elevenlabs.modelId",
     storyUploadToken: "storyMp3Upload.token",
+    mergeGapMs: "mixedmerge.gapMs",
   });
 
   function storageGet(key) {
@@ -182,14 +185,22 @@
   function persistVoiceId(valueRaw) {
     if (!els.voiceId) return;
     const value = (valueRaw ?? els.voiceId.value ?? "").trim();
+    const selectedName = (els.voiceId?.selectedOptions?.[0]?.textContent || "").trim();
 
     if (!isRememberVoiceEnabled()) {
       storageDel(STORAGE.voiceId);
+      storageDel(STORAGE.voiceName);
       return;
     }
 
-    if (!value) storageDel(STORAGE.voiceId);
-    else storageSet(STORAGE.voiceId, value);
+    if (!value) {
+      storageDel(STORAGE.voiceId);
+      storageDel(STORAGE.voiceName);
+      return;
+    }
+    storageSet(STORAGE.voiceId, value);
+    if (selectedName) storageSet(STORAGE.voiceName, selectedName);
+    else storageDel(STORAGE.voiceName);
   }
 
   function persistApiKey(valueRaw) {
@@ -225,6 +236,15 @@
     else storageSet(STORAGE.storyUploadToken, value);
   }
 
+  function persistMergeGapMs(valueRaw) {
+    if (!els.mergeGapMs) return;
+    const raw = (valueRaw ?? els.mergeGapMs.value ?? "").trim();
+    const n = Number.parseInt(raw, 10);
+    const gap = Number.isFinite(n) ? Math.min(5000, Math.max(0, n)) : 500;
+    els.mergeGapMs.value = String(gap);
+    storageSet(STORAGE.mergeGapMs, String(gap));
+  }
+
   function loadPrefs() {
     const rememberVoice = storageGet(STORAGE.rememberVoice);
     const rememberKey = storageGet(STORAGE.rememberKey);
@@ -257,6 +277,12 @@
     const savedStoryUploadToken = storageGet(STORAGE.storyUploadToken);
     if (savedStoryUploadToken && els.storyUploadToken) {
       els.storyUploadToken.value = savedStoryUploadToken;
+    }
+
+    const savedMergeGapMs = storageGet(STORAGE.mergeGapMs);
+    if (els.mergeGapMs) {
+      els.mergeGapMs.value = (savedMergeGapMs || "500").trim() || "500";
+      persistMergeGapMs(els.mergeGapMs.value);
     }
   }
 
@@ -700,6 +726,7 @@
   });
   els.modelId?.addEventListener("change", () => persistModelId());
   els.storyUploadToken?.addEventListener("change", () => persistStoryUploadToken());
+  els.mergeGapMs?.addEventListener("change", () => persistMergeGapMs());
 
   els.chkRememberKey?.addEventListener("change", () => {
     persistRememberFlags();
