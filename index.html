@@ -150,7 +150,7 @@
             <textarea id="klankzuiver_text"></textarea>
 
             <div class="inlineRow">
-              <input id="klankzuiver_letters" placeholder="/sounds/nl/klankzuiver/" />
+              <input id="klankzuiver_audio_path" placeholder="/sounds/nl/klankzuiver/" />
               <button id="btnPlayKlankzuiverAudio" disabled>Play</button>
             </div>
           </div>
@@ -422,7 +422,7 @@
       { id: "object1_description", key: "object1_description" },
       { id: "object1_audio_path", key: "object1_audio_path" },
       { id: "klankzuiver_text", key: "klankzuiver_text" },
-      { id: "klankzuiver_letters", key: "klankzuiver_audio_path" },
+      { id: "klankzuiver_audio_path", key: "klankzuiver_audio_path" },
       { id: "woord_text", key: "woord_text" },
       { id: "woord_audio_path", key: "woord_audio_path" },
       { id: "opdracht1_text", key: "opdracht1_text" },
@@ -1169,7 +1169,7 @@ function scheduleAutosave() {
       setVal("object1_description", row.object1_description || "");
       setVal("object1_audio_path", row.object1_audio_path || "");
       setVal("klankzuiver_text", row.klankzuiver_text || "");
-      setVal("klankzuiver_letters", row.klankzuiver_audio_path || "");
+      setVal("klankzuiver_audio_path", row.klankzuiver_audio_path || "");
       setVal("opdracht1_text", row.opdracht1_text || "");
       setVal("opdracht2_text", row.opdracht2_text || "");
       setVal("opdracht3_text", row.opdracht3_text || "");
@@ -1219,7 +1219,7 @@ function scheduleAutosave() {
       setPlayButton("btnPlayOpdracht6Audio", val("opdracht6_audio_path"));
       setPlayButton("btnPlayWoordAudio", val("woord_audio_path"));
       setPlayButton("btnPlayAudioObject2", val("object2_audio_path"));
-      setPlayButton("btnPlayKlankzuiverAudio", val("klankzuiver_letters"));
+      setPlayButton("btnPlayKlankzuiverAudio", val("klankzuiver_audio_path"));
       updateImagePreview("image1_path", "image1_preview");
       updateImagePreview("image2_path", "image2_preview");
       updateImagePreview("image3_path", "image3_preview");
@@ -1267,7 +1267,7 @@ function scheduleAutosave() {
           object1_description: val("object1_description").trim(),
           object1_audio_path: val("object1_audio_path").trim(),
           klankzuiver_text: val("klankzuiver_text"),
-          klankzuiver_audio_path: val("klankzuiver_letters").trim(),
+          klankzuiver_audio_path: val("klankzuiver_audio_path").trim(),
 
           opdracht1_text: val("opdracht1_text"),
           opdracht2_text: val("opdracht2_text"),
@@ -2064,7 +2064,7 @@ function scheduleAutosave() {
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
     $("btnPlayKlankzuiverAudio").onclick = () => {
-      try { toggleAudio($("btnPlayKlankzuiverAudio"), val("klankzuiver_letters")); }
+      try { toggleAudio($("btnPlayKlankzuiverAudio"), val("klankzuiver_audio_path")); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
     $("btnPlayOpdracht1Audio").onclick = () => {
@@ -2109,7 +2109,7 @@ function scheduleAutosave() {
     $("title").addEventListener("input", refreshStoryAudioUiState);
     refreshStoryAudioUiState();
     wireAudioInput("object1_audio_path", "btnPlayAudioObject1");
-    wireAudioInput("klankzuiver_letters", "btnPlayKlankzuiverAudio");
+    wireAudioInput("klankzuiver_audio_path", "btnPlayKlankzuiverAudio");
     wireAudioInput("opdracht1_audio_path", "btnPlayOpdracht1Audio");
     wireAudioInput("opdracht2_audio_path", "btnPlayOpdracht2Audio");
     wireAudioInput("opdracht3_audio_path", "btnPlayOpdracht3Audio");

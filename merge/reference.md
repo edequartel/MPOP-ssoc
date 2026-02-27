@@ -1,4 +1,3 @@
-
 # Secure Server-Side MP3 Merge (Bluehost) — Reference
 
 ## A. Install ffmpeg on Bluehost (shared hosting)
@@ -81,9 +80,18 @@
 - Safe for shared hosting
 - No client-side CORS exposure
 
-
-curl --location 'https://www.tastenbraille.com/upload_mp3.php' \
---form 'token=JOUW_TOKEN' \
---form 'path=sounds/nl/stories' \
---form 'audiofile=temp.mp3' \
---form 'file=@"/Users/ericdequartel/Downloads/temp.mp3"'
+curl --location 'https://www.tastenbraille.com/api/merge_mp3.php' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer een_heel_lang_random_token_hier' \
+--data '{
+    "sources": [
+      "/sounds/nl/speech/b.mp3",
+      "/sounds/nl/speech/a.mp3",
+      "/sounds/nl/speech/l.mp3",
+      "/sounds/nl/speech/bal.mp3"
+    ],
+    "outputFilename": "ballbal.mp3",
+    "gapMs": 500,
+    "debug": true,
+    "tryCopyFirst": false
+  }'
