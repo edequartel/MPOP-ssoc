@@ -3,28 +3,142 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Make bal (b+a+l)</title>
+  <title>Merge MP3s (Full Logging)</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; padding:16px; }
+    textarea, input { width: 100%; font-size: 14px; }
+    textarea { height: 120px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin: 10px 0; }
+    .row > * { flex: 1; min-width: 220px; }
     button { font-size:16px; padding:10px 14px; }
-    #status { margin-top:12px; color:#444; white-space:pre-wrap; }
+    #log { margin-top:12px; padding:12px; background:#0b0f14; color:#e8eef6; border-radius:10px;
+           white-space:pre-wrap; word-break:break-word; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+    small { color:#555; }
   </style>
 </head>
 <body>
-  <h3>Merge: b.mp3 + a.mp3 + l.mp3 → bal.wav</h3>
-  <button id="go">Make bal</button>
-  <div id="status"></div>
+  <h2>Merge online clips → WAV (with full logging)</h2>
+  <p><small>
+    Tip: don’t run this as <b>file://</b>. Use <b>http://localhost</b> (python http.server) or host it on tastenbraille.com.
+    Output is WAV (browser-native).
+  </small></p>
+
+  <label>URLs (one per line)</label>
+  <textarea id="urls">https://www.tastenbraille.com/braillestudio/sounds/nl/alfabet/b.mp3
+https://www.tastenbraille.com/braillestudio/sounds/nl/alfabet/a.mp3
+https://www.tastenbraille.com/braillestudio/sounds/nl/alfabet/l.mp3</textarea>
+
+  <div class="row">
+    <label>Silence between clips (ms)
+      <input id="gapMs" type="number" value="0" min="0" step="10"/>
+    </label>
+    <label>Output filename
+      <input id="filename" type="text" value="bal.wav"/>
+    </label>
+  </div>
+
+  <div class="row">
+    <label>Exist check
+      <select id="existMode">
+        <option value="head">HEAD (fast, may be blocked)</option>
+        <option value="get" selected>GET (safer)</option>
+      </select>
+    </label>
+    <label>Fetch mode
+      <select id="fetchMode">
+        <option value="cors" selected>cors</option>
+        <option value="same-origin">same-origin</option>
+        <option value="no-cors">no-cors (won’t decode)</option>
+      </select>
+    </label>
+  </div>
+
+  <button id="go">Check + Merge + Download</button>
+
+  <div id="log"></div>
 
 <script>
-const BASE = "https://www.tastenbraille.com/braillestudio/sounds/nl/alfabet/";
-const URLS = [BASE + "b.mp3", BASE + "a.mp3", BASE + "l.mp3"];
-const GAP_MS = 0; // set e.g. 120 for a short pause between letters
+const logEl = document.getElementById("log");
+function log(...args) {
+  const s = args.map(a => (typeof a === "string" ? a : JSON.stringify(a, null, 2))).join(" ");
+  console.log(...args);
+  logEl.textContent += s + "\n";
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function clearLog() { logEl.textContent = ""; }
 
-async function fetchDecode(ctx, url) {
-  const res = await fetch(url, { mode: "cors" });
-  if (!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}`);
+function prettyHeaders(headers) {
+  const obj = {};
+  for (const [k, v] of headers.entries()) obj[k.toLowerCase()] = v;
+  return obj;
+}
+
+async function existsCheck(url, mode, fetchMode) {
+  // Some hosts block HEAD; GET is safest. We keep response small via Range if allowed.
+  const method = mode === "head" ? "HEAD" : "GET";
+  const headers = new Headers();
+  if (method === "GET") headers.set("Range", "bytes=0-1"); // tiny fetch if server supports it
+
+  log(`\n[exists] ${method} ${url}`);
+  let res;
+  try {
+    res = await fetch(url, { method, mode: fetchMode, headers, cache: "no-store" });
+  } catch (e) {
+    log(`[exists] fetch error: ${e?.message || e}`);
+    return { ok: false, reason: "fetch_error", error: String(e) };
+  }
+
+  const h = prettyHeaders(res.headers);
+  log(`[exists] status: ${res.status} ${res.statusText}`);
+  log(`[exists] type: ${res.type}  redirected: ${res.redirected}  url(final): ${res.url}`);
+  log(`[exists] content-type: ${h["content-type"] || "(none)"}`);
+  log(`[exists] content-length: ${h["content-length"] || "(none)"}  accept-ranges: ${h["accept-ranges"] || "(none)"}`);
+
+  const ok = res.ok;
+  return { ok, status: res.status, statusText: res.statusText, headers: h, finalUrl: res.url, redirected: res.redirected, type: res.type };
+}
+
+async function fetchArrayBufferWithLogging(url, fetchMode) {
+  log(`\n[fetch] GET ${url}`);
+  let res;
+  try {
+    res = await fetch(url, { method: "GET", mode: fetchMode, cache: "no-store" });
+  } catch (e) {
+    throw new Error(`[fetch] network error for ${url}: ${e?.message || e}`);
+  }
+
+  const h = prettyHeaders(res.headers);
+  log(`[fetch] status: ${res.status} ${res.statusText}`);
+  log(`[fetch] type: ${res.type}  redirected: ${res.redirected}  url(final): ${res.url}`);
+  log(`[fetch] content-type: ${h["content-type"] || "(none)"}`);
+  log(`[fetch] content-length: ${h["content-length"] || "(none)"}`);
+
+  if (!res.ok) {
+    // Try to read text snippet for debugging (could be HTML error page)
+    let snippet = "";
+    try {
+      const txt = await res.text();
+      snippet = txt.slice(0, 300);
+    } catch {}
+    throw new Error(`[fetch] HTTP ${res.status} for ${url}\ncontent-type: ${h["content-type"] || "(none)"}\nbody-snippet: ${snippet}`);
+  }
+
   const ab = await res.arrayBuffer();
-  return await ctx.decodeAudioData(ab);
+  log(`[fetch] bytes: ${ab.byteLength}`);
+  return { ab, headers: h };
+}
+
+async function decodeWithLogging(ctx, url, fetchMode) {
+  const { ab, headers } = await fetchArrayBufferWithLogging(url, fetchMode);
+
+  try {
+    const buf = await ctx.decodeAudioData(ab.slice(0)); // slice to detach
+    log(`[decode] ok: duration=${buf.duration.toFixed(3)}s  sampleRate=${buf.sampleRate}  channels=${buf.numberOfChannels}  length(frames)=${buf.length}`);
+    return buf;
+  } catch (e) {
+    const ct = headers["content-type"] || "(none)";
+    throw new Error(`[decode] decodeAudioData failed for ${url}\ncontent-type: ${ct}\nbytes: ${ab.byteLength}\nerror: ${e?.message || e}`);
+  }
 }
 
 function silenceBuffer(ctx, ms, sampleRate) {
@@ -34,12 +148,15 @@ function silenceBuffer(ctx, ms, sampleRate) {
 
 function concatMono(ctx, buffers, gapMs) {
   const sr = buffers[0].sampleRate;
+
+  // If sources differ in sampleRate, simplest is to fail (resampling is more code).
   for (const b of buffers) {
-    if (b.sampleRate !== sr) throw new Error(`Sample rate mismatch: ${b.sampleRate} vs ${sr}`);
+    if (b.sampleRate !== sr) {
+      throw new Error(`[concat] sampleRate mismatch: got ${b.sampleRate}, expected ${sr}. Standardize your mp3 exports.`);
+    }
   }
 
   const gap = gapMs > 0 ? silenceBuffer(ctx, gapMs, sr) : null;
-
   const seq = [];
   for (let i = 0; i < buffers.length; i++) {
     seq.push(buffers[i]);
@@ -51,12 +168,12 @@ function concatMono(ctx, buffers, gapMs) {
 
   let offset = 0;
   const outData = out.getChannelData(0);
-
   for (const b of seq) {
     outData.set(b.getChannelData(0), offset);
     offset += b.length;
   }
 
+  log(`[concat] totalFrames=${out.length}  totalSeconds=${(out.length / sr).toFixed(3)}s  sampleRate=${sr}`);
   return out;
 }
 
@@ -88,11 +205,11 @@ function audioBufferToWavBlob(buffer) {
   writeStr(36, "data");
   view.setUint32(40, dataSize, true);
 
-  let offset = 44;
+  let off = 44;
   const data = buffer.getChannelData(0);
-  for (let i=0; i<data.length; i++, offset += 2) {
+  for (let i=0; i<data.length; i++, off += 2) {
     const s = Math.max(-1, Math.min(1, data[i]));
-    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+    view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
   }
 
   return new Blob([view], { type: "audio/wav" });
@@ -104,38 +221,93 @@ function downloadBlob(blob, filename) {
   a.download = filename;
   document.body.appendChild(a);
   a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1200);
 }
 
 document.getElementById("go").onclick = async () => {
-  const status = document.getElementById("status");
-  status.textContent = "Starting…";
+  clearLog();
+  const urls = document.getElementById("urls").value.split("\n").map(s => s.trim()).filter(Boolean);
+  const gapMs = Number(document.getElementById("gapMs").value || 0);
+  const filename = (document.getElementById("filename").value || "merged.wav").trim();
+  const existMode = document.getElementById("existMode").value; // head|get
+  const fetchMode = document.getElementById("fetchMode").value; // cors|same-origin|no-cors
 
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  log(`[env] location.href=${location.href}`);
+  log(`[env] origin=${location.origin}`);
+  log(`[env] userAgent=${navigator.userAgent}`);
+  log(`[env] urls=${urls.length}  gapMs=${gapMs}  filename=${filename}`);
+  log(`[env] existCheck=${existMode}  fetchMode=${fetchMode}`);
 
-    status.textContent = "Downloading & decoding:\n" + URLS.join("\n");
-    const buffers = [];
-    for (let i=0;i<URLS.length;i++) {
-      status.textContent = `Downloading & decoding ${i+1}/${URLS.length}…`;
-      buffers.push(await fetchDecode(ctx, URLS[i]));
-    }
-
-    status.textContent = "Concatenating…";
-    const merged = concatMono(ctx, buffers, GAP_MS);
-
-    status.textContent = "Encoding WAV…";
-    const wav = audioBufferToWavBlob(merged);
-
-    status.textContent = "Downloading bal.wav…";
-    downloadBlob(wav, "bal.wav");
-
-    status.textContent = "Done.";
-    ctx.close?.();
-  } catch (e) {
-    status.textContent = "Error:\n" + e.message +
-      "\n\nIf this is a CORS error, your server must send Access-Control-Allow-Origin.";
+  if (urls.length < 2) {
+    log("[error] Please provide at least 2 URLs.");
+    return;
   }
+
+  // 1) Existence checks
+  log("\n== Step 1: Existence checks ==");
+  const existResults = [];
+  for (const url of urls) {
+    const r = await existsCheck(url, existMode, fetchMode);
+    existResults.push({ url, ...r });
+    if (!r.ok) {
+      log(`\n[stop] Missing or not accessible: ${url}`);
+      log("[hint] If you run from file://, use http://localhost or host the html on the same domain.");
+      log("[hint] If CORS: add Access-Control-Allow-Origin for /braillestudio/sounds/.");
+      return;
+    }
+  }
+
+  // 2) Create AudioContext (must be inside click handler)
+  log("\n== Step 2: AudioContext ==");
+  let ctx;
+  try {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    log(`[audiocontext] state=${ctx.state}  sampleRate=${ctx.sampleRate}`);
+  } catch (e) {
+    log(`[error] AudioContext failed: ${e?.message || e}`);
+    return;
+  }
+
+  // 3) Fetch + decode
+  log("\n== Step 3: Fetch + decode ==");
+  const buffers = [];
+  try {
+    for (let i = 0; i < urls.length; i++) {
+      log(`\n-- Clip ${i+1}/${urls.length} --`);
+      buffers.push(await decodeWithLogging(ctx, urls[i], fetchMode));
+    }
+  } catch (e) {
+    log(`\n[error] ${e?.message || e}`);
+    log("\n[debug tips]");
+    log("• If content-type is text/html, you are receiving an error page/redirect instead of mp3.");
+    log("• If status is 403/404/302, fix URL/permissions/redirects.");
+    log("• If CORS blocked, add Access-Control-Allow-Origin on the mp3 responses.");
+    ctx.close?.();
+    return;
+  }
+
+  // 4) Concatenate
+  log("\n== Step 4: Concatenate ==");
+  let merged;
+  try {
+    merged = concatMono(ctx, buffers, gapMs);
+  } catch (e) {
+    log(`[error] ${e?.message || e}`);
+    ctx.close?.();
+    return;
+  }
+
+  // 5) Encode WAV
+  log("\n== Step 5: Encode WAV ==");
+  const wav = audioBufferToWavBlob(merged);
+  log(`[wav] sizeBytes=${wav.size}`);
+
+  // 6) Download
+  log("\n== Step 6: Download ==");
+  downloadBlob(wav, filename);
+  log("[done] Download triggered.");
+
+  ctx.close?.();
 };
 </script>
 </body>
