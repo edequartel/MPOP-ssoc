@@ -370,9 +370,10 @@
     const STORY_MP3_UPLOAD_URL = "https://www.tastenbraille.com/upload_mp3.php";
     const STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY = "storyMp3Upload.token";
     const STORY_AUDIO_EXISTS_CHECK_URL = "https://www.tastenbraille.com/check_audio_exists.php";
-    const KLANKZUIVER_MERGE_API_URL = "https://www.tastenbraille.com/api/merge_mp3.php";
+    const KLANKZUIVER_MERGE_API_URL = "https://www.tastenbraille.com/api/mixedmerge_mp3.php";
     const KLANKZUIVER_SOURCE_BASE_PATH = "/sounds/nl/speech/";
     const KLANKZUIVER_OUTPUT_DIR = "/sounds/nl/klankzuiver/";
+    const OBJECT1_TTS_PARTS_PATH = "sounds/nl/instruction/_parts";
 
     const supabaseInit = async () => {
       try {
@@ -1643,15 +1644,64 @@ function scheduleAutosave() {
       return `${getObject1OutputDirFromField()}${getObject1OutputFilename()}`;
     }
 
-    function getObject1SourcesFromText() {
+    function parseObject1DescriptionSegments() {
       const raw = (val("object1_description") || "").trim();
       if (!raw) throw new Error("object1_description is empty.");
-      const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
-      if (!parts.length) throw new Error("No comma separated entries found in object1_description.");
-      return parts.map((part) => {
-        const normalized = part.replace(/\.mp3$/i, "");
-        return `${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`;
+
+      const segments = [];
+      const re = /<([^>]+)>/g;
+      let cursor = 0;
+      let match;
+
+      while ((match = re.exec(raw)) !== null) {
+        const textBefore = raw.slice(cursor, match.index).replace(/\s+/g, " ").trim();
+        if (textBefore) segments.push({ type: "tts", value: textBefore });
+
+        const tokenRaw = (match[1] || "").replace(/\s+/g, " ").trim();
+        if (tokenRaw) {
+          const tokenParts = tokenRaw.split(",").map((s) => s.trim()).filter(Boolean);
+          for (const token of tokenParts) {
+            segments.push({ type: "speech", value: token });
+          }
+        }
+
+        cursor = re.lastIndex;
+      }
+
+      const textAfter = raw.slice(cursor).replace(/\s+/g, " ").trim();
+      if (textAfter) segments.push({ type: "tts", value: textAfter });
+
+      if (!segments.length) {
+        throw new Error("No valid object1 segments found. Use text and optionally <speech-token> tags.");
+      }
+      return segments;
+    }
+
+    async function synthesizeTextSegmentToMp3Blob(text) {
+      const apiKey = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.apiKey);
+      const voiceId = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.voiceId);
+      const modelId = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.modelId);
+      const outputFormat = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.outputFormat) || ELEVENLABS_DEFAULT_OUTPUT_FORMAT;
+
+      if (!apiKey || !voiceId) {
+        throw new Error("ElevenLabs API key/Voice ID not found in localStorage. Open ./api-elevenlabs/elevenlabs.html first and save them there.");
+      }
+
+      const res = await fetch(getElevenLabsEndpoint(voiceId, outputFormat), {
+        method: "POST",
+        headers: {
+          "xi-api-key": apiKey,
+          "Content-Type": "application/json",
+          "Accept": "audio/mpeg",
+        },
+        body: JSON.stringify(buildElevenLabsBody(text, modelId)),
       });
+
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`ElevenLabs failed (${res.status}). ${body}`.trim());
+      }
+      return res.blob();
     }
 
     function refreshObject1PlayButton() {
@@ -1699,7 +1749,7 @@ function scheduleAutosave() {
     async function produceObject1AudioViaMergeApi() {
       const outputDir = getObject1OutputDirFromField();
       const outputFilename = getObject1OutputFilename();
-      const sources = getObject1SourcesFromText();
+      const segments = parseObject1DescriptionSegments();
       const token = getStoryUploadToken();
       if (!token) {
         throw new Error(`Upload token missing in localStorage (${STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY}).`);
@@ -1708,6 +1758,28 @@ function scheduleAutosave() {
       setProduceObject1ButtonState("producing");
       try {
         msg($("saveMsg"), "Producing object1 audio...");
+        const sources = [];
+        let partNo = 1;
+        const outputStem = outputFilename.replace(/\.mp3$/i, "");
+
+        for (const seg of segments) {
+          if (seg.type === "speech") {
+            const normalized = seg.value.replace(/\.mp3$/i, "");
+            sources.push(`${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`);
+            continue;
+          }
+
+          const blob = await synthesizeTextSegmentToMp3Blob(seg.value);
+          const partFilename = `${outputStem}-part-${String(partNo).padStart(3, "0")}.mp3`;
+          await uploadStoryMp3Blob(blob, { path: OBJECT1_TTS_PARTS_PATH, audiofile: partFilename });
+          sources.push(`/${OBJECT1_TTS_PARTS_PATH}/${partFilename}`);
+          partNo += 1;
+        }
+
+        if (sources.length < 2) {
+          throw new Error("Need at least 2 audio segments to merge for object1.");
+        }
+
         let res;
         try {
           res = await fetch(KLANKZUIVER_MERGE_API_URL, {
