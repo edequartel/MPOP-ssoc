@@ -47,6 +47,7 @@
   const MIXED_MERGE_OUTPUT_FILENAME = "merged.mp3";
   const MIXED_MERGE_PARTS_PATH = "sounds/nl/instruction/_parts";
   const SPEECH_BASE_PATH = "/sounds/nl/speech/";
+  const DOWNLOAD_MERGED_API_URL = "https://www.tastenbraille.com/api/download_merged.php";
 
   const STORAGE = Object.freeze({
     rememberVoice: "elevenlabs.remember.voiceId",
@@ -877,18 +878,12 @@
   async function onDownloadMergedFile() {
     try {
       setStatus("Downloading merged…");
-      const url = buildAudioUrl(`${MIXED_MERGE_OUTPUT_DIR}${MIXED_MERGE_OUTPUT_FILENAME}`);
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(`HTTP ${res.status}. ${body}`.trim());
-      }
-      const blob = await res.blob();
-      await saveAudioBlobToFiles(blob, MIXED_MERGE_OUTPUT_FILENAME);
-      log(`Downloaded merged file: ${url}`);
+      const url = `${DOWNLOAD_MERGED_API_URL}?t=${Date.now()}`;
+      window.location.assign(url);
+      log(`Download requested via API: ${url}`);
       setStatus("Idle");
     } catch (e) {
-      log(`Download merged failed: ${e?.message || e}. No fallback to new tab is used.`);
+      log(`Download merged failed: ${e?.message || e}`);
       setStatus("Error");
     }
   }
