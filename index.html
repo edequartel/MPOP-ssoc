@@ -490,6 +490,7 @@
     ];
     const { client: sbClient, config: sbConfig, error: sbInitError } = await supabaseInit();
     sb = sbClient;
+    window.sb = sb;
     // no UI display of config values
 
     function getSupabaseMergeProxyUrl() {
