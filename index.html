@@ -77,7 +77,6 @@
           <button type="button" class="btn-like" onclick="window.open('readme.html','_blank','noreferrer')">Handleiding</button>
           <button type="button" class="btn-like" onclick="window.open('mpop.html','_blank','noreferrer')">MPOP</button>
           <button type="button" class="btn-like" onclick="window.open('./links.html','_blank','noreferrer')">Links</button>
-          <button id="btnElevenLabs" type="button" class="btn-like" onclick="window.open('./api-elevenlabs/elevenlabs.html','_blank','noreferrer')">ElevenLabs</button>
         </div>
       </div>
     </div>
@@ -142,6 +141,7 @@
               <input id="story_audio_path" placeholder="/sounds/nl/stories/" />
               <button id="btnPlayStoryAudio" disabled>Play</button>
               <button id="btnProduceStoryAudio" type="button">Produce</button>
+              <button id="btnMergeStoryAudio" type="button">Merge</button>
               <span id="storyAudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Story audio online status unknown" aria-label="Story audio online status"></span>
             </div>
           </div>
@@ -371,7 +371,6 @@
       if (el) el.value = value ?? "";
     };
     const CONFIG_URL_LOCAL = "./supabase-config.js";
-    const CONFIG_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/supabase-config.js";
     const PDF_URL_LOCAL = "/api/pdf";
     const PDF_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdf";
     const MANUAL_PDF_URL_LOCAL = "/api/manualpdf";
@@ -399,22 +398,10 @@
     const supabaseInit = async () => {
       try {
         let cfg = null;
-        try {
-          const mod = await import(CONFIG_URL_LOCAL);
-          cfg = mod?.supabaseConfig || mod?.default || null;
-          if (!cfg?.url || !cfg?.anonKey) {
-            throw new Error("Local supabase-config.js missing url/anonKey.");
-          }
-        } catch (localErr) {
-          const res = await fetch(CONFIG_URL_REMOTE);
-          if (!res.ok) {
-            const body = await res.text().catch(() => "");
-            throw new Error(`Failed to load supabase-config (${res.status}). ${body}`.trim());
-          }
-          cfg = await res.json();
-          if (!cfg?.url || !cfg?.anonKey) {
-            throw new Error("Supabase config missing url/anonKey.");
-          }
+        const mod = await import(CONFIG_URL_LOCAL);
+        cfg = mod?.supabaseConfig || mod?.default || null;
+        if (!cfg?.url || !cfg?.anonKey) {
+          throw new Error("Local supabase-config.js missing url/anonKey.");
         }
         const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
         return { client: createClient(cfg.url, cfg.anonKey), config: cfg, error: null };
@@ -434,6 +421,7 @@
     let authRefreshRunning = false;
     let authListenerBound = false;
     let isViewerRole = false;
+    let isAdminRole = false;
     let storyAudioExistsCheckSeq = 0;
     let object1AudioExistsCheckSeq = 0;
     let object2AudioExistsCheckSeq = 0;
@@ -496,9 +484,71 @@
     sb = sbClient;
     // no UI display of config values
 
+    function getSupabaseMergeProxyUrl() {
+      const baseUrl = (sbConfig?.url || "").trim();
+      if (!baseUrl) {
+        throw new Error("Supabase config URL missing.");
+      }
+      return `${baseUrl}/functions/v1/merge-proxy`;
+    }
+
+    async function getFreshSupabaseAccessToken(forceRefresh = false) {
+      if (!sb) throw new Error("Supabase client not ready.");
+
+      const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+      if (sessionError) throw sessionError;
+
+      const session = sessionData?.session ?? null;
+      const expiresAt = Number(session?.expires_at || 0);
+      const now = Math.floor(Date.now() / 1000);
+
+      if (session?.refresh_token && (forceRefresh || !session?.access_token || (expiresAt && expiresAt <= now + 60))) {
+        const { data: refreshedData, error: refreshError } = await sb.auth.refreshSession();
+        if (refreshError) throw refreshError;
+        const refreshedToken = (refreshedData?.session?.access_token || "").trim();
+        if (refreshedToken) return refreshedToken;
+      }
+
+      const token = (session?.access_token || "").trim();
+      if (!token) {
+        throw new Error("No active Supabase session. Sign in first.");
+      }
+      return token;
+    }
+
+    async function postMergeProxy(payload, { forceRefresh = false } = {}) {
+      const jwt = await getFreshSupabaseAccessToken(forceRefresh);
+      const url = getSupabaseMergeProxyUrl();
+      try {
+        return await fetch(url, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${jwt}`,
+            "Content-Type": "application/json",
+            "apikey": sbConfig?.anonKey || "",
+          },
+          body: JSON.stringify(payload),
+        });
+      } catch (e) {
+        const online = typeof navigator === "undefined" ? "unknown" : (navigator.onLine ? "online" : "offline");
+        const detail = e?.message || String(e);
+        const phase = forceRefresh ? "after session refresh" : "initial request";
+        throw new Error(`merge-proxy fetch failed (${phase}) at ${url}. online=${online}. ${detail}`.trim());
+      }
+    }
+
     function msg(el, text, ok=true) {
       el.innerHTML = text ? `<span class="${ok ? 'ok' : 'err'}">${escapeHtml(text)}</span>` : '';
     }
+
+    function updateAdminOnlyAudioButtons() {
+      for (const btn of document.querySelectorAll("#editor button")) {
+        const btnId = btn.id || "";
+        if (!btnId.startsWith("btnProduce") && !btnId.startsWith("btnMerge")) continue;
+        btn.style.display = isAdminRole ? "" : "none";
+      }
+    }
+
     function escapeHtml(s) {
       return (s ?? '').toString()
         .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
@@ -1095,13 +1145,17 @@
         const role = error ? "unknown" : (prof?.role || "unknown");
         $("userRole").textContent = role;
         isViewerRole = role === "viewer";
+        isAdminRole = role === "admin";
         setEditorReadonly(isViewerRole);
+        updateAdminOnlyAudioButtons();
 
         await loadItems();
       } else {
         $("itemsList").innerHTML = "";
         hideEditor();
         isViewerRole = false;
+        isAdminRole = false;
+        updateAdminOnlyAudioButtons();
       }
       } finally {
         authRefreshRunning = false;
@@ -3031,6 +3085,70 @@ function scheduleAutosave() {
       }
     }
 
+    function setMergeStoryButtonState(state) {
+      const btn = $("btnMergeStoryAudio");
+      if (!btn) return;
+      if (btn._mergeStateTimer) {
+        window.clearTimeout(btn._mergeStateTimer);
+        btn._mergeStateTimer = null;
+      }
+
+      if (state === "idle") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Merge";
+        return;
+      }
+      if (state === "producing") {
+        btn.disabled = true;
+        btn.classList.add("busy");
+        btn.textContent = "Producing MP3...";
+        return;
+      }
+      if (state === "merging") {
+        btn.disabled = true;
+        btn.classList.add("busy");
+        btn.textContent = "Merging...";
+        return;
+      }
+      if (state === "done") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Merged";
+        btn._mergeStateTimer = window.setTimeout(() => setMergeStoryButtonState("idle"), 4000);
+        return;
+      }
+      if (state === "error") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Error";
+        btn._mergeStateTimer = window.setTimeout(() => setMergeStoryButtonState("idle"), 4000);
+      }
+    }
+
+    async function buildStoryMergeSources(outputFilename) {
+      const segments = parseStoryTextSegments();
+      const sources = [];
+      let partNo = 1;
+      const outputStem = outputFilename.replace(/\.mp3$/i, "");
+
+      for (const seg of segments) {
+        if (seg.type === "speech") {
+          const normalized = seg.value.replace(/\.mp3$/i, "");
+          sources.push(`${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`);
+          continue;
+        }
+
+        const blob = await synthesizeTextSegmentToMp3Blob(seg.value);
+        const partFilename = `${outputStem}-part-${String(partNo).padStart(3, "0")}.mp3`;
+        await uploadStoryMp3Blob(blob, { path: OBJECT1_TTS_PARTS_PATH, audiofile: partFilename });
+        sources.push(`/${OBJECT1_TTS_PARTS_PATH}/${partFilename}`);
+        partNo += 1;
+      }
+
+      return sources;
+    }
+
     async function produceStoryAudioWithElevenLabs() {
       const target = getStoryUploadTarget();
       const outputDir = `/${target.path.replace(/^\/+/, "").replace(/\/+$/, "")}/`;
@@ -3054,23 +3172,7 @@ function scheduleAutosave() {
           return;
         }
 
-        const sources = [];
-        let partNo = 1;
-        const outputStem = outputFilename.replace(/\.mp3$/i, "");
-
-        for (const seg of segments) {
-          if (seg.type === "speech") {
-            const normalized = seg.value.replace(/\.mp3$/i, "");
-            sources.push(`${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`);
-            continue;
-          }
-
-          const blob = await synthesizeTextSegmentToMp3Blob(seg.value);
-          const partFilename = `${outputStem}-part-${String(partNo).padStart(3, "0")}.mp3`;
-          await uploadStoryMp3Blob(blob, { path: OBJECT1_TTS_PARTS_PATH, audiofile: partFilename });
-          sources.push(`/${OBJECT1_TTS_PARTS_PATH}/${partFilename}`);
-          partNo += 1;
-        }
+        const sources = await buildStoryMergeSources(outputFilename);
 
         if (sources.length < 2) {
           throw new Error("Need at least 2 audio segments to merge for story.");
@@ -3117,6 +3219,76 @@ function scheduleAutosave() {
         setProduceStoryButtonState("downloaded");
       } catch (e) {
         setProduceStoryButtonState("error");
+        throw e;
+      }
+    }
+
+    async function mergeStoryAudioViaSupabaseProxy() {
+      const target = getStoryUploadTarget();
+      const outputDir = `/${target.path.replace(/^\/+/, "").replace(/\/+$/, "")}/`;
+      const outputFilename = target.audiofile;
+      const segments = parseStoryTextSegments();
+
+      setMergeStoryButtonState("producing");
+      try {
+        msg($("saveMsg"), "Producing story audio...");
+        if (segments.length === 1) {
+          const savedUrl = await produceSingleSegmentToTarget(segments[0], outputDir, outputFilename);
+          const savedRelativePath = `/${target.path}/${target.audiofile}`;
+          markAudioPathUpdated(savedRelativePath);
+          refreshStoryAudioUiState();
+          msg($("saveMsg"), `Story audio merged: ${savedUrl}`);
+          setMergeStoryButtonState("done");
+          return;
+        }
+
+        msg($("saveMsg"), "Producing story parts for merge...");
+        const sources = await buildStoryMergeSources(outputFilename);
+        if (sources.length < 2) {
+          throw new Error("Need at least 2 audio segments to merge for story.");
+        }
+
+        setMergeStoryButtonState("merging");
+        const payload = {
+          outputDir,
+          sources,
+          outputFilename,
+          gapMs: getMixedMergeGapMs(),
+          debug: true,
+          tryCopyFirst: false,
+        };
+        let res = await postMergeProxy(payload);
+        let bodyText = await res.text().catch(() => "");
+        let bodyJson = null;
+        try { bodyJson = bodyText ? JSON.parse(bodyText) : null; } catch {}
+        if (res.status === 401 && bodyJson?.message === "Invalid JWT") {
+          res = await postMergeProxy(payload, { forceRefresh: true });
+          bodyText = await res.text().catch(() => "");
+          bodyJson = null;
+          try { bodyJson = bodyText ? JSON.parse(bodyText) : null; } catch {}
+        }
+        console.log("merge-proxy response", bodyJson ?? bodyText);
+        if (!res.ok || bodyJson?.ok === false) {
+          const errorDetail = bodyText || bodyJson?.message || "No response body.";
+          throw new Error(`Story merge-proxy failed (${res.status}) via ${getSupabaseMergeProxyUrl()}. ${errorDetail}`.trim());
+        }
+
+        const savedRelativePath = `/${target.path}/${target.audiofile}`;
+        const savedUrl = bodyJson?.outputUrl || bodyJson?.url || buildAudioUrl(savedRelativePath);
+        markAudioPathUpdated(savedRelativePath);
+        refreshStoryAudioUiState();
+        msg($("saveMsg"), `Story audio merged: ${savedUrl}`);
+        setMergeStoryButtonState("done");
+      } catch (e) {
+        console.error("mergeStoryAudioViaSupabaseProxy failed", {
+          message: e?.message || String(e),
+          stack: e?.stack || "",
+          endpoint: (() => {
+            try { return getSupabaseMergeProxyUrl(); } catch { return ""; }
+          })(),
+          online: typeof navigator === "undefined" ? "unknown" : navigator.onLine,
+        });
+        setMergeStoryButtonState("error");
         throw e;
       }
     }
@@ -3455,6 +3627,8 @@ function scheduleAutosave() {
       });
     }
 
+    updateAdminOnlyAudioButtons();
+
 
     for (const el of document.querySelectorAll("#editor input, #editor textarea, #editor select")) {
       el.addEventListener("input", scheduleAutosave);
@@ -3471,6 +3645,10 @@ function scheduleAutosave() {
     };
     $("btnProduceStoryAudio").onclick = async () => {
       try { await produceStoryAudioWithElevenLabs(); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+    $("btnMergeStoryAudio").onclick = async () => {
+      try { await mergeStoryAudioViaSupabaseProxy(); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
     $("btnPlayAudioObject1").onclick = () => {
