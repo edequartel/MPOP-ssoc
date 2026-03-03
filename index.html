@@ -525,8 +525,8 @@
       return token;
     }
 
-    async function postMergeProxy(payload, { forceRefresh = false } = {}) {
-      const jwt = await getFreshSupabaseAccessToken(forceRefresh);
+    async function postMergeProxy(payload, { forceRefresh = false, jwtOverride = "" } = {}) {
+      const jwt = (jwtOverride || "").trim() || await getFreshSupabaseAccessToken(forceRefresh);
       const url = getSupabaseMergeProxyUrl();
       try {
         return await fetch(url, {
@@ -534,7 +534,6 @@
           headers: {
             "Authorization": `Bearer ${jwt}`,
             "Content-Type": "application/json",
-            "apikey": sbConfig?.anonKey || "",
           },
           body: JSON.stringify(payload),
         });
@@ -3298,6 +3297,52 @@ function scheduleAutosave() {
           online: typeof navigator === "undefined" ? "unknown" : navigator.onLine,
         });
         setMergeStoryButtonState("error");
+        throw e;
+      }
+    }
+
+    async function curlStoryAudioViaMergeProxy() {
+      const payload = {
+        outputDir: "/sounds/nl/out/",
+        sources: [
+          "/sounds/nl/instruction/_parts/merged-1772199514628-part-002.mp3",
+          "/sounds/nl/speech/a.mp3",
+        ],
+        outputFilename: "test-merge.mp3",
+        gapMs: 500,
+        debug: true,
+        tryCopyFirst: false,
+      };
+
+      try {
+        msg($("saveMsg"), "Calling merge-proxy curl test...");
+        const res = await fetch(getSupabaseMergeProxyUrl(), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": sbConfig?.anonKey || LOCAL_SUPABASE_CONFIG.anonKey,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const bodyText = await res.text().catch(() => "");
+        let bodyJson = null;
+        try { bodyJson = bodyText ? JSON.parse(bodyText) : null; } catch {}
+        console.log("merge-proxy curl response", bodyJson ?? bodyText);
+
+        if (!res.ok) {
+          throw new Error(`Curl merge-proxy failed (${res.status}) via ${getSupabaseMergeProxyUrl()}. ${bodyText || "No response body."}`.trim());
+        }
+
+        msg($("saveMsg"), `Curl merge-proxy OK: ${bodyText || "Success"}`);
+      } catch (e) {
+        console.error("curlStoryAudioViaMergeProxy failed", {
+          message: e?.message || String(e),
+          endpoint: (() => {
+            try { return getSupabaseMergeProxyUrl(); } catch { return ""; }
+          })(),
+          online: typeof navigator === "undefined" ? "unknown" : navigator.onLine,
+        });
         throw e;
       }
     }
