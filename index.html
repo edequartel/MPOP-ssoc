@@ -153,6 +153,7 @@
               <input id="klankzuiver_audio_path" placeholder="/sounds/nl/klankzuiver/" />
               <button id="btnPlayKlankzuiverAudio" disabled>Play</button>
               <button id="btnProduceKlankzuiverAudio" type="button">Produce</button>
+              <button id="btnMergeKlankzuiverAudio" type="button">Merge</button>
               <span id="klankzuiverAudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Klankzuiver audio online status unknown" aria-label="Klankzuiver audio online status"></span>
             </div>
           </div>
@@ -2921,6 +2922,69 @@ function scheduleAutosave() {
       }
     }
 
+    function setMergeKlankzuiverButtonState(state) {
+      const btn = $("btnMergeKlankzuiverAudio");
+      if (!btn) return;
+      if (btn._mergeStateTimer) {
+        window.clearTimeout(btn._mergeStateTimer);
+        btn._mergeStateTimer = null;
+      }
+      if (state === "idle") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Merge";
+        return;
+      }
+      if (state === "producing") {
+        btn.disabled = true;
+        btn.classList.add("busy");
+        btn.textContent = "Producing...";
+        return;
+      }
+      if (state === "merging") {
+        btn.disabled = true;
+        btn.classList.add("busy");
+        btn.textContent = "Merging...";
+        return;
+      }
+      if (state === "done") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Merged";
+        btn._mergeStateTimer = window.setTimeout(() => setMergeKlankzuiverButtonState("idle"), 4000);
+        return;
+      }
+      if (state === "error") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Error";
+        btn._mergeStateTimer = window.setTimeout(() => setMergeKlankzuiverButtonState("idle"), 4000);
+      }
+    }
+
+    async function buildKlankzuiverMergeSources(outputFilename) {
+      const segments = parseKlankzuiverTextSegments();
+      const sources = [];
+      let partNo = 1;
+      const outputStem = outputFilename.replace(/\.mp3$/i, "");
+
+      for (const seg of segments) {
+        if (seg.type === "speech") {
+          const normalized = seg.value.replace(/\.mp3$/i, "");
+          sources.push(`${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`);
+          continue;
+        }
+
+        const blob = await synthesizeTextSegmentToMp3Blob(seg.value);
+        const partFilename = `${outputStem}-part-${String(partNo).padStart(3, "0")}.mp3`;
+        await uploadStoryMp3Blob(blob, { path: OBJECT1_TTS_PARTS_PATH, audiofile: partFilename });
+        sources.push(`/${OBJECT1_TTS_PARTS_PATH}/${partFilename}`);
+        partNo += 1;
+      }
+
+      return sources;
+    }
+
     async function produceKlankzuiverAudioViaMergeApi() {
       const outputFilename = getKlankzuiverOutputFilename();
       const segments = parseKlankzuiverTextSegments();
@@ -2940,23 +3004,7 @@ function scheduleAutosave() {
           return;
         }
 
-        const sources = [];
-        let partNo = 1;
-        const outputStem = outputFilename.replace(/\.mp3$/i, "");
-
-        for (const seg of segments) {
-          if (seg.type === "speech") {
-            const normalized = seg.value.replace(/\.mp3$/i, "");
-            sources.push(`${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`);
-            continue;
-          }
-
-          const blob = await synthesizeTextSegmentToMp3Blob(seg.value);
-          const partFilename = `${outputStem}-part-${String(partNo).padStart(3, "0")}.mp3`;
-          await uploadStoryMp3Blob(blob, { path: OBJECT1_TTS_PARTS_PATH, audiofile: partFilename });
-          sources.push(`/${OBJECT1_TTS_PARTS_PATH}/${partFilename}`);
-          partNo += 1;
-        }
+        const sources = await buildKlankzuiverMergeSources(outputFilename);
 
         if (sources.length < 2) {
           throw new Error("Need at least 2 audio segments to merge for klankzuiver.");
@@ -3000,6 +3048,72 @@ function scheduleAutosave() {
         setProduceKlankzuiverButtonState("done");
       } catch (e) {
         setProduceKlankzuiverButtonState("error");
+        throw e;
+      }
+    }
+
+    async function mergeKlankzuiverAudioViaSupabaseProxy() {
+      const outputFilename = getKlankzuiverOutputFilename();
+      const segments = parseKlankzuiverTextSegments();
+
+      setMergeKlankzuiverButtonState("producing");
+      try {
+        msg($("saveMsg"), "Producing klankzuiver audio...");
+        if (segments.length === 1) {
+          const savedUrl = await produceSingleSegmentToTarget(segments[0], KLANKZUIVER_OUTPUT_DIR, outputFilename);
+          markAudioPathUpdated(getKlankzuiverPlaybackPath());
+          refreshKlankzuiverAudioUiState();
+          msg($("saveMsg"), `Klankzuiver audio merged: ${savedUrl}`);
+          setMergeKlankzuiverButtonState("done");
+          return;
+        }
+
+        msg($("saveMsg"), "Producing klankzuiver parts for merge...");
+        const sources = await buildKlankzuiverMergeSources(outputFilename);
+        if (sources.length < 2) {
+          throw new Error("Need at least 2 audio segments to merge for klankzuiver.");
+        }
+
+        setMergeKlankzuiverButtonState("merging");
+        const payload = {
+          outputDir: KLANKZUIVER_OUTPUT_DIR,
+          sources,
+          outputFilename,
+          gapMs: getMixedMergeGapMs(),
+          debug: true,
+          tryCopyFirst: false,
+        };
+        let res = await postMergeProxy(payload);
+        let bodyText = await res.text().catch(() => "");
+        let bodyJson = null;
+        try { bodyJson = bodyText ? JSON.parse(bodyText) : null; } catch {}
+        if (res.status === 401 && bodyJson?.message === "Invalid JWT") {
+          res = await postMergeProxy(payload, { forceRefresh: true });
+          bodyText = await res.text().catch(() => "");
+          bodyJson = null;
+          try { bodyJson = bodyText ? JSON.parse(bodyText) : null; } catch {}
+        }
+        console.log("merge-proxy klankzuiver response", bodyJson ?? bodyText);
+        if (!res.ok || bodyJson?.ok === false) {
+          const errorDetail = bodyText || bodyJson?.message || "No response body.";
+          throw new Error(`Klankzuiver merge-proxy failed (${res.status}) via ${getSupabaseMergeProxyUrl()}. ${errorDetail}`.trim());
+        }
+
+        const savedUrl = bodyJson?.outputUrl || bodyJson?.url || buildAudioUrl(getKlankzuiverPlaybackPath());
+        markAudioPathUpdated(getKlankzuiverPlaybackPath());
+        refreshKlankzuiverAudioUiState();
+        msg($("saveMsg"), `Klankzuiver audio merged: ${savedUrl}`);
+        setMergeKlankzuiverButtonState("done");
+      } catch (e) {
+        console.error("mergeKlankzuiverAudioViaSupabaseProxy failed", {
+          message: e?.message || String(e),
+          stack: e?.stack || "",
+          endpoint: (() => {
+            try { return getSupabaseMergeProxyUrl(); } catch { return ""; }
+          })(),
+          online: typeof navigator === "undefined" ? "unknown" : navigator.onLine,
+        });
+        setMergeKlankzuiverButtonState("error");
         throw e;
       }
     }
@@ -3730,6 +3844,10 @@ function scheduleAutosave() {
     };
     $("btnProduceKlankzuiverAudio").onclick = async () => {
       try { await produceKlankzuiverAudioViaMergeApi(); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+    $("btnMergeKlankzuiverAudio").onclick = async () => {
+      try { await mergeKlankzuiverAudioViaSupabaseProxy(); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
     for (const no of [1, 2, 3, 4, 5, 6]) {
