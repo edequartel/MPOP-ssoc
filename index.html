@@ -394,14 +394,22 @@
     const KLANKZUIVER_SOURCE_BASE_PATH = "/sounds/nl/speech/";
     const KLANKZUIVER_OUTPUT_DIR = "/sounds/nl/klankzuiver/";
     const OBJECT1_TTS_PARTS_PATH = "sounds/nl/instruction/_parts";
+    const LOCAL_SUPABASE_CONFIG = Object.freeze({
+      url: "https://zrcdyzcfsdlmqqwdhctk.supabase.co",
+      anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyY2R5emNmc2RsbXFxd2RoY3RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxOTgyNzUsImV4cCI6MjA4Mzc3NDI3NX0.voT1eh_FbBkrv7ZMN7B8VRRbrab7tyx3eV6JuXy4ySs"
+    });
 
     const supabaseInit = async () => {
       try {
-        let cfg = null;
-        const mod = await import(CONFIG_URL_LOCAL);
-        cfg = mod?.supabaseConfig || mod?.default || null;
+        let cfg = LOCAL_SUPABASE_CONFIG;
+        try {
+          const mod = await import(CONFIG_URL_LOCAL);
+          cfg = mod?.supabaseConfig || mod?.default || LOCAL_SUPABASE_CONFIG;
+        } catch {
+          cfg = LOCAL_SUPABASE_CONFIG;
+        }
         if (!cfg?.url || !cfg?.anonKey) {
-          throw new Error("Local supabase-config.js missing url/anonKey.");
+          throw new Error("Supabase config missing url/anonKey.");
         }
         const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
         return { client: createClient(cfg.url, cfg.anonKey), config: cfg, error: null };

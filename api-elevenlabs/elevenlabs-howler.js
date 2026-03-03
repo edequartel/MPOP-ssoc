@@ -73,16 +73,20 @@
 
   async function initSupabaseClient() {
     const CONFIG_URL_LOCAL = "../supabase-config.js";
+    const LOCAL_SUPABASE_CONFIG = Object.freeze({
+      url: "https://zrcdyzcfsdlmqqwdhctk.supabase.co",
+      anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyY2R5emNmc2RsbXFxd2RoY3RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxOTgyNzUsImV4cCI6MjA4Mzc3NDI3NX0.voT1eh_FbBkrv7ZMN7B8VRRbrab7tyx3eV6JuXy4ySs"
+    });
     const CONFIG_URLS_REMOTE = [
       "https://mpop-ssoc.vercel.app/api/supabase-config.js",
       "https://www.tastenbraille.com/braillestudio/api/supabase-config",
     ];
-    let cfg = null;
+    let cfg = LOCAL_SUPABASE_CONFIG;
     try {
       const mod = await import(CONFIG_URL_LOCAL);
-      cfg = mod?.supabaseConfig || mod?.default || null;
+      cfg = mod?.supabaseConfig || mod?.default || LOCAL_SUPABASE_CONFIG;
     } catch {
-      // fallback below
+      cfg = LOCAL_SUPABASE_CONFIG;
     }
     if (!cfg?.url || !cfg?.anonKey) {
       let lastError = null;
