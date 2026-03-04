@@ -1592,9 +1592,28 @@ function scheduleAutosave() {
       });
     }
 
+    function getProduceButtonIdForPlayButton(btnId) {
+      if (btnId === "btnPlayStoryAudio") return "btnProduceStoryAudio";
+      if (btnId === "btnPlayKlankzuiverAudio") return "btnProduceKlankzuiverAudio";
+      if (btnId === "btnPlayAudioObject1") return "btnProduceAudioObject1";
+      if (btnId === "btnPlayAudioObject2") return "btnProduceAudioObject2";
+      if (btnId === "btnPlayAudioObject3") return "btnProduceAudioObject3";
+      const opdrachtMatch = /^btnPlayOpdracht(\d+)Audio$/.exec(btnId || "");
+      if (opdrachtMatch) return `btnProduceOpdracht${opdrachtMatch[1]}Audio`;
+      return "";
+    }
+
+    function isPlayButtonBlockedByProduce(btnId) {
+      const produceBtnId = getProduceButtonIdForPlayButton(btnId);
+      if (!produceBtnId) return false;
+      const produceBtn = $(produceBtnId);
+      return !!produceBtn?.classList.contains("busy");
+    }
+
     function setPlayButton(btnId, path) {
       const btn = $(btnId);
-      btn.disabled = !path || !path.trim();
+      const hasPath = !!(path || "").trim();
+      btn.disabled = !hasPath || isPlayButtonBlockedByProduce(btnId);
       btn.textContent = "Play";
     }
 
@@ -2333,6 +2352,7 @@ function scheduleAutosave() {
 
     function setProduceObject1ButtonState(state) {
       const btn = $("btnProduceObject1Audio");
+      const playBtn = $("btnPlayAudioObject1");
       if (!btn) return;
       if (btn._produceStateTimer) {
         window.clearTimeout(btn._produceStateTimer);
@@ -2342,18 +2362,21 @@ function scheduleAutosave() {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Produce";
+        refreshObject1AudioUiState();
         return;
       }
       if (state === "producing") {
         btn.disabled = true;
         btn.classList.add("busy");
         btn.textContent = "Producing...";
+        if (playBtn) playBtn.disabled = true;
         return;
       }
       if (state === "done") {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Produced";
+        refreshObject1AudioUiState();
         btn._produceStateTimer = window.setTimeout(() => setProduceObject1ButtonState("idle"), 4000);
         return;
       }
@@ -2361,6 +2384,7 @@ function scheduleAutosave() {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Error";
+        refreshObject1AudioUiState();
         btn._produceStateTimer = window.setTimeout(() => setProduceObject1ButtonState("idle"), 4000);
       }
     }
@@ -2380,6 +2404,7 @@ function scheduleAutosave() {
 
     function setProduceObject2ButtonState(state) {
       const btn = $("btnProduceObject2Audio");
+      const playBtn = $("btnPlayAudioObject2");
       if (!btn) return;
       if (btn._produceStateTimer) {
         window.clearTimeout(btn._produceStateTimer);
@@ -2389,18 +2414,21 @@ function scheduleAutosave() {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Produce";
+        refreshObject2AudioUiState();
         return;
       }
       if (state === "producing") {
         btn.disabled = true;
         btn.classList.add("busy");
         btn.textContent = "Producing...";
+        if (playBtn) playBtn.disabled = true;
         return;
       }
       if (state === "done") {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Produced";
+        refreshObject2AudioUiState();
         btn._produceStateTimer = window.setTimeout(() => setProduceObject2ButtonState("idle"), 4000);
         return;
       }
@@ -2408,6 +2436,7 @@ function scheduleAutosave() {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Error";
+        refreshObject2AudioUiState();
         btn._produceStateTimer = window.setTimeout(() => setProduceObject2ButtonState("idle"), 4000);
       }
     }
@@ -2427,6 +2456,7 @@ function scheduleAutosave() {
 
     function setProduceObject3ButtonState(state) {
       const btn = $("btnProduceObject3Audio");
+      const playBtn = $("btnPlayAudioObject3");
       if (!btn) return;
       if (btn._produceStateTimer) {
         window.clearTimeout(btn._produceStateTimer);
@@ -2436,18 +2466,21 @@ function scheduleAutosave() {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Produce";
+        refreshObject3AudioUiState();
         return;
       }
       if (state === "producing") {
         btn.disabled = true;
         btn.classList.add("busy");
         btn.textContent = "Producing...";
+        if (playBtn) playBtn.disabled = true;
         return;
       }
       if (state === "done") {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Produced";
+        refreshObject3AudioUiState();
         btn._produceStateTimer = window.setTimeout(() => setProduceObject3ButtonState("idle"), 4000);
         return;
       }
@@ -2455,6 +2488,7 @@ function scheduleAutosave() {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Error";
+        refreshObject3AudioUiState();
         btn._produceStateTimer = window.setTimeout(() => setProduceObject3ButtonState("idle"), 4000);
       }
     }
@@ -2593,6 +2627,7 @@ function scheduleAutosave() {
 
     function setProduceOpdrachtButtonState(no, state) {
       const btn = $(`btnProduceOpdracht${no}Audio`);
+      const playBtn = $(`btnPlayOpdracht${no}Audio`);
       if (!btn) return;
       if (btn._produceStateTimer) {
         window.clearTimeout(btn._produceStateTimer);
@@ -2602,18 +2637,21 @@ function scheduleAutosave() {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Produce";
+        refreshOpdrachtAudioUiState(no);
         return;
       }
       if (state === "producing") {
         btn.disabled = true;
         btn.classList.add("busy");
         btn.textContent = "Producing...";
+        if (playBtn) playBtn.disabled = true;
         return;
       }
       if (state === "done") {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Produced";
+        refreshOpdrachtAudioUiState(no);
         btn._produceStateTimer = window.setTimeout(() => setProduceOpdrachtButtonState(no, "idle"), 4000);
         return;
       }
@@ -2621,6 +2659,7 @@ function scheduleAutosave() {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Error";
+        refreshOpdrachtAudioUiState(no);
         btn._produceStateTimer = window.setTimeout(() => setProduceOpdrachtButtonState(no, "idle"), 4000);
       }
     }
@@ -2664,6 +2703,7 @@ function scheduleAutosave() {
 
     function setProduceKlankzuiverButtonState(state) {
       const btn = $("btnProduceKlankzuiverAudio");
+      const playBtn = $("btnPlayKlankzuiverAudio");
       if (!btn) return;
       if (btn._produceStateTimer) {
         window.clearTimeout(btn._produceStateTimer);
@@ -2673,18 +2713,21 @@ function scheduleAutosave() {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Produce";
+        refreshKlankzuiverAudioUiState();
         return;
       }
       if (state === "producing") {
         btn.disabled = true;
         btn.classList.add("busy");
         btn.textContent = "Producing...";
+        if (playBtn) playBtn.disabled = true;
         return;
       }
       if (state === "done") {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Produced";
+        refreshKlankzuiverAudioUiState();
         btn._produceStateTimer = window.setTimeout(() => setProduceKlankzuiverButtonState("idle"), 4000);
         return;
       }
@@ -2692,6 +2735,7 @@ function scheduleAutosave() {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Error";
+        refreshKlankzuiverAudioUiState();
         btn._produceStateTimer = window.setTimeout(() => setProduceKlankzuiverButtonState("idle"), 4000);
       }
     }
@@ -3106,6 +3150,7 @@ function scheduleAutosave() {
 
     function setProduceStoryButtonState(state) {
       const btn = $("btnProduceStoryAudio");
+      const playBtn = $("btnPlayStoryAudio");
       if (!btn) return;
       if (btn._recordStateTimer) {
         window.clearTimeout(btn._recordStateTimer);
@@ -3116,30 +3161,35 @@ function scheduleAutosave() {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Produce";
+        refreshStoryAudioUiState();
         return;
       }
       if (state === "producing") {
         btn.disabled = true;
         btn.classList.add("busy");
         btn.textContent = "Producing MP3...";
+        if (playBtn) playBtn.disabled = true;
         return;
       }
       if (state === "uploading") {
         btn.disabled = true;
         btn.classList.add("busy");
         btn.textContent = "Uploading...";
+        if (playBtn) playBtn.disabled = true;
         return;
       }
       if (state === "downloading") {
         btn.disabled = true;
         btn.classList.add("busy");
         btn.textContent = "Downloading...";
+        if (playBtn) playBtn.disabled = true;
         return;
       }
       if (state === "downloaded") {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Produced";
+        refreshStoryAudioUiState();
         btn._recordStateTimer = window.setTimeout(() => setProduceStoryButtonState("idle"), 4000);
         return;
       }
@@ -3147,6 +3197,7 @@ function scheduleAutosave() {
         btn.disabled = false;
         btn.classList.remove("busy");
         btn.textContent = "Error";
+        refreshStoryAudioUiState();
         btn._recordStateTimer = window.setTimeout(() => setProduceStoryButtonState("idle"), 4000);
       }
     }
