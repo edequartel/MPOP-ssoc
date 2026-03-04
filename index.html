@@ -142,7 +142,8 @@
               <input id="story_audio_path" placeholder="/sounds/nl/stories/" />
               <button id="btnPlayStoryAudio" disabled>Play</button>
               <button id="btnProduceStoryAudio" type="button">Produce</button>
-              <button id="btnMergeStoryAudio" type="button">Merge</button>
+              <button id="btnProduceStoryPartsAudio" type="button">Maak delen</button>
+              <button id="btnMergeStoryAudio" type="button">Merge delen</button>
               <span id="storyAudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Story audio online status unknown" aria-label="Story audio online status"></span>
             </div>
           </div>
@@ -154,7 +155,8 @@
               <input id="klankzuiver_audio_path" placeholder="/sounds/nl/klankzuiver/" />
               <button id="btnPlayKlankzuiverAudio" disabled>Play</button>
               <button id="btnProduceKlankzuiverAudio" type="button">Produce</button>
-              <button id="btnMergeKlankzuiverAudio" type="button">Merge</button>
+              <button id="btnProduceKlankzuiverPartsAudio" type="button">Maak delen</button>
+              <button id="btnMergeKlankzuiverAudio" type="button">Merge delen</button>
               <span id="klankzuiverAudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Klankzuiver audio online status unknown" aria-label="Klankzuiver audio online status"></span>
             </div>
           </div>
@@ -2936,13 +2938,7 @@ function scheduleAutosave() {
       if (state === "idle") {
         btn.disabled = false;
         btn.classList.remove("busy");
-        btn.textContent = "Merge";
-        return;
-      }
-      if (state === "producing") {
-        btn.disabled = true;
-        btn.classList.add("busy");
-        btn.textContent = "Producing...";
+        btn.textContent = "Merge delen";
         return;
       }
       if (state === "merging") {
@@ -2954,7 +2950,7 @@ function scheduleAutosave() {
       if (state === "done") {
         btn.disabled = false;
         btn.classList.remove("busy");
-        btn.textContent = "Merged";
+        btn.textContent = "Gemerged";
         btn._mergeStateTimer = window.setTimeout(() => setMergeKlankzuiverButtonState("idle"), 4000);
         return;
       }
@@ -2963,6 +2959,40 @@ function scheduleAutosave() {
         btn.classList.remove("busy");
         btn.textContent = "Error";
         btn._mergeStateTimer = window.setTimeout(() => setMergeKlankzuiverButtonState("idle"), 4000);
+      }
+    }
+
+    function setProduceKlankzuiverPartsButtonState(state) {
+      const btn = $("btnProduceKlankzuiverPartsAudio");
+      if (!btn) return;
+      if (btn._partsStateTimer) {
+        window.clearTimeout(btn._partsStateTimer);
+        btn._partsStateTimer = null;
+      }
+      if (state === "idle") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Maak delen";
+        return;
+      }
+      if (state === "producing") {
+        btn.disabled = true;
+        btn.classList.add("busy");
+        btn.textContent = "Delen maken...";
+        return;
+      }
+      if (state === "done") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Delen klaar";
+        btn._partsStateTimer = window.setTimeout(() => setProduceKlankzuiverPartsButtonState("idle"), 4000);
+        return;
+      }
+      if (state === "error") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Error";
+        btn._partsStateTimer = window.setTimeout(() => setProduceKlankzuiverPartsButtonState("idle"), 4000);
       }
     }
 
@@ -2987,6 +3017,50 @@ function scheduleAutosave() {
       }
 
       return sources;
+    }
+
+    function getPreparedKlankzuiverMergeSources(outputFilename) {
+      const segments = parseKlankzuiverTextSegments();
+      const sources = [];
+      let partNo = 1;
+      const outputStem = outputFilename.replace(/\.mp3$/i, "");
+
+      for (const seg of segments) {
+        if (seg.type === "speech") {
+          const normalized = seg.value.replace(/\.mp3$/i, "");
+          sources.push(`${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`);
+          continue;
+        }
+
+        const partFilename = `${outputStem}-part-${String(partNo).padStart(3, "0")}.mp3`;
+        sources.push(`/${OBJECT1_TTS_PARTS_PATH}/${partFilename}`);
+        partNo += 1;
+      }
+
+      return sources;
+    }
+
+    async function produceKlankzuiverMergeParts() {
+      const outputFilename = getKlankzuiverOutputFilename();
+      const segments = parseKlankzuiverTextSegments();
+
+      setProduceKlankzuiverPartsButtonState("producing");
+      try {
+        if (segments.length <= 1) {
+          msg($("saveMsg"), "Klankzuiver heeft geen losse delen nodig voor merge.");
+          setProduceKlankzuiverPartsButtonState("done");
+          return;
+        }
+
+        msg($("saveMsg"), "Klankzuiver delen maken...");
+        const sources = await buildKlankzuiverMergeSources(outputFilename);
+        const generatedParts = sources.filter((src) => src.startsWith(`/${OBJECT1_TTS_PARTS_PATH}/`)).length;
+        msg($("saveMsg"), `Klankzuiver merge-delen klaar (${generatedParts} nieuwe MP3${generatedParts === 1 ? "" : "'s"}).`);
+        setProduceKlankzuiverPartsButtonState("done");
+      } catch (e) {
+        setProduceKlankzuiverPartsButtonState("error");
+        throw e;
+      }
     }
 
     async function produceKlankzuiverAudioViaMergeApi() {
@@ -3060,10 +3134,9 @@ function scheduleAutosave() {
       const outputFilename = getKlankzuiverOutputFilename();
       const segments = parseKlankzuiverTextSegments();
 
-      setMergeKlankzuiverButtonState("producing");
       try {
-        msg($("saveMsg"), "Producing klankzuiver audio...");
         if (segments.length === 1) {
+          msg($("saveMsg"), "Producing klankzuiver audio...");
           const savedUrl = await produceSingleSegmentToTarget(segments[0], KLANKZUIVER_OUTPUT_DIR, outputFilename);
           markAudioPathUpdated(getKlankzuiverPlaybackPath());
           refreshKlankzuiverAudioUiState();
@@ -3072,8 +3145,8 @@ function scheduleAutosave() {
           return;
         }
 
-        msg($("saveMsg"), "Producing klankzuiver parts for merge...");
-        const sources = await buildKlankzuiverMergeSources(outputFilename);
+        msg($("saveMsg"), "Klankzuiver delen mergen...");
+        const sources = getPreparedKlankzuiverMergeSources(outputFilename);
         if (sources.length < 2) {
           throw new Error("Need at least 2 audio segments to merge for klankzuiver.");
         }
@@ -3222,13 +3295,7 @@ function scheduleAutosave() {
       if (state === "idle") {
         btn.disabled = false;
         btn.classList.remove("busy");
-        btn.textContent = "Merge";
-        return;
-      }
-      if (state === "producing") {
-        btn.disabled = true;
-        btn.classList.add("busy");
-        btn.textContent = "Producing MP3...";
+        btn.textContent = "Merge delen";
         return;
       }
       if (state === "merging") {
@@ -3240,7 +3307,7 @@ function scheduleAutosave() {
       if (state === "done") {
         btn.disabled = false;
         btn.classList.remove("busy");
-        btn.textContent = "Merged";
+        btn.textContent = "Gemerged";
         btn._mergeStateTimer = window.setTimeout(() => setMergeStoryButtonState("idle"), 4000);
         return;
       }
@@ -3249,6 +3316,41 @@ function scheduleAutosave() {
         btn.classList.remove("busy");
         btn.textContent = "Error";
         btn._mergeStateTimer = window.setTimeout(() => setMergeStoryButtonState("idle"), 4000);
+      }
+    }
+
+    function setProduceStoryPartsButtonState(state) {
+      const btn = $("btnProduceStoryPartsAudio");
+      if (!btn) return;
+      if (btn._partsStateTimer) {
+        window.clearTimeout(btn._partsStateTimer);
+        btn._partsStateTimer = null;
+      }
+
+      if (state === "idle") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Maak delen";
+        return;
+      }
+      if (state === "producing") {
+        btn.disabled = true;
+        btn.classList.add("busy");
+        btn.textContent = "Delen maken...";
+        return;
+      }
+      if (state === "done") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Delen klaar";
+        btn._partsStateTimer = window.setTimeout(() => setProduceStoryPartsButtonState("idle"), 4000);
+        return;
+      }
+      if (state === "error") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Error";
+        btn._partsStateTimer = window.setTimeout(() => setProduceStoryPartsButtonState("idle"), 4000);
       }
     }
 
@@ -3273,6 +3375,51 @@ function scheduleAutosave() {
       }
 
       return sources;
+    }
+
+    function getPreparedStoryMergeSources(outputFilename) {
+      const segments = parseStoryTextSegments();
+      const sources = [];
+      let partNo = 1;
+      const outputStem = outputFilename.replace(/\.mp3$/i, "");
+
+      for (const seg of segments) {
+        if (seg.type === "speech") {
+          const normalized = seg.value.replace(/\.mp3$/i, "");
+          sources.push(`${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`);
+          continue;
+        }
+
+        const partFilename = `${outputStem}-part-${String(partNo).padStart(3, "0")}.mp3`;
+        sources.push(`/${OBJECT1_TTS_PARTS_PATH}/${partFilename}`);
+        partNo += 1;
+      }
+
+      return sources;
+    }
+
+    async function produceStoryMergeParts() {
+      const target = getStoryUploadTarget();
+      const outputFilename = target.audiofile;
+      const segments = parseStoryTextSegments();
+
+      setProduceStoryPartsButtonState("producing");
+      try {
+        if (segments.length <= 1) {
+          msg($("saveMsg"), "Story heeft geen losse delen nodig voor merge.");
+          setProduceStoryPartsButtonState("done");
+          return;
+        }
+
+        msg($("saveMsg"), "Story delen maken...");
+        const sources = await buildStoryMergeSources(outputFilename);
+        const generatedParts = sources.filter((src) => src.startsWith(`/${OBJECT1_TTS_PARTS_PATH}/`)).length;
+        msg($("saveMsg"), `Story merge-delen klaar (${generatedParts} nieuwe MP3${generatedParts === 1 ? "" : "'s"}).`);
+        setProduceStoryPartsButtonState("done");
+      } catch (e) {
+        setProduceStoryPartsButtonState("error");
+        throw e;
+      }
     }
 
     async function produceStoryAudioWithElevenLabs() {
@@ -3355,10 +3502,9 @@ function scheduleAutosave() {
       const outputFilename = target.audiofile;
       const segments = parseStoryTextSegments();
 
-      setMergeStoryButtonState("producing");
       try {
-        msg($("saveMsg"), "Producing story audio...");
         if (segments.length === 1) {
+          msg($("saveMsg"), "Producing story audio...");
           const savedUrl = await produceSingleSegmentToTarget(segments[0], outputDir, outputFilename);
           const savedRelativePath = `/${target.path}/${target.audiofile}`;
           markAudioPathUpdated(savedRelativePath);
@@ -3368,8 +3514,8 @@ function scheduleAutosave() {
           return;
         }
 
-        msg($("saveMsg"), "Producing story parts for merge...");
-        const sources = await buildStoryMergeSources(outputFilename);
+        msg($("saveMsg"), "Story delen mergen...");
+        const sources = getPreparedStoryMergeSources(outputFilename);
         if (sources.length < 2) {
           throw new Error("Need at least 2 audio segments to merge for story.");
         }
@@ -3819,6 +3965,10 @@ function scheduleAutosave() {
       try { await produceStoryAudioWithElevenLabs(); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
+    $("btnProduceStoryPartsAudio").onclick = async () => {
+      try { await produceStoryMergeParts(); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
     $("btnMergeStoryAudio").onclick = async () => {
       try { await mergeStoryAudioViaSupabaseProxy(); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
@@ -3848,6 +3998,10 @@ function scheduleAutosave() {
     };
     $("btnProduceKlankzuiverAudio").onclick = async () => {
       try { await produceKlankzuiverAudioViaMergeApi(); }
+      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
+    };
+    $("btnProduceKlankzuiverPartsAudio").onclick = async () => {
+      try { await produceKlankzuiverMergeParts(); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
     $("btnMergeKlankzuiverAudio").onclick = async () => {
