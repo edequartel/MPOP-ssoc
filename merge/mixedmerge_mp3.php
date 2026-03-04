@@ -59,6 +59,7 @@ $OUT_BITRATE     = "128k";
 // --------------------
 $ALLOWED_INPUT_PREFIXES = [
   "/sounds/nl/speech/",
+  "/sounds/general/",
   "/sounds/nl/alfabet/",
   "/sounds/nl/stories/",
   "/sounds/nl/instruction/",

@@ -46,6 +46,7 @@
   const MIXED_MERGE_OUTPUT_FILENAME = "merged.mp3";
   const MIXED_MERGE_PARTS_PATH = "sounds/nl/instruction/_parts";
   const SPEECH_BASE_PATH = "/sounds/nl/speech/";
+  const GENERAL_BASE_PATH = "/sounds/general/";
   const DOWNLOAD_MERGED_API_URL = "https://www.tastenbraille.com/api/download_merged.php";
 
   const STORAGE = Object.freeze({
@@ -559,7 +560,7 @@
     if (!raw) throw new Error("Text is empty.");
 
     const segments = [];
-    const re = /<([^>]+)>/g;
+    const re = /<([^>]+)>|\{([^}]+)\}/g;
     let cursor = 0;
     let match;
 
@@ -567,10 +568,12 @@
       const textBefore = raw.slice(cursor, match.index).replace(/\s+/g, " ").trim();
       if (textBefore) segments.push({ type: "tts", value: textBefore });
 
-      const tokenRaw = (match[1] || "").replace(/\s+/g, " ").trim();
+      const isSpeechToken = typeof match[1] === "string" && match[1] !== "";
+      const tokenType = isSpeechToken ? "speech" : "general";
+      const tokenRaw = (match[1] || match[2] || "").replace(/\s+/g, " ").trim();
       if (tokenRaw) {
         const tokenParts = tokenRaw.split(",").map((s) => s.trim()).filter(Boolean);
-        for (const token of tokenParts) segments.push({ type: "speech", value: token });
+        for (const token of tokenParts) segments.push({ type: tokenType, value: token });
       }
       cursor = re.lastIndex;
     }
@@ -579,7 +582,7 @@
     if (textAfter) segments.push({ type: "tts", value: textAfter });
 
     if (!segments.length) {
-      throw new Error("No valid segments found. Use text and optionally <speech-token> tags.");
+      throw new Error("No valid segments found. Use text and optionally <speech-token> or {general-token} tags.");
     }
     return segments;
   }
@@ -1000,6 +1003,11 @@
         if (seg.type === "speech") {
           const normalized = seg.value.replace(/\.mp3$/i, "");
           sources.push(`${SPEECH_BASE_PATH}${normalized}.mp3`);
+          continue;
+        }
+        if (seg.type === "general") {
+          const normalized = seg.value.replace(/\.mp3$/i, "");
+          sources.push(`${GENERAL_BASE_PATH}${normalized}.mp3`);
           continue;
         }
         const blob = await synthesizeTextToMp3BlobViaTtsProxy({ voiceId, text: seg.value, modelId, outputFormat });

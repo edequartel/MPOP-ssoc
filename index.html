@@ -390,6 +390,7 @@
     const STORY_AUDIO_EXISTS_CHECK_URL = "https://www.tastenbraille.com/check_audio_exists.php";
     const KLANKZUIVER_MERGE_API_URL = "https://www.tastenbraille.com/api/mixedmerge_mp3.php";
     const KLANKZUIVER_SOURCE_BASE_PATH = "/sounds/nl/speech/";
+    const GENERAL_SOURCE_BASE_PATH = "/sounds/general/";
     const KLANKZUIVER_OUTPUT_DIR = "/sounds/nl/klankzuiver/";
     const OBJECT1_TTS_PARTS_PATH = "sounds/nl/instruction/_parts";
     const LOCAL_SUPABASE_CONFIG = Object.freeze({
@@ -1772,7 +1773,7 @@ function scheduleAutosave() {
       if (!raw) throw new Error(`${fieldLabel} is empty.`);
 
       const segments = [];
-      const re = /<([^>]+)>/g;
+      const re = /<([^>]+)>|\{([^}]+)\}/g;
       let cursor = 0;
       let match;
 
@@ -1780,11 +1781,13 @@ function scheduleAutosave() {
         const textBefore = raw.slice(cursor, match.index).replace(/\s+/g, " ").trim();
         if (textBefore) segments.push({ type: "tts", value: textBefore });
 
-        const tokenRaw = (match[1] || "").replace(/\s+/g, " ").trim();
+        const isSpeechToken = typeof match[1] === "string" && match[1] !== "";
+        const tokenType = isSpeechToken ? "speech" : "general";
+        const tokenRaw = (match[1] || match[2] || "").replace(/\s+/g, " ").trim();
         if (tokenRaw) {
           const tokenParts = tokenRaw.split(",").map((s) => s.trim()).filter(Boolean);
           for (const token of tokenParts) {
-            segments.push({ type: "speech", value: token });
+            segments.push({ type: tokenType, value: token });
           }
         }
 
@@ -1795,7 +1798,7 @@ function scheduleAutosave() {
       if (textAfter) segments.push({ type: "tts", value: textAfter });
 
       if (!segments.length) {
-        throw new Error(`No valid segments found in ${fieldLabel}. Use text and optionally <speech-token> tags.`);
+        throw new Error(`No valid segments found in ${fieldLabel}. Use text and optionally <speech-token> or {general-token} tags.`);
       }
       return segments;
     }
@@ -2888,6 +2891,11 @@ function scheduleAutosave() {
           sources.push(`${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`);
           continue;
         }
+        if (seg.type === "general") {
+          const normalized = seg.value.replace(/\.mp3$/i, "");
+          sources.push(`${GENERAL_SOURCE_BASE_PATH}${normalized}.mp3`);
+          continue;
+        }
 
         const blob = await synthesizeFn(seg.value);
         const partFilename = `${outputStem}-part-${String(partNo).padStart(3, "0")}.mp3`;
@@ -2909,6 +2917,11 @@ function scheduleAutosave() {
         if (seg.type === "speech") {
           const normalized = seg.value.replace(/\.mp3$/i, "");
           sources.push(`${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`);
+          continue;
+        }
+        if (seg.type === "general") {
+          const normalized = seg.value.replace(/\.mp3$/i, "");
+          sources.push(`${GENERAL_SOURCE_BASE_PATH}${normalized}.mp3`);
           continue;
         }
 
@@ -3081,6 +3094,11 @@ function scheduleAutosave() {
         if (seg.type === "speech") {
           const normalized = seg.value.replace(/\.mp3$/i, "");
           sources.push(`${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`);
+          continue;
+        }
+        if (seg.type === "general") {
+          const normalized = seg.value.replace(/\.mp3$/i, "");
+          sources.push(`${GENERAL_SOURCE_BASE_PATH}${normalized}.mp3`);
           continue;
         }
 
@@ -3354,6 +3372,11 @@ function scheduleAutosave() {
           sources.push(`${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`);
           continue;
         }
+        if (seg.type === "general") {
+          const normalized = seg.value.replace(/\.mp3$/i, "");
+          sources.push(`${GENERAL_SOURCE_BASE_PATH}${normalized}.mp3`);
+          continue;
+        }
 
         const blob = await synthesizeFn(seg.value);
         const partFilename = `${outputStem}-part-${String(partNo).padStart(3, "0")}.mp3`;
@@ -3375,6 +3398,11 @@ function scheduleAutosave() {
         if (seg.type === "speech") {
           const normalized = seg.value.replace(/\.mp3$/i, "");
           sources.push(`${KLANKZUIVER_SOURCE_BASE_PATH}${normalized}.mp3`);
+          continue;
+        }
+        if (seg.type === "general") {
+          const normalized = seg.value.replace(/\.mp3$/i, "");
+          sources.push(`${GENERAL_SOURCE_BASE_PATH}${normalized}.mp3`);
           continue;
         }
 
