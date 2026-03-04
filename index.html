@@ -142,8 +142,7 @@
               <input id="story_audio_path" placeholder="/sounds/nl/stories/" />
               <button id="btnPlayStoryAudio" disabled>Play</button>
               <button id="btnProduceStoryAudio" type="button">Produce</button>
-              <button id="btnProduceStoryPartsAudio" type="button">Maak delen</button>
-              <button id="btnMergeStoryAudio" type="button">Merge delen</button>
+              <button id="btnProduceStoryPartsAudioJwt" type="button">Maak delen JWT</button>
               <button id="btnMergeStoryAudioJwt" type="button">Merge JWT</button>
               <span id="storyAudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Story audio online status unknown" aria-label="Story audio online status"></span>
             </div>
@@ -156,8 +155,7 @@
               <input id="klankzuiver_audio_path" placeholder="/sounds/nl/klankzuiver/" />
               <button id="btnPlayKlankzuiverAudio" disabled>Play</button>
               <button id="btnProduceKlankzuiverAudio" type="button">Produce</button>
-              <button id="btnProduceKlankzuiverPartsAudio" type="button">Maak delen</button>
-              <button id="btnMergeKlankzuiverAudio" type="button">Merge delen</button>
+              <button id="btnProduceKlankzuiverPartsAudioJwt" type="button">Maak delen JWT</button>
               <button id="btnMergeKlankzuiverAudioJwt" type="button">Merge JWT</button>
               <span id="klankzuiverAudioOnlineDot" class="remote-file-dot" data-state="unknown" title="Klankzuiver audio online status unknown" aria-label="Klankzuiver audio online status"></span>
             </div>
@@ -393,8 +391,6 @@
       mergeGapMs: "mixedmerge.gapMs",
     };
     const ELEVENLABS_DEFAULT_OUTPUT_FORMAT = "mp3_44100_128";
-    const STORY_MP3_UPLOAD_URL = "https://www.tastenbraille.com/upload_mp3.php";
-    const STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY = "storyMp3Upload.token";
     const STORY_AUDIO_EXISTS_CHECK_URL = "https://www.tastenbraille.com/check_audio_exists.php";
     const KLANKZUIVER_MERGE_API_URL = "https://www.tastenbraille.com/api/mixedmerge_mp3.php";
     const KLANKZUIVER_SOURCE_BASE_PATH = "/sounds/nl/speech/";
@@ -505,6 +501,22 @@
         throw new Error("Supabase config URL missing.");
       }
       return `${baseUrl}/functions/v1/merge-proxy`;
+    }
+
+    function getSupabaseTtsProxyUrl() {
+      const baseUrl = (sbConfig?.url || "").trim();
+      if (!baseUrl) {
+        throw new Error("Supabase config URL missing.");
+      }
+      return `${baseUrl}/functions/v1/tts-proxy`;
+    }
+
+    function getSupabaseUploadMp3ProxyUrl() {
+      const baseUrl = (sbConfig?.url || "").trim();
+      if (!baseUrl) {
+        throw new Error("Supabase config URL missing.");
+      }
+      return `${baseUrl}/functions/v1/upload-mp3-proxy`;
     }
 
     async function getFreshSupabaseAccessToken(forceRefresh = false) {
@@ -2014,6 +2026,56 @@ function scheduleAutosave() {
       return res.blob();
     }
 
+    async function synthesizeTextSegmentToMp3BlobViaTtsProxy(text) {
+      const voiceId = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.voiceId);
+      const modelId = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.modelId);
+      const outputFormat = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.outputFormat) || ELEVENLABS_DEFAULT_OUTPUT_FORMAT;
+
+      if (!voiceId) {
+        throw new Error("ElevenLabs Voice ID not found in localStorage. Open ./api-elevenlabs/elevenlabs.html first and save it there.");
+      }
+
+      const jwt = await getFreshSupabaseAccessToken(false);
+      const body = buildElevenLabsBody(text, modelId);
+      const payload = {
+        text,
+        voiceId,
+        modelId: typeof body.model_id === "string" ? body.model_id : "",
+        outputFormat,
+        voice_settings: body.voice_settings,
+      };
+
+      let res = await fetch(getSupabaseTtsProxyUrl(), {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${jwt}`,
+          "Content-Type": "application/json",
+          "Accept": "audio/mpeg",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.status === 401) {
+        const retryJwt = await getFreshSupabaseAccessToken(true);
+        res = await fetch(getSupabaseTtsProxyUrl(), {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${retryJwt}`,
+            "Content-Type": "application/json",
+            "Accept": "audio/mpeg",
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!res.ok) {
+        const bodyText = await res.text().catch(() => "");
+        throw new Error(`TTS proxy failed (${res.status}) via ${getSupabaseTtsProxyUrl()}. ${bodyText}`.trim());
+      }
+
+      return res.blob();
+    }
+
     async function fetchSpeechTokenMp3Blob(token) {
       const normalized = (token || "").replace(/\.mp3$/i, "").trim();
       if (!normalized) throw new Error("Speech token is empty.");
@@ -2311,10 +2373,6 @@ function scheduleAutosave() {
       const outputDir = getObject1OutputDirFromField();
       const outputFilename = getObject1OutputFilename();
       const segments = parseObject1DescriptionSegments();
-      const token = getStoryUploadToken();
-      if (!token) {
-        throw new Error(`Upload token missing in localStorage (${STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY}).`);
-      }
 
       setProduceObject1ButtonState("producing");
       try {
@@ -2431,10 +2489,6 @@ function scheduleAutosave() {
       const outputDir = getObject2OutputDirFromField();
       const outputFilename = getObject2OutputFilename();
       const segments = parseObject2DescriptionSegments();
-      const token = getStoryUploadToken();
-      if (!token) {
-        throw new Error(`Upload token missing in localStorage (${STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY}).`);
-      }
 
       setProduceObject2ButtonState("producing");
       try {
@@ -2551,10 +2605,6 @@ function scheduleAutosave() {
       const outputDir = getObject3OutputDirFromField();
       const outputFilename = getObject3OutputFilename();
       const segments = parseObject3DescriptionSegments();
-      const token = getStoryUploadToken();
-      if (!token) {
-        throw new Error(`Upload token missing in localStorage (${STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY}).`);
-      }
 
       setProduceObject3ButtonState("producing");
       try {
@@ -2790,10 +2840,6 @@ function scheduleAutosave() {
       const outputDir = getOpdrachtOutputDirFromField(no);
       const outputFilename = getOpdrachtOutputFilename(no);
       const segments = parseOpdrachtTextSegments(no);
-      const token = getStoryUploadToken();
-      if (!token) {
-        throw new Error(`Upload token missing in localStorage (${STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY}).`);
-      }
 
       setProduceOpdrachtButtonState(no, "producing");
       try {
@@ -3032,7 +3078,41 @@ function scheduleAutosave() {
       }
     }
 
-    async function buildKlankzuiverMergeSources(outputFilename) {
+    function setProduceKlankzuiverPartsJwtButtonState(state) {
+      const btn = $("btnProduceKlankzuiverPartsAudioJwt");
+      if (!btn) return;
+      if (btn._partsStateTimer) {
+        window.clearTimeout(btn._partsStateTimer);
+        btn._partsStateTimer = null;
+      }
+      if (state === "idle") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Maak delen JWT";
+        return;
+      }
+      if (state === "producing") {
+        btn.disabled = true;
+        btn.classList.add("busy");
+        btn.textContent = "JWT-delen...";
+        return;
+      }
+      if (state === "done") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Delen klaar";
+        btn._partsStateTimer = window.setTimeout(() => setProduceKlankzuiverPartsJwtButtonState("idle"), 4000);
+        return;
+      }
+      if (state === "error") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Error";
+        btn._partsStateTimer = window.setTimeout(() => setProduceKlankzuiverPartsJwtButtonState("idle"), 4000);
+      }
+    }
+
+    async function buildKlankzuiverMergeSources(outputFilename, synthesizeFn = synthesizeTextSegmentToMp3Blob) {
       const segments = parseKlankzuiverTextSegments();
       const sources = [];
       let partNo = 1;
@@ -3045,7 +3125,7 @@ function scheduleAutosave() {
           continue;
         }
 
-        const blob = await synthesizeTextSegmentToMp3Blob(seg.value);
+        const blob = await synthesizeFn(seg.value);
         const partFilename = `${outputStem}-part-${String(partNo).padStart(3, "0")}.mp3`;
         await uploadStoryMp3Blob(blob, { path: OBJECT1_TTS_PARTS_PATH, audiofile: partFilename });
         sources.push(`/${OBJECT1_TTS_PARTS_PATH}/${partFilename}`);
@@ -3076,19 +3156,19 @@ function scheduleAutosave() {
       return sources;
     }
 
-    async function produceKlankzuiverMergeParts() {
+    async function produceKlankzuiverMergeParts({ useTtsProxy = false, setState = setProduceKlankzuiverPartsButtonState } = {}) {
       const outputFilename = getKlankzuiverOutputFilename();
-      const segments = parseKlankzuiverTextSegments();
+      const synthesizeFn = useTtsProxy ? synthesizeTextSegmentToMp3BlobViaTtsProxy : synthesizeTextSegmentToMp3Blob;
 
-      setProduceKlankzuiverPartsButtonState("producing");
+      setState("producing");
       try {
-        msg($("saveMsg"), "Klankzuiver delen maken...");
-        const sources = await buildKlankzuiverMergeSources(outputFilename);
+        msg($("saveMsg"), useTtsProxy ? "Klankzuiver JWT-delen maken..." : "Klankzuiver delen maken...");
+        const sources = await buildKlankzuiverMergeSources(outputFilename, synthesizeFn);
         const generatedParts = sources.filter((src) => src.startsWith(`/${OBJECT1_TTS_PARTS_PATH}/`)).length;
         msg($("saveMsg"), `Klankzuiver merge-delen klaar (${generatedParts} nieuwe MP3${generatedParts === 1 ? "" : "'s"}, ${sources.length} bron${sources.length === 1 ? "" : "nen"}).`);
-        setProduceKlankzuiverPartsButtonState("done");
+        setState("done");
       } catch (e) {
-        setProduceKlankzuiverPartsButtonState("error");
+        setState("error");
         throw e;
       }
     }
@@ -3096,10 +3176,6 @@ function scheduleAutosave() {
     async function produceKlankzuiverAudioViaMergeApi() {
       const outputFilename = getKlankzuiverOutputFilename();
       const segments = parseKlankzuiverTextSegments();
-      const token = getStoryUploadToken();
-      if (!token) {
-        throw new Error(`Upload token missing in localStorage (${STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY}).`);
-      }
       setProduceKlankzuiverButtonState("producing");
       try {
         msg($("saveMsg"), "Producing klankzuiver audio...");
@@ -3234,14 +3310,6 @@ function scheduleAutosave() {
       }
     }
 
-    function getStoryUploadToken() {
-      try {
-        return (localStorage.getItem(STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY) || "").trim();
-      } catch {
-        return "";
-      }
-    }
-
     function getMixedMergeGapMs() {
       const raw = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.mergeGapMs);
       const n = Number.parseInt(raw, 10);
@@ -3250,24 +3318,35 @@ function scheduleAutosave() {
     }
 
     async function uploadStoryMp3Blob(blob, target) {
-      const token = getStoryUploadToken();
-      if (!token) {
-        throw new Error(`Upload token missing in localStorage (${STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY}).`);
-      }
       const form = new FormData();
-      form.append("token", token);
       form.append("path", target.path);
       form.append("audiofile", target.audiofile);
       form.append("file", blob, target.audiofile);
-
-      const res = await fetch(STORY_MP3_UPLOAD_URL, {
+      let jwt = await getFreshSupabaseAccessToken(false);
+      let res = await fetch(getSupabaseUploadMp3ProxyUrl(), {
         method: "POST",
+        headers: {
+          "Authorization": `Bearer ${jwt}`,
+          "Accept": "application/json",
+        },
         body: form,
       });
 
+      if (res.status === 401) {
+        jwt = await getFreshSupabaseAccessToken(true);
+        res = await fetch(getSupabaseUploadMp3ProxyUrl(), {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${jwt}`,
+            "Accept": "application/json",
+          },
+          body: form,
+        });
+      }
+
       const body = await res.text().catch(() => "");
       if (!res.ok) {
-        throw new Error(`MP3 upload failed (${res.status}). ${body}`.trim());
+        throw new Error(`MP3 upload failed (${res.status}) via ${getSupabaseUploadMp3ProxyUrl()}. ${body}`.trim());
       }
       try {
         return JSON.parse(body);
@@ -3428,7 +3507,42 @@ function scheduleAutosave() {
       }
     }
 
-    async function buildStoryMergeSources(outputFilename) {
+    function setProduceStoryPartsJwtButtonState(state) {
+      const btn = $("btnProduceStoryPartsAudioJwt");
+      if (!btn) return;
+      if (btn._partsStateTimer) {
+        window.clearTimeout(btn._partsStateTimer);
+        btn._partsStateTimer = null;
+      }
+
+      if (state === "idle") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Maak delen JWT";
+        return;
+      }
+      if (state === "producing") {
+        btn.disabled = true;
+        btn.classList.add("busy");
+        btn.textContent = "JWT-delen...";
+        return;
+      }
+      if (state === "done") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Delen klaar";
+        btn._partsStateTimer = window.setTimeout(() => setProduceStoryPartsJwtButtonState("idle"), 4000);
+        return;
+      }
+      if (state === "error") {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+        btn.textContent = "Error";
+        btn._partsStateTimer = window.setTimeout(() => setProduceStoryPartsJwtButtonState("idle"), 4000);
+      }
+    }
+
+    async function buildStoryMergeSources(outputFilename, synthesizeFn = synthesizeTextSegmentToMp3Blob) {
       const segments = parseStoryTextSegments();
       const sources = [];
       let partNo = 1;
@@ -3441,7 +3555,7 @@ function scheduleAutosave() {
           continue;
         }
 
-        const blob = await synthesizeTextSegmentToMp3Blob(seg.value);
+        const blob = await synthesizeFn(seg.value);
         const partFilename = `${outputStem}-part-${String(partNo).padStart(3, "0")}.mp3`;
         await uploadStoryMp3Blob(blob, { path: OBJECT1_TTS_PARTS_PATH, audiofile: partFilename });
         sources.push(`/${OBJECT1_TTS_PARTS_PATH}/${partFilename}`);
@@ -3472,20 +3586,20 @@ function scheduleAutosave() {
       return sources;
     }
 
-    async function produceStoryMergeParts() {
+    async function produceStoryMergeParts({ useTtsProxy = false, setState = setProduceStoryPartsButtonState } = {}) {
       const target = getStoryUploadTarget();
       const outputFilename = target.audiofile;
-      const segments = parseStoryTextSegments();
+      const synthesizeFn = useTtsProxy ? synthesizeTextSegmentToMp3BlobViaTtsProxy : synthesizeTextSegmentToMp3Blob;
 
-      setProduceStoryPartsButtonState("producing");
+      setState("producing");
       try {
-        msg($("saveMsg"), "Story delen maken...");
-        const sources = await buildStoryMergeSources(outputFilename);
+        msg($("saveMsg"), useTtsProxy ? "Story JWT-delen maken..." : "Story delen maken...");
+        const sources = await buildStoryMergeSources(outputFilename, synthesizeFn);
         const generatedParts = sources.filter((src) => src.startsWith(`/${OBJECT1_TTS_PARTS_PATH}/`)).length;
         msg($("saveMsg"), `Story merge-delen klaar (${generatedParts} nieuwe MP3${generatedParts === 1 ? "" : "'s"}, ${sources.length} bron${sources.length === 1 ? "" : "nen"}).`);
-        setProduceStoryPartsButtonState("done");
+        setState("done");
       } catch (e) {
-        setProduceStoryPartsButtonState("error");
+        setState("error");
         throw e;
       }
     }
@@ -3495,11 +3609,6 @@ function scheduleAutosave() {
       const outputDir = `/${target.path.replace(/^\/+/, "").replace(/\/+$/, "")}/`;
       const outputFilename = target.audiofile;
       const segments = parseStoryTextSegments();
-      const token = getStoryUploadToken();
-      if (!token) {
-        setProduceStoryButtonState("error");
-        throw new Error(`Upload token missing in localStorage (${STORY_MP3_UPLOAD_TOKEN_STORAGE_KEY}).`);
-      }
       setProduceStoryButtonState("producing");
       try {
         msg($("saveMsg"), "Producing story audio...");
@@ -4042,12 +4151,8 @@ function scheduleAutosave() {
       try { await produceStoryAudioWithElevenLabs(); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
-    $("btnProduceStoryPartsAudio").onclick = async () => {
-      try { await produceStoryMergeParts(); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
-    $("btnMergeStoryAudio").onclick = async () => {
-      try { await mergeStoryAudioViaSupabaseProxy(); }
+    $("btnProduceStoryPartsAudioJwt").onclick = async () => {
+      try { await produceStoryMergeParts({ useTtsProxy: true, setState: setProduceStoryPartsJwtButtonState }); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
     $("btnMergeStoryAudioJwt").onclick = async () => {
@@ -4081,12 +4186,8 @@ function scheduleAutosave() {
       try { await produceKlankzuiverAudioViaMergeApi(); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
-    $("btnProduceKlankzuiverPartsAudio").onclick = async () => {
-      try { await produceKlankzuiverMergeParts(); }
-      catch(e){ msg($("saveMsg"), e.message || String(e), false); }
-    };
-    $("btnMergeKlankzuiverAudio").onclick = async () => {
-      try { await mergeKlankzuiverAudioViaSupabaseProxy(); }
+    $("btnProduceKlankzuiverPartsAudioJwt").onclick = async () => {
+      try { await produceKlankzuiverMergeParts({ useTtsProxy: true, setState: setProduceKlankzuiverPartsJwtButtonState }); }
       catch(e){ msg($("saveMsg"), e.message || String(e), false); }
     };
     $("btnMergeKlankzuiverAudioJwt").onclick = async () => {

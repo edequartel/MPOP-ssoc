@@ -10,7 +10,6 @@
     text: $("text"),
     modelId: $("modelId"),
     outputFormat: $("outputFormat"),
-    storyUploadToken: $("storyUploadToken"),
     mergeGapMs: $("mergeGapMs"),
     chkRememberVoice: $("chkRememberVoice"),
     chkRememberKey: $("chkRememberKey"),
@@ -22,7 +21,8 @@
     btnClear: $("btnClear"),
     btnClearText: $("clearTextBtn"), // <-- added
     btnDownload: $("btnDownload"),
-    btnDownloadMerged: $("btnDownloadMerged"),
+    btnMakePartsMergedJwt: $("btnMakePartsMergedJwt"),
+    btnMergeMergedJwt: $("btnMergeMergedJwt"),
     btnPlayMerged: $("btnPlayMerged"),
     btnDownloadMergedFile: $("btnDownloadMergedFile"),
     status: $("status"),
@@ -37,12 +37,12 @@
   let mergedAudio = null;
   let mergedAudioVersion = "";
   let sb = null;
+  let sbConfig = null;
   let savedVoiceIdPref = "";
+  let preparedMergedSources = [];
   const voiceLinkById = new Map();
   const FIXED_OUTPUT_FORMAT = "mp3_44100_128";
   const BRAILLE_AUDIO_BASE_URL = "https://www.tastenbraille.com/braillestudio";
-  const STORY_MP3_UPLOAD_URL = "https://www.tastenbraille.com/upload_mp3.php";
-  const MIXED_MERGE_API_URL = "https://www.tastenbraille.com/api/mixedmerge_mp3.php";
   const MIXED_MERGE_OUTPUT_DIR = "/sounds/nl/out/";
   const MIXED_MERGE_OUTPUT_FILENAME = "merged.mp3";
   const MIXED_MERGE_PARTS_PATH = "sounds/nl/instruction/_parts";
@@ -57,7 +57,6 @@
     voiceName: "elevenlabs.voiceName",
     apiKey: "elevenlabs.apiKey",
     modelId: "elevenlabs.modelId",
-    storyUploadToken: "storyMp3Upload.token",
     mergeGapMs: "mixedmerge.gapMs",
   });
 
@@ -111,8 +110,60 @@
         throw lastError || new Error("Supabase config missing url/anonKey.");
       }
     }
+    sbConfig = cfg;
     const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
     return createClient(cfg.url, cfg.anonKey);
+  }
+
+  function getSupabaseFunctionUrl(functionName) {
+    const baseUrl = (sbConfig?.url || "").trim();
+    if (!baseUrl) throw new Error("Supabase config URL missing.");
+    return `${baseUrl}/functions/v1/${functionName}`;
+  }
+
+  async function getFreshSupabaseAccessToken(forceRefresh = false) {
+    if (!sb) sb = await initSupabaseClient();
+    const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+    if (sessionError) throw sessionError;
+
+    let session = sessionData?.session ?? null;
+    const expiresAt = Number(session?.expires_at || 0);
+    const now = Math.floor(Date.now() / 1000);
+    const shouldRefresh = forceRefresh || !session || (expiresAt > 0 && expiresAt - now < 30);
+
+    if (shouldRefresh) {
+      const { data: refreshed, error: refreshError } = await sb.auth.refreshSession();
+      if (refreshError) throw refreshError;
+      session = refreshed?.session ?? session;
+    }
+
+    const token = (session?.access_token || "").trim();
+    if (!token) throw new Error("No active Supabase session. Sign in first.");
+    return token;
+  }
+
+  async function fetchWithJwtRetry(functionName, init) {
+    let jwt = await getFreshSupabaseAccessToken(false);
+    let res = await fetch(getSupabaseFunctionUrl(functionName), {
+      ...init,
+      headers: {
+        ...(init?.headers || {}),
+        Authorization: `Bearer ${jwt}`,
+      },
+    });
+
+    if (res.status === 401) {
+      jwt = await getFreshSupabaseAccessToken(true);
+      res = await fetch(getSupabaseFunctionUrl(functionName), {
+        ...init,
+        headers: {
+          ...(init?.headers || {}),
+          Authorization: `Bearer ${jwt}`,
+        },
+      });
+    }
+
+    return res;
   }
 
   function setVoiceOptions(rows) {
@@ -267,13 +318,6 @@
     else storageSet(STORAGE.modelId, value);
   }
 
-  function persistStoryUploadToken(valueRaw) {
-    if (!els.storyUploadToken) return;
-    const value = (valueRaw ?? els.storyUploadToken.value ?? "").trim();
-    if (!value) storageDel(STORAGE.storyUploadToken);
-    else storageSet(STORAGE.storyUploadToken, value);
-  }
-
   function persistMergeGapMs(valueRaw) {
     if (!els.mergeGapMs) return;
     const raw = (valueRaw ?? els.mergeGapMs.value ?? "").trim();
@@ -310,11 +354,6 @@
     if (isRememberModelEnabled()) {
       const savedModelId = storageGet(STORAGE.modelId);
       if (savedModelId && els.modelId) els.modelId.value = savedModelId;
-    }
-
-    const savedStoryUploadToken = storageGet(STORAGE.storyUploadToken);
-    if (savedStoryUploadToken && els.storyUploadToken) {
-      els.storyUploadToken.value = savedStoryUploadToken;
     }
 
     const savedMergeGapMs = storageGet(STORAGE.mergeGapMs);
@@ -477,6 +516,33 @@
     return res.blob();
   }
 
+  async function synthesizeTextToMp3BlobViaTtsProxy({ voiceId, text, modelId, outputFormat }) {
+    const body = buildBody(text, modelId);
+    const payload = {
+      text,
+      voiceId,
+      modelId: typeof body.model_id === "string" ? body.model_id : "",
+      outputFormat,
+      voice_settings: body.voice_settings,
+    };
+
+    const res = await fetchWithJwtRetry("tts-proxy", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "audio/mpeg",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(`TTS proxy failed (${res.status}). ${errText}`.trim());
+    }
+
+    return res.blob();
+  }
+
   async function fetchSpeechTokenMp3Blob(token) {
     const normalized = String(token || "").replace(/\.mp3$/i, "").trim();
     if (!normalized) throw new Error("Speech token is empty.");
@@ -526,19 +592,17 @@
     return Math.min(5000, Math.max(0, n));
   }
 
-  function getUploadToken() {
-    return (els.storyUploadToken?.value || storageGet(STORAGE.storyUploadToken) || "").trim();
-  }
-
-  async function uploadBlobToStoryEndpoint(blob, { path, audiofile, token }) {
+  async function uploadBlobToStoryEndpoint(blob, { path, audiofile }) {
     const form = new FormData();
-    form.append("token", token);
     form.append("path", path);
     form.append("audiofile", audiofile);
     form.append("file", blob, audiofile);
 
-    const res = await fetch(STORY_MP3_UPLOAD_URL, {
+    const res = await fetchWithJwtRetry("upload-mp3-proxy", {
       method: "POST",
+      headers: {
+        "Accept": "application/json",
+      },
       body: form,
     });
 
@@ -847,10 +911,16 @@
     }
   }
 
-  function setMergedButtonBusy(busy) {
-    if (!els.btnDownloadMerged) return;
-    els.btnDownloadMerged.disabled = !!busy;
-    els.btnDownloadMerged.textContent = busy ? "Producing..." : "Produce";
+  function setMakePartsJwtButtonBusy(busy) {
+    if (!els.btnMakePartsMergedJwt) return;
+    els.btnMakePartsMergedJwt.disabled = !!busy;
+    els.btnMakePartsMergedJwt.textContent = busy ? "JWT-delen..." : "Maak delen JWT";
+  }
+
+  function setMergeJwtButtonBusy(busy) {
+    if (!els.btnMergeMergedJwt) return;
+    els.btnMergeMergedJwt.disabled = !!busy;
+    els.btnMergeMergedJwt.textContent = busy ? "Merging..." : "Merge JWT";
   }
 
   function getMergedAudioUrl() {
@@ -913,51 +983,21 @@
     }
   }
 
-  async function onDownloadMerged() {
-    const apiKey = (els.apiKey?.value || "").trim();
+  async function onMakePartsMergedJwt() {
     const voiceId = (els.voiceId?.value || "").trim();
     const text = (els.text?.value || "").trim();
     const modelId = "eleven_v3";
     const outputFormat = FIXED_OUTPUT_FORMAT;
-    const token = getUploadToken();
-    const gapMs = getMergeGapMs();
-
-    persistStoryUploadToken(token);
-
-    if (!apiKey || !voiceId || !text) {
-      log("Missing required fields for merged download: API key, Voice, Text.");
+    if (!voiceId || !text) {
+      log("Missing required fields for JWT parts: Voice, Text.");
       setStatus("Missing input");
       return;
     }
-    if (!token) {
-      log("Upload token missing (storyMp3Upload.token).");
-      setStatus("Missing token");
-      return;
-    }
 
-    setMergedButtonBusy(true);
+    setMakePartsJwtButtonBusy(true);
     try {
-      setStatus("Preparing merge…");
+      setStatus("Preparing JWT parts…");
       const segments = parseMixedTextSegments(text);
-
-      if (segments.length === 1) {
-        const blob = segments[0].type === "speech"
-          ? await fetchSpeechTokenMp3Blob(segments[0].value)
-          : await synthesizeTextToMp3Blob({ apiKey, voiceId, text: segments[0].value, modelId, outputFormat });
-        const uploadPath = MIXED_MERGE_OUTPUT_DIR.replace(/^\/+|\/+$/g, "");
-        const singleResult = await uploadBlobToStoryEndpoint(blob, {
-          token,
-          path: uploadPath,
-          audiofile: MIXED_MERGE_OUTPUT_FILENAME,
-        });
-        const singleUrl = singleResult?.url || buildAudioUrl(`${MIXED_MERGE_OUTPUT_DIR}${MIXED_MERGE_OUTPUT_FILENAME}`);
-        mergedAudioVersion = String(Date.now());
-        stopMergedPlayback();
-        log(`Merged file produced: ${singleUrl}`);
-        setStatus("Idle");
-        return;
-      }
-
       const sources = [];
       const stem = `merged-${Date.now()}`;
       let partNo = 1;
@@ -967,10 +1007,9 @@
           sources.push(`${SPEECH_BASE_PATH}${normalized}.mp3`);
           continue;
         }
-        const blob = await synthesizeTextToMp3Blob({ apiKey, voiceId, text: seg.value, modelId, outputFormat });
+        const blob = await synthesizeTextToMp3BlobViaTtsProxy({ voiceId, text: seg.value, modelId, outputFormat });
         const partFilename = `${stem}-part-${String(partNo).padStart(3, "0")}.mp3`;
         await uploadBlobToStoryEndpoint(blob, {
-          token,
           path: MIXED_MERGE_PARTS_PATH,
           audiofile: partFilename,
         });
@@ -978,17 +1017,38 @@
         partNo += 1;
       }
 
-      const mergeRes = await fetch(MIXED_MERGE_API_URL, {
+      preparedMergedSources = sources;
+      log(`JWT parts ready: ${sources.length} source${sources.length === 1 ? "" : "s"}.`);
+      setStatus("Idle");
+    } catch (e) {
+      log(`Maak delen JWT failed: ${e?.message || e}`);
+      setStatus("Error");
+    } finally {
+      setMakePartsJwtButtonBusy(false);
+    }
+  }
+
+  async function onMergeMergedJwt() {
+    if (!preparedMergedSources.length) {
+      log("No prepared sources yet. Click 'Maak delen JWT' first.");
+      setStatus("Missing input");
+      return;
+    }
+
+    setMergeJwtButtonBusy(true);
+    try {
+      setStatus("Merging via JWT…");
+      const mergeRes = await fetchWithJwtRetry("merge-proxy", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          "Accept": "application/json",
         },
         body: JSON.stringify({
           outputDir: MIXED_MERGE_OUTPUT_DIR,
-          sources,
+          sources: preparedMergedSources,
           outputFilename: MIXED_MERGE_OUTPUT_FILENAME,
-          gapMs,
+          gapMs: getMergeGapMs(),
           debug: true,
           tryCopyFirst: false,
         }),
@@ -1007,10 +1067,10 @@
       log(`Merged file produced: ${outputUrl}`);
       setStatus("Idle");
     } catch (e) {
-      log(`Merged download failed: ${e?.message || e}`);
+      log(`Merge JWT failed: ${e?.message || e}`);
       setStatus("Error");
     } finally {
-      setMergedButtonBusy(false);
+      setMergeJwtButtonBusy(false);
     }
   }
 
@@ -1020,7 +1080,8 @@
   els.btnClear?.addEventListener("click", onClear);
   els.btnClearText?.addEventListener("click", onClearText); // <-- added
   els.btnDownload?.addEventListener("click", onDownload);
-  els.btnDownloadMerged?.addEventListener("click", onDownloadMerged);
+  els.btnMakePartsMergedJwt?.addEventListener("click", onMakePartsMergedJwt);
+  els.btnMergeMergedJwt?.addEventListener("click", onMergeMergedJwt);
   els.btnPlayMerged?.addEventListener("click", onPlayMerged);
   els.btnDownloadMergedFile?.addEventListener("click", onDownloadMergedFile);
   els.btnVoiceInfo?.addEventListener("click", onVoiceInfoClick);
@@ -1030,7 +1091,6 @@
     refreshVoiceInfoButton();
   });
   els.modelId?.addEventListener("change", () => persistModelId());
-  els.storyUploadToken?.addEventListener("change", () => persistStoryUploadToken());
   els.mergeGapMs?.addEventListener("change", () => persistMergeGapMs());
 
   els.chkRememberKey?.addEventListener("change", () => {
