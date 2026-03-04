@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>General Sounds</title>
+  <link rel="stylesheet" href="./elevenlabs-howler.css" />
+  <style>
+    .list-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .sound-list {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .sound-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #0c0f16;
+    }
+
+    .sound-meta {
+      min-width: 0;
+    }
+
+    .sound-name {
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    .sound-path {
+      margin-top: 0.2rem;
+      color: var(--muted);
+      font-size: 0.86rem;
+      word-break: break-word;
+    }
+
+    .empty-state {
+      color: var(--muted);
+      padding: 1rem 0;
+    }
+
+    @media (max-width: 720px) {
+      .sound-item {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="header">
+      <h1>General Sounds</h1>
+      <div class="header-actions">
+        <button type="button" class="btn" onclick="window.location.href='./elevenlabs.html'">ElevenLabs</button>
+      </div>
+    </header>
+
+    <section class="panel list-panel">
+      <div class="row">
+        <strong>API:</strong>
+        <span id="apiStatus" class="status">Loading…</span>
+      </div>
+      <div id="soundList" class="sound-list" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = "https://www.tastenbraille.com/api/list_files.php?path=sounds/general";
+    const soundListEl = document.getElementById("soundList");
+    const apiStatusEl = document.getElementById("apiStatus");
+
+    function setStatus(text) {
+      apiStatusEl.textContent = text;
+    }
+
+    function formatBytes(bytes) {
+      const n = Number(bytes);
+      if (!Number.isFinite(n) || n < 1024) return `${bytes || 0} B`;
+      if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+      return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function renderEmpty(text) {
+      soundListEl.innerHTML = `<div class="empty-state">${text}</div>`;
+    }
+
+    function renderFiles(files) {
+      const mp3Files = Array.isArray(files)
+        ? files.filter((file) => /\.mp3$/i.test(String(file?.name || "")))
+        : [];
+
+      if (!mp3Files.length) {
+        renderEmpty("No files found.");
+        return;
+      }
+
+      soundListEl.innerHTML = mp3Files.map((file) => {
+        const name = String(file?.name || "");
+        const path = String(file?.path || "");
+        const url = String(file?.url || "");
+        const bytes = formatBytes(file?.bytes || 0);
+        return `
+          <div class="sound-item">
+            <div class="sound-meta">
+              <div class="sound-name">${escapeHtml(name)}</div>
+              <div class="sound-path">${escapeHtml(path)} • ${escapeHtml(bytes)}</div>
+            </div>
+            <audio controls preload="none" src="${escapeAttr(url)}"></audio>
+            <a class="btn" href="${escapeAttr(url)}" target="_blank" rel="noreferrer">Open</a>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value);
+    }
+
+    async function loadFiles() {
+      setStatus("Loading…");
+      renderEmpty("Loading files…");
+
+      try {
+        const res = await fetch(API_URL, { cache: "no-store" });
+        const text = await res.text();
+        let body = null;
+        try { body = text ? JSON.parse(text) : null; } catch {}
+
+        if (!res.ok || body?.ok === false) {
+          throw new Error(body?.error || text || `HTTP ${res.status}`);
+        }
+
+        const files = Array.isArray(body?.files)
+          ? body.files.filter((file) => /\.mp3$/i.test(String(file?.name || "")))
+          : [];
+        renderFiles(files);
+        setStatus(`${files.length} mp3 file${files.length === 1 ? "" : "s"} loaded`);
+      } catch (err) {
+        renderEmpty(`Failed to load files: ${err?.message || err}`);
+        setStatus("Error");
+      }
+    }
+
+    loadFiles();
+  </script>
+</body>
+</html>
