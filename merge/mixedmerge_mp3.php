@@ -136,14 +136,12 @@ if (!in_array($outputDir, $ALLOWED_OUTPUT_DIRS, true)) {
   fail(400, "Invalid outputDir", ["allowed" => $ALLOWED_OUTPUT_DIRS]);
 }
 
-if (!is_array($sources) || count($sources) < 2) {
-  fail(400, "Provide sources[] with at least 2 items.", [
+if (!is_array($sources) || count($sources) < 1) {
+  fail(400, "Provide sources[] with at least 1 item.", [
     "example" => [
       "outputDir" => "/sounds/nl/klankzuiver/",
       "sources" => [
-        "/sounds/nl/speech/b.mp3",
-        "/sounds/nl/speech/a.mp3",
-        "/sounds/nl/speech/l.mp3"
+        "/sounds/nl/speech/b.mp3"
       ],
       "outputFilename" => "bal.mp3",
       "gapMs" => 500
