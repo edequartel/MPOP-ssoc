@@ -39,8 +39,6 @@
         </label>
 
         <div class="actions full">
-          <button id="btnPlay" class="btn primary">Play</button>
-          <button id="btnStop" class="btn">Stop</button>
           <button id="btnClear" class="btn">Clear log</button>
           
           <button id="clearTextBtn" class="btn">
@@ -48,11 +46,9 @@
 </button>
           
           
-          <button id="btnDownload" class="btn" disabled>Download audio</button>
           <div class="merged-actions">
+            <button id="btnProduceMergedJwt" class="btn">Produce</button>
             <button id="btnPlayMerged" class="btn">Play</button>
-            <button id="btnMakePartsMergedJwt" class="btn">Maak delen JWT</button>
-            <button id="btnMergeMergedJwt" class="btn">Merge JWT</button>
             <button id="btnDownloadMergedFile" class="btn">Download</button>
           </div>
 
@@ -60,10 +56,6 @@
             <label class="toggle">
               <input id="chkRememberVoice" type="checkbox" checked />
               <span>Remember selected voice</span>
-            </label>
-            <label class="toggle">
-              <input id="chkRememberKey" type="checkbox" />
-              <span>Remember API key (local)</span>
             </label>
             <label class="toggle">
               <input id="chkTryMSE" type="checkbox" checked />
@@ -76,11 +68,6 @@
 
     <section class="panel">
       <div class="grid">
-        <label class="field">
-          <span>API key</span>
-          <input id="apiKey" type="password" placeholder="xi-api-key…" autocomplete="off" />
-        </label>
-
       </div>
     </section>
 

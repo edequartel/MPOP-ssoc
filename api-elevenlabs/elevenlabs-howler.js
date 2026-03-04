@@ -21,8 +21,7 @@
     btnClear: $("btnClear"),
     btnClearText: $("clearTextBtn"), // <-- added
     btnDownload: $("btnDownload"),
-    btnMakePartsMergedJwt: $("btnMakePartsMergedJwt"),
-    btnMergeMergedJwt: $("btnMergeMergedJwt"),
+    btnProduceMergedJwt: $("btnProduceMergedJwt"),
     btnPlayMerged: $("btnPlayMerged"),
     btnDownloadMergedFile: $("btnDownloadMergedFile"),
     status: $("status"),
@@ -911,16 +910,12 @@
     }
   }
 
-  function setMakePartsJwtButtonBusy(busy) {
-    if (!els.btnMakePartsMergedJwt) return;
-    els.btnMakePartsMergedJwt.disabled = !!busy;
-    els.btnMakePartsMergedJwt.textContent = busy ? "JWT-delen..." : "Maak delen JWT";
-  }
-
-  function setMergeJwtButtonBusy(busy) {
-    if (!els.btnMergeMergedJwt) return;
-    els.btnMergeMergedJwt.disabled = !!busy;
-    els.btnMergeMergedJwt.textContent = busy ? "Merging..." : "Merge JWT";
+  function setProduceMergedJwtButtonBusy(busy, label = "Produce") {
+    if (!els.btnProduceMergedJwt) return;
+    els.btnProduceMergedJwt.disabled = !!busy;
+    els.btnProduceMergedJwt.textContent = busy ? label : "Produce";
+    if (els.btnPlayMerged) els.btnPlayMerged.disabled = !!busy;
+    if (els.btnDownloadMergedFile) els.btnDownloadMergedFile.disabled = !!busy;
   }
 
   function getMergedAudioUrl() {
@@ -994,7 +989,7 @@
       return;
     }
 
-    setMakePartsJwtButtonBusy(true);
+    setProduceMergedJwtButtonBusy(true, "JWT-delen...");
     try {
       setStatus("Preparing JWT parts…");
       const segments = parseMixedTextSegments(text);
@@ -1024,7 +1019,7 @@
       log(`Maak delen JWT failed: ${e?.message || e}`);
       setStatus("Error");
     } finally {
-      setMakePartsJwtButtonBusy(false);
+      setProduceMergedJwtButtonBusy(false);
     }
   }
 
@@ -1035,7 +1030,7 @@
       return;
     }
 
-    setMergeJwtButtonBusy(true);
+    setProduceMergedJwtButtonBusy(true, "Merging...");
     try {
       setStatus("Merging via JWT…");
       const mergeRes = await fetchWithJwtRetry("merge-proxy", {
@@ -1070,7 +1065,23 @@
       log(`Merge JWT failed: ${e?.message || e}`);
       setStatus("Error");
     } finally {
-      setMergeJwtButtonBusy(false);
+      setProduceMergedJwtButtonBusy(false);
+    }
+  }
+
+  async function onProduceMergedJwt() {
+    setProduceMergedJwtButtonBusy(true, "Producing...");
+    try {
+      await onMakePartsMergedJwt();
+      if (!preparedMergedSources.length) {
+        throw new Error("No prepared sources after parts step.");
+      }
+      await onMergeMergedJwt();
+    } catch (e) {
+      log(`Produce failed: ${e?.message || e}`);
+      setStatus("Error");
+    } finally {
+      setProduceMergedJwtButtonBusy(false);
     }
   }
 
@@ -1080,8 +1091,7 @@
   els.btnClear?.addEventListener("click", onClear);
   els.btnClearText?.addEventListener("click", onClearText); // <-- added
   els.btnDownload?.addEventListener("click", onDownload);
-  els.btnMakePartsMergedJwt?.addEventListener("click", onMakePartsMergedJwt);
-  els.btnMergeMergedJwt?.addEventListener("click", onMergeMergedJwt);
+  els.btnProduceMergedJwt?.addEventListener("click", onProduceMergedJwt);
   els.btnPlayMerged?.addEventListener("click", onPlayMerged);
   els.btnDownloadMergedFile?.addEventListener("click", onDownloadMergedFile);
   els.btnVoiceInfo?.addEventListener("click", onVoiceInfoClick);
