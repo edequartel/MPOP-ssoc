@@ -42,6 +42,9 @@ De items zijn de woorden waar de methode uit bestaat.
 ## Audio afspelen
 
 - Gebruik de **play/pauze** knop om audio te beluisteren.
+- Gebruik <o> <b,a,l> of <b,3_0s)> <4_0s> voor phonetische uitspraak
+- Ruimte tussen letters is standaard een 0,5 sec daarna kun je deze instellen met <1_0s> maximaal 4_0s oplopende met een 0.5 seconde.
+- geberuik {geluid} voor geluiden. Deze geluiden moeten dan wel bestaan. Bestaat deze niet doorgeven dan komen deze erbij.
 
 
 ## Afbeeldingen
@@ -71,6 +74,5 @@ De items zijn de woorden waar de methode uit bestaat.
 ## Handleiding en template
 
 - Klik op **Handleiding** om deze pagina te openen.
-- Klik op **Template** voor toelichting op de PDF template.
 - Klik op **MPOP versie 1** om de oude MPOP-versie te openen.
-- Klik op **Tekeningen** om de ontwerp- en tekeningenrichtlijnen te openen.
+- Klik op **Links** om de ontwerp- en tekeningenrichtlijnen te openen, en meer.
