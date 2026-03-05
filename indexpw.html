@@ -64,6 +64,7 @@
           <div class="btnrow mt-10">
             <button id="btnSignIn">Inloggen</button>
             <button id="btnSignUp">Registreren</button>
+            <button id="btnForgotPassword">Wachtwoord vergeten?</button>
           </div>
           <div id="authMsg" class="tiny mt-10"></div>
         </div>
@@ -1229,6 +1230,22 @@
         const { error } = await sb.auth.signUp({ email, password });
         if (error) throw error;
         msg($("authMsg"), "Registratie gelukt. Bevestig je e-mail voordat je kunt inloggen.");
+      } catch (e) {
+        msg($("authMsg"), e.message || String(e), false);
+      }
+    }
+
+    async function requestPasswordReset() {
+      try {
+        ensureClient();
+        msg($("authMsg"), "");
+        const email = val("email").trim();
+        if (!email) throw new Error("Vul eerst je e-mailadres in.");
+        const basePath = window.location.pathname.replace(/\/[^/]*$/, "/");
+        const redirectTo = `${window.location.origin}${basePath}reset-password.html`;
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+        if (error) throw error;
+        msg($("authMsg"), "Herstelmail verzonden. Controleer je inbox en spam-map.");
       } catch (e) {
         msg($("authMsg"), e.message || String(e), false);
       }
@@ -3783,6 +3800,7 @@ function scheduleAutosave() {
     // -----------------------------
     $("btnSignIn").onclick = signIn;
     $("btnSignUp").onclick = signUp;
+    $("btnForgotPassword").onclick = requestPasswordReset;
     wirePasswordToggle("password", "btnTogglePassword");
 
     $("btnSignOut").onclick = signOut;
