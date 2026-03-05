@@ -42,7 +42,24 @@
           <input id="email" type="email" placeholder="name@school.nl" />
 
           <label>Password</label>
-          <input id="password" type="password" placeholder="••••••••" />
+          <div class="inlineRow passwordRow">
+            <input id="password" type="password" placeholder="••••••••" />
+            <button id="btnTogglePassword" type="button" class="password-toggle" aria-label="Toon wachtwoord" aria-pressed="false">
+              <span class="icon-eye" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M1.5 12s3.8-6.5 10.5-6.5S22.5 12 22.5 12s-3.8 6.5-10.5 6.5S1.5 12 1.5 12Z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </span>
+              <span class="icon-eye-off hidden" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M1.5 12s3.8-6.5 10.5-6.5S22.5 12 22.5 12s-3.8 6.5-10.5 6.5S1.5 12 1.5 12Z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M3 21 21 3"></path>
+                </svg>
+              </span>
+            </button>
+          </div>
 
           <div class="btnrow mt-10">
             <button id="btnSignIn">Inloggen</button>
@@ -1242,6 +1259,25 @@
       } catch (e) {
         msg($("listMsg"), e.message || String(e), false);
       }
+    }
+
+    function wirePasswordToggle(inputId, buttonId) {
+      const input = $(inputId);
+      const btn = $(buttonId);
+      if (!input || !btn) return;
+      const eye = btn.querySelector(".icon-eye");
+      const eyeOff = btn.querySelector(".icon-eye-off");
+      const setVisible = (visible) => {
+        input.type = visible ? "text" : "password";
+        btn.setAttribute("aria-pressed", visible ? "true" : "false");
+        btn.setAttribute("aria-label", visible ? "Verberg wachtwoord" : "Toon wachtwoord");
+        if (eye) eye.classList.toggle("hidden", visible);
+        if (eyeOff) eyeOff.classList.toggle("hidden", !visible);
+      };
+      setVisible(false);
+      btn.addEventListener("click", () => {
+        setVisible(input.type === "password");
+      });
     }
 
     // -----------------------------
@@ -3765,6 +3801,7 @@ function scheduleAutosave() {
     $("btnSignIn").onclick = signIn;
     $("btnSignUp").onclick = signUp;
     $("btnForgotPassword").onclick = requestPasswordReset;
+    wirePasswordToggle("password", "btnTogglePassword");
 
     $("btnSignOut").onclick = signOut;
     $("btnRefresh").onclick = () => loadItems();

@@ -67,6 +67,24 @@ button.busy::after {
 .inlineRow { display:flex; gap:8px; align-items:center; }
 .inlineRow input { flex:1; }
 .inlineRow button { width:auto; padding:8px 10px; }
+.inlineRow.passwordRow { align-items:stretch; }
+.inlineRow.passwordRow input { min-width:0; }
+.password-toggle {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:44px;
+  padding:0 12px;
+}
+.password-toggle svg {
+  width:18px;
+  height:18px;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
 .remote-file-dot {
   width:10px;
   height:10px;
