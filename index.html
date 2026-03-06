@@ -1195,6 +1195,7 @@
 
         await loadItems();
       } else {
+        msg($("authMsg"), "");
         $("itemsList").innerHTML = "";
         hideEditor();
         isViewerRole = false;
@@ -1253,6 +1254,7 @@
 
     async function signOut() {
       try {
+        msg($("authMsg"), "");
         msg($("listMsg"), "");
         await sb.auth.signOut();
         await refreshAuthUI();
