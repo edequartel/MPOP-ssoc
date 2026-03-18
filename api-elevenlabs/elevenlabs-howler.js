@@ -857,6 +857,7 @@
       for (const item of readyDownloads) {
         downloadBlobViaAnchor(item.blob, item.filename);
         log(`Download started [deel ${item.index}]: ${item.filename}`);
+        await sleep(750);
       }
       log(`Split download klaar: ${completed}/${groups.length} bestanden gestart.`);
       setStatus("Idle");
