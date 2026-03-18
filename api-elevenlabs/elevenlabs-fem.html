@@ -18,36 +18,38 @@
     </header>
 
     <section class="panel">
-      <div class="grid">
-        <div class="credit-card full" aria-live="polite">
-          <div class="credit-card-head">
-            <div>
-              <p class="credit-label">ElevenLabs credits</p>
-              <strong id="creditSummary">Laden...</strong>
-            </div>
-            <button id="btnRefreshCredits" type="button" class="btn">Refresh credits</button>
+      <div class="credit-card" aria-live="polite">
+        <div class="credit-card-head">
+          <div>
+            <p class="credit-label">ElevenLabs credits</p>
+            <strong id="creditSummary">Laden...</strong>
           </div>
-          <div class="credit-stats">
-            <div class="credit-stat">
-              <span>Gebruikt</span>
-              <strong id="creditUsed">-</strong>
-            </div>
-            <div class="credit-stat">
-              <span>Beschikbaar</span>
-              <strong id="creditRemaining">-</strong>
-            </div>
-            <div class="credit-stat">
-              <span>Limiet</span>
-              <strong id="creditLimit">-</strong>
-            </div>
-            <div class="credit-stat">
-              <span>Plan</span>
-              <strong id="creditTier">-</strong>
-            </div>
-          </div>
-          <p id="creditMeta" class="credit-meta">Credits worden opgehaald via een beveiligde server-call op basis van je Supabase-login.</p>
+          <button id="btnRefreshCredits" type="button" class="btn">Refresh credits</button>
         </div>
+        <div class="credit-stats">
+          <div class="credit-stat">
+            <span>Gebruikt</span>
+            <strong id="creditUsed">-</strong>
+          </div>
+          <div class="credit-stat">
+            <span>Beschikbaar</span>
+            <strong id="creditRemaining">-</strong>
+          </div>
+          <div class="credit-stat">
+            <span>Limiet</span>
+            <strong id="creditLimit">-</strong>
+          </div>
+          <div class="credit-stat">
+            <span>Plan</span>
+            <strong id="creditTier">-</strong>
+          </div>
+        </div>
+        <p id="creditMeta" class="credit-meta">Credits worden opgehaald via een beveiligde server-call op basis van je Supabase-login.</p>
+      </div>
+    </section>
 
+    <section class="panel">
+      <div class="grid">
         <label class="field">
           <span>Voice</span>
           <div class="voice-select-row">
