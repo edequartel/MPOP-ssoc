@@ -688,6 +688,24 @@
     await new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  async function fetchAudioBlobViaProxy(url) {
+    const res = await fetchWithJwtRetry("audio-download-proxy", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "audio/mpeg",
+      },
+      body: JSON.stringify({ url }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Audio download proxy failed (${res.status}). ${body}`.trim());
+    }
+
+    return res.blob();
+  }
+
   async function mergeSourcesToBlob(sources, outputFilename) {
     const mergeRes = await fetchWithJwtRetry("merge-proxy", {
       method: "POST",
@@ -719,14 +737,8 @@
     for (let attempt = 1; attempt <= 5; attempt += 1) {
       try {
         log(`Split merged fetch attempt ${attempt}: ${outputUrl}`);
-        const audioRes = await fetch(`${outputUrl}${outputUrl.includes("?") ? "&" : "?"}t=${Date.now()}`, {
-          cache: "no-store",
-        });
-        if (!audioRes.ok) {
-          const body = await audioRes.text().catch(() => "");
-          throw new Error(`Merged audio fetch failed (${audioRes.status}). ${body}`.trim());
-        }
-        return audioRes.blob();
+        const proxiedUrl = `${outputUrl}${outputUrl.includes("?") ? "&" : "?"}t=${Date.now()}`;
+        return await fetchAudioBlobViaProxy(proxiedUrl);
       } catch (e) {
         lastError = e;
         if (attempt < 5) {
