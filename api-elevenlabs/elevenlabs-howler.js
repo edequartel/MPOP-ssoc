@@ -679,12 +679,21 @@
     }, 0);
   }
 
+  function downloadUrlViaAnchor(url, filename) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || "elevenlabs.mp3";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
   function buildSplitFilename(index, rawText) {
     const textPart = safeFilenamePart(rawText).slice(0, 40) || "part";
     return `elevenlabs-part-${String(index).padStart(3, "0")}-${textPart}.mp3`;
   }
 
-  async function mergeSourcesToBlob(sources, outputFilename) {
+  async function mergeSourcesToUrl(sources, outputFilename) {
     const mergeRes = await fetchWithJwtRetry("merge-proxy", {
       method: "POST",
       headers: {
@@ -709,23 +718,19 @@
     }
 
     const outputUrlRaw = mergeBody?.outputUrl || mergeBody?.url || `${MIXED_MERGE_OUTPUT_DIR}${outputFilename}`;
-    const outputUrl = buildAudioUrl(outputUrlRaw);
-    const audioRes = await fetch(`${outputUrl}${outputUrl.includes("?") ? "&" : "?"}t=${Date.now()}`, {
-      cache: "no-store",
-    });
-    if (!audioRes.ok) {
-      const body = await audioRes.text().catch(() => "");
-      throw new Error(`Merged audio fetch failed (${audioRes.status}). ${body}`.trim());
-    }
-    return audioRes.blob();
+    return `${buildAudioUrl(outputUrlRaw)}${String(outputUrlRaw).includes("?") ? "&" : "?"}t=${Date.now()}`;
   }
 
   async function buildBlobForMixedGroup(groupText, { voiceId, modelId, outputFormat, stem }) {
     const segments = parseMixedTextSegments(groupText);
     if (segments.length === 1) {
       const seg = segments[0];
-      if (seg.type === "speech") return fetchSpeechTokenMp3Blob(seg.value);
+      if (seg.type === "speech") {
+        log(`Split group uses speech token: ${seg.value}`);
+        return { kind: "blob", value: await fetchSpeechTokenMp3Blob(seg.value) };
+      }
       if (seg.type === "general") {
+        log(`Split group uses general token: ${seg.value}`);
         const normalized = String(seg.value || "").replace(/\.mp3$/i, "").trim();
         const relPath = `${GENERAL_BASE_PATH}${normalized}.mp3`;
         const res = await fetch(buildAudioUrl(relPath), { cache: "no-store" });
@@ -733,9 +738,12 @@
           const body = await res.text().catch(() => "");
           throw new Error(`General token fetch failed (${res.status}) for ${relPath}. ${body}`.trim());
         }
-        return res.blob();
+        return { kind: "blob", value: await res.blob() };
       }
-      return synthesizeTextToMp3BlobViaTtsProxy({ voiceId, text: seg.value, modelId, outputFormat });
+      return {
+        kind: "blob",
+        value: await synthesizeTextToMp3BlobViaTtsProxy({ voiceId, text: seg.value, modelId, outputFormat }),
+      };
     }
 
     const sources = [];
@@ -743,16 +751,20 @@
     for (const seg of segments) {
       if (seg.type === "speech") {
         const normalized = seg.value.replace(/\.mp3$/i, "");
+        log(`Split merge source [speech]: ${normalized}`);
         sources.push(`${SPEECH_BASE_PATH}${normalized}.mp3`);
         continue;
       }
       if (seg.type === "general") {
         const normalized = seg.value.replace(/\.mp3$/i, "");
+        log(`Split merge source [general]: ${normalized}`);
         sources.push(`${GENERAL_BASE_PATH}${normalized}.mp3`);
         continue;
       }
+      log(`Split merge source [tts]: ${seg.value}`);
       const blob = await synthesizeTextToMp3BlobViaTtsProxy({ voiceId, text: seg.value, modelId, outputFormat });
       const partFilename = `${stem}-part-${String(partNo).padStart(3, "0")}.mp3`;
+      log(`Split upload part -> ${MIXED_MERGE_PARTS_PATH}/${partFilename}`);
       await uploadBlobToStoryEndpoint(blob, {
         path: MIXED_MERGE_PARTS_PATH,
         audiofile: partFilename,
@@ -761,7 +773,8 @@
       partNo += 1;
     }
 
-    return mergeSourcesToBlob(sources, `${stem}.mp3`);
+    log(`Split merge call with ${sources.length} sources -> ${stem}.mp3`);
+    return { kind: "url", value: await mergeSourcesToUrl(sources, `${stem}.mp3`) };
   }
 
   function setDownloadSplitFilesButtonBusy(busy, label = "Download # MP3s") {
@@ -798,8 +811,9 @@
         try {
           const stem = `split-${Date.now()}-${String(index).padStart(3, "0")}`;
           const filename = buildSplitFilename(index, groupText);
-          const blob = await buildBlobForMixedGroup(groupText, { voiceId, modelId, outputFormat, stem });
-          downloadBlobViaAnchor(blob, filename);
+          const result = await buildBlobForMixedGroup(groupText, { voiceId, modelId, outputFormat, stem });
+          if (result.kind === "url") downloadUrlViaAnchor(result.value, filename);
+          else downloadBlobViaAnchor(result.value, filename);
           log(`Download started [deel ${index}]: ${filename}`);
           completed += 1;
         } catch (e) {
