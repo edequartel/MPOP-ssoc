@@ -684,6 +684,10 @@
     return `elevenlabs-part-${String(index).padStart(3, "0")}-${textPart}.mp3`;
   }
 
+  async function sleep(ms) {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   async function mergeSourcesToBlob(sources, outputFilename) {
     const mergeRes = await fetchWithJwtRetry("merge-proxy", {
       method: "POST",
@@ -710,14 +714,28 @@
 
     const outputUrlRaw = mergeBody?.outputUrl || mergeBody?.url || `${MIXED_MERGE_OUTPUT_DIR}${outputFilename}`;
     const outputUrl = buildAudioUrl(outputUrlRaw);
-    const audioRes = await fetch(`${outputUrl}${outputUrl.includes("?") ? "&" : "?"}t=${Date.now()}`, {
-      cache: "no-store",
-    });
-    if (!audioRes.ok) {
-      const body = await audioRes.text().catch(() => "");
-      throw new Error(`Merged audio fetch failed (${audioRes.status}). ${body}`.trim());
+
+    let lastError = null;
+    for (let attempt = 1; attempt <= 5; attempt += 1) {
+      try {
+        log(`Split merged fetch attempt ${attempt}: ${outputUrl}`);
+        const audioRes = await fetch(`${outputUrl}${outputUrl.includes("?") ? "&" : "?"}t=${Date.now()}`, {
+          cache: "no-store",
+        });
+        if (!audioRes.ok) {
+          const body = await audioRes.text().catch(() => "");
+          throw new Error(`Merged audio fetch failed (${audioRes.status}). ${body}`.trim());
+        }
+        return audioRes.blob();
+      } catch (e) {
+        lastError = e;
+        if (attempt < 5) {
+          await sleep(500 * attempt);
+        }
+      }
     }
-    return audioRes.blob();
+
+    throw lastError || new Error("Merged audio fetch failed.");
   }
 
   async function buildBlobForMixedGroup(groupText, { voiceId, modelId, outputFormat, stem }) {
