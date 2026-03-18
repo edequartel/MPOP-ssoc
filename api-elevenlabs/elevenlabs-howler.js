@@ -1,5 +1,5 @@
 // file: elevenlabs-howler.js
-/* global Howl */
+/* global Howl, JSZip */
 
 (() => {
   const $ = (id) => document.getElementById(id);
@@ -23,6 +23,7 @@
     btnPlayMerged: $("btnPlayMerged"),
     btnDownloadMergedFile: $("btnDownloadMergedFile"),
     btnDownloadSplitFiles: $("btnDownloadSplitFiles"),
+    btnDownloadSplitZip: $("btnDownloadSplitZip"),
     btnRefreshCredits: $("btnRefreshCredits"),
     creditSummary: $("creditSummary"),
     creditUsed: $("creditUsed"),
@@ -812,6 +813,39 @@
     els.btnDownloadSplitFiles.textContent = busy ? label : "Download # MP3s";
   }
 
+  function setDownloadSplitZipButtonBusy(busy, label = "Download # ZIP") {
+    if (!els.btnDownloadSplitZip) return;
+    els.btnDownloadSplitZip.disabled = !!busy;
+    els.btnDownloadSplitZip.textContent = busy ? label : "Download # ZIP";
+  }
+
+  async function buildSplitDownloads({ voiceId, text, modelId, outputFormat }) {
+    const groups = parseHashSeparatedGroups(text);
+    log(`Preparing ${groups.length} split download${groups.length === 1 ? "" : "s"} from # separators.`);
+
+    const readyDownloads = [];
+    let completed = 0;
+    let index = 1;
+    for (const groupText of groups) {
+      try {
+        const stem = `split-${Date.now()}-${String(index).padStart(3, "0")}`;
+        const filename = buildSplitFilename(index, groupText);
+        const result = await buildBlobForMixedGroup(groupText, { voiceId, modelId, outputFormat, stem });
+        readyDownloads.push({ filename, blob: result.value, index });
+        log(`Split bestand klaar [deel ${index}]: ${filename}`);
+        completed += 1;
+      } catch (e) {
+        log(`Split download failed [deel ${index}] "${groupText}": ${e?.message || e}`);
+      }
+      index += 1;
+    }
+
+    if (!completed) {
+      throw new Error("No split downloads succeeded.");
+    }
+    return { groups, readyDownloads, completed };
+  }
+
   async function onDownloadSplitFiles() {
     const voiceId = (els.voiceId?.value || "").trim();
     const text = (els.text?.value || "").trim();
@@ -830,30 +864,8 @@
 
     setDownloadSplitFilesButtonBusy(true, "Downloading...");
     try {
-      const groups = parseHashSeparatedGroups(text);
       setStatus("Preparing split downloads…");
-      log(`Preparing ${groups.length} split download${groups.length === 1 ? "" : "s"} from # separators.`);
-
-      const readyDownloads = [];
-      let completed = 0;
-      let index = 1;
-      for (const groupText of groups) {
-        try {
-          const stem = `split-${Date.now()}-${String(index).padStart(3, "0")}`;
-          const filename = buildSplitFilename(index, groupText);
-          const result = await buildBlobForMixedGroup(groupText, { voiceId, modelId, outputFormat, stem });
-          readyDownloads.push({ filename, blob: result.value, index });
-          log(`Split bestand klaar [deel ${index}]: ${filename}`);
-          completed += 1;
-        } catch (e) {
-          log(`Split download failed [deel ${index}] "${groupText}": ${e?.message || e}`);
-        }
-        index += 1;
-      }
-
-      if (!completed) {
-        throw new Error("No split downloads succeeded.");
-      }
+      const { groups, readyDownloads, completed } = await buildSplitDownloads({ voiceId, text, modelId, outputFormat });
       for (const item of readyDownloads) {
         downloadBlobViaAnchor(item.blob, item.filename);
         log(`Download started [deel ${item.index}]: ${item.filename}`);
@@ -866,6 +878,48 @@
       setStatus("Error");
     } finally {
       setDownloadSplitFilesButtonBusy(false);
+    }
+  }
+
+  async function onDownloadSplitZip() {
+    const voiceId = (els.voiceId?.value || "").trim();
+    const text = (els.text?.value || "").trim();
+    const modelId = "eleven_v3";
+    const outputFormat = FIXED_OUTPUT_FORMAT;
+
+    persistRememberFlags();
+    persistVoiceId(voiceId);
+    persistModelId(modelId);
+
+    if (!voiceId || !text) {
+      log("Missing required fields for split ZIP: Voice ID and Text are required.");
+      setStatus("Missing input");
+      return;
+    }
+    if (typeof JSZip === "undefined") {
+      log("Split ZIP failed: JSZip not loaded.");
+      setStatus("Error");
+      return;
+    }
+
+    setDownloadSplitZipButtonBusy(true, "Building ZIP...");
+    try {
+      setStatus("Preparing ZIP…");
+      const { groups, readyDownloads, completed } = await buildSplitDownloads({ voiceId, text, modelId, outputFormat });
+      const zip = new JSZip();
+      for (const item of readyDownloads) {
+        zip.file(item.filename, item.blob);
+      }
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const zipFilename = `elevenlabs-split-${String(groups.length).padStart(3, "0")}-files.zip`;
+      downloadBlobViaAnchor(zipBlob, zipFilename);
+      log(`ZIP download started: ${zipFilename} (${completed}/${groups.length} bestanden).`);
+      setStatus("Idle");
+    } catch (e) {
+      log(`Split ZIP failed: ${e?.message || e}`);
+      setStatus("Error");
+    } finally {
+      setDownloadSplitZipButtonBusy(false);
     }
   }
 
@@ -1182,6 +1236,7 @@
   els.btnPlayMerged?.addEventListener("click", onPlayMerged);
   els.btnDownloadMergedFile?.addEventListener("click", onDownloadMergedFile);
   els.btnDownloadSplitFiles?.addEventListener("click", onDownloadSplitFiles);
+  els.btnDownloadSplitZip?.addEventListener("click", onDownloadSplitZip);
   els.btnRefreshCredits?.addEventListener("click", () => { void loadElevenLabsCredits(); });
   els.btnVoiceInfo?.addEventListener("click", onVoiceInfoClick);
   els.voiceId?.addEventListener("change", () => {
