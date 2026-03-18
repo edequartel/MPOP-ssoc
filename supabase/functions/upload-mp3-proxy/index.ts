@@ -46,9 +46,9 @@ serve(async (req) => {
     return json(403, { error: "Profile lookup failed", details: profErr?.message })
   }
 
-  const allowed = new Set(["admin", "editor"])
+  const allowed = new Set(["admin", "editor", "soundcreator"])
   if (!allowed.has(profile.role)) {
-    return json(403, { error: "Forbidden (admin/editor only)", role: profile.role })
+    return json(403, { error: "Forbidden (admin/editor/soundcreator only)", role: profile.role })
   }
 
   let formData: FormData

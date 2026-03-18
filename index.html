@@ -98,6 +98,9 @@
           <button type="button" class="btn-like" onclick="window.open('./links.html','_blank','noreferrer')">Links</button>
           <button type="button" class="btn-like" data-admin-only style="display:none" onclick="window.open('./api-elevenlabs/elevenlabs-fem.html','_blank','noreferrer')">Audio</button>
         </div>
+        <div class="btnrow mt-10">
+          <button type="button" class="btn-like" data-soundcreator-audio style="display:none" onclick="window.open('./api-elevenlabs/elevenlabs-fem.html','_blank','noreferrer')">Audio</button>
+        </div>
       </div>
     </div>
 
@@ -447,6 +450,7 @@
     let authListenerBound = false;
     let isViewerRole = false;
     let isAdminRole = false;
+    let isSoundCreatorRole = false;
     let storyAudioExistsCheckSeq = 0;
     let object1AudioExistsCheckSeq = 0;
     let object2AudioExistsCheckSeq = 0;
@@ -585,6 +589,9 @@
     function updateAdminOnlyAudioButtons() {
       for (const el of document.querySelectorAll("[data-admin-only]")) {
         el.style.display = isAdminRole ? "" : "none";
+      }
+      for (const el of document.querySelectorAll("[data-soundcreator-audio]")) {
+        el.style.display = isSoundCreatorRole ? "" : "none";
       }
       for (const btn of document.querySelectorAll("#editor button")) {
         const btnId = btn.id || "";
@@ -1190,8 +1197,9 @@
         const displayName = error ? "" : (prof?.display_name || "");
         $("userRole").textContent = role;
         $("userDisplayName").textContent = displayName ? displayName : "";
-        isViewerRole = role === "viewer";
+        isViewerRole = role === "viewer" || role === "soundcreator";
         isAdminRole = role === "admin";
+        isSoundCreatorRole = role === "soundcreator";
         setEditorReadonly(isViewerRole);
         updateAdminOnlyAudioButtons();
 
@@ -1203,6 +1211,7 @@
         hideEditor();
         isViewerRole = false;
         isAdminRole = false;
+        isSoundCreatorRole = false;
         updateAdminOnlyAudioButtons();
       }
       } finally {
