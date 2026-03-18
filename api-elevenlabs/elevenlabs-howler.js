@@ -53,11 +53,6 @@
   const SPEECH_BASE_PATH = "/sounds/nl/speech/";
   const GENERAL_BASE_PATH = "/sounds/general/";
   const DOWNLOAD_MERGED_API_URL = "https://www.tastenbraille.com/api/download_merged.php";
-  const ELEVENLABS_SUBSCRIPTION_PROXY_URLS = [
-    "../api/elevenlabs_subscription.php",
-    "https://www.tastenbraille.com/api/elevenlabs_subscription.php",
-  ];
-
   const STORAGE = Object.freeze({
     rememberVoice: "elevenlabs.remember.voiceId",
     rememberModel: "elevenlabs.remember.modelId",
@@ -381,36 +376,24 @@
     if (els.creditTier) els.creditTier.textContent = tier;
   }
 
-  async function fetchElevenLabsSubscriptionViaPhp() {
-    const jwt = await getFreshSupabaseAccessToken(false);
-    let lastError = null;
+  async function fetchElevenLabsSubscription() {
+    const res = await fetchWithJwtRetry("elevenlabs-subscription", {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+      },
+    });
 
-    for (const url of ELEVENLABS_SUBSCRIPTION_PROXY_URLS) {
-      try {
-        const res = await fetch(url, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${jwt}`,
-            "Accept": "application/json",
-          },
-        });
+    const bodyText = await res.text().catch(() => "");
+    let body = null;
+    try { body = bodyText ? JSON.parse(bodyText) : null; } catch {}
 
-        const bodyText = await res.text().catch(() => "");
-        let body = null;
-        try { body = bodyText ? JSON.parse(bodyText) : null; } catch {}
-
-        if (!res.ok) {
-          const detail = body?.error || body?.details || bodyText || res.statusText;
-          throw new Error(`${url} -> ${res.status}: ${String(detail).trim()}`);
-        }
-
-        return body || {};
-      } catch (e) {
-        lastError = e;
-      }
+    if (!res.ok) {
+      const detail = body?.error || body?.details || bodyText || res.statusText;
+      throw new Error(`elevenlabs-subscription failed (${res.status}). ${String(detail).trim()}`);
     }
 
-    throw lastError || new Error("ElevenLabs subscription proxy not available.");
+    return body || {};
   }
 
   async function loadElevenLabsCredits() {
@@ -420,7 +403,7 @@
     setCreditsSummary("Credits laden...", "Bezig met ophalen via beveiligde server-call.");
 
     try {
-      const body = await fetchElevenLabsSubscriptionViaPhp();
+      const body = await fetchElevenLabsSubscription();
       const used = Number(body?.character_count || 0);
       const limit = Number(body?.character_limit || 0);
       const remaining = Math.max(0, limit - used);
@@ -501,27 +484,11 @@
     }
   }
 
-  function browserCanUseMSE() {
-    try {
-      return ("MediaSource" in window) && MediaSource.isTypeSupported("audio/mpeg");
-    } catch {
-      return false;
-    }
-  }
-
   function buildAudioUrl(path) {
     const p = String(path || "").trim();
     if (!p) return "";
     if (/^https?:\/\//i.test(p)) return p;
     return `${BRAILLE_AUDIO_BASE_URL}${p.startsWith("/") ? p : `/${p}`}`;
-  }
-
-  function getEndpoint(voiceId, outputFormat) {
-    const base = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/stream`;
-    if (!outputFormat) return base;
-    const url = new URL(base);
-    url.searchParams.set("output_format", outputFormat);
-    return url.toString();
   }
 
   // IMPORTANT:
@@ -550,50 +517,6 @@
     }
 
     return body;
-  }
-
-  async function fetchStream({ apiKey, voiceId, text, modelId, outputFormat, signal }) {
-    const endpoint = getEndpoint(voiceId, outputFormat);
-
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "xi-api-key": apiKey,
-        "Content-Type": "application/json",
-        "Accept": "audio/mpeg",
-      },
-      body: JSON.stringify(buildBody(text, modelId)),
-      signal,
-    });
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => "");
-      throw new Error(`HTTP ${res.status} ${res.statusText}${errText ? ` -- ${errText}` : ""}`);
-    }
-
-    if (!res.body) {
-      throw new Error("Streaming not supported by this browser (Response.body missing).");
-    }
-
-    return res;
-  }
-
-  async function synthesizeTextToMp3Blob({ apiKey, voiceId, text, modelId, outputFormat }) {
-    const res = await fetch(getEndpoint(voiceId, outputFormat), {
-      method: "POST",
-      headers: {
-        "xi-api-key": apiKey,
-        "Content-Type": "application/json",
-        "Accept": "audio/mpeg",
-      },
-      body: JSON.stringify(buildBody(text, modelId)),
-    });
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      throw new Error(`ElevenLabs failed (${res.status}). ${body}`.trim());
-    }
-    return res.blob();
   }
 
   async function synthesizeTextToMp3BlobViaTtsProxy({ voiceId, text, modelId, outputFormat }) {
@@ -691,135 +614,6 @@
     const body = await res.text().catch(() => "");
     if (!res.ok) throw new Error(`MP3 upload failed (${res.status}). ${body}`.trim());
     try { return JSON.parse(body); } catch { return { ok: true, raw: body }; }
-  }
-
-  async function playViaBlobBuffering(params) {
-    log("Fallback: buffering full MP3 into a Blob…");
-    setStatus("Downloading…");
-
-    const res = await fetchStream(params);
-    const arrayBuffer = await res.arrayBuffer();
-
-    const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
-    setLastAudio(blob, { voiceId: params.voiceId, modelId: params.modelId });
-    const url = URL.createObjectURL(blob);
-    currentObjectUrl = url;
-
-    return new Promise((resolve, reject) => {
-      setStatus("Playing…");
-      log("Starting playback (Howler) from buffered Blob URL.");
-
-      currentHowl = new Howl({
-        src: [url],
-        html5: true,
-        format: ["mp3"],
-        onplay: () => log("Howler: play"),
-        onend: () => {
-          log("Howler: end");
-          setStatus("Idle");
-          resolve();
-        },
-        onloaderror: (_id, err) => reject(new Error(`Howler load error: ${err}`)),
-        onplayerror: (_id, err) => reject(new Error(`Howler play error: ${err}`)),
-      });
-
-      currentHowl.play();
-    });
-  }
-
-  async function playViaMediaSource(params) {
-    if (!("MediaSource" in window)) {
-      throw new Error("MediaSource not available in this browser.");
-    }
-
-    const mime = "audio/mpeg";
-    if (!MediaSource.isTypeSupported(mime)) {
-      throw new Error(`MediaSource does not support: ${mime}`);
-    }
-
-    log("Attempting true streaming via MediaSource…");
-    setStatus("Streaming…");
-
-    const ms = new MediaSource();
-    const url = URL.createObjectURL(ms);
-    currentObjectUrl = url;
-
-    const howl = new Howl({
-      src: [url],
-      html5: true,
-      format: ["mp3"],
-      onplay: () => log("Howler: play (MediaSource)"),
-      onend: () => {
-        log("Howler: end");
-        setStatus("Idle");
-      },
-      onloaderror: (_id, err) => log(`Howler load error (MediaSource): ${err}`),
-      onplayerror: (_id, err) => log(`Howler play error (MediaSource): ${err}`),
-    });
-
-    currentHowl = howl;
-
-    await new Promise((resolve, reject) => {
-      ms.addEventListener("sourceopen", resolve, { once: true });
-      ms.addEventListener("error", () => reject(new Error("MediaSource error")), { once: true });
-    });
-
-    const sb = ms.addSourceBuffer(mime);
-
-    const res = await fetchStream(params);
-    const reader = res.body.getReader();
-
-    let started = false;
-    const downloadChunks = [];
-
-    const appendChunk = (chunk) =>
-      new Promise((resolve, reject) => {
-        const onUpdateEnd = () => {
-          sb.removeEventListener("updateend", onUpdateEnd);
-          sb.removeEventListener("error", onError);
-          resolve();
-        };
-        const onError = () => {
-          sb.removeEventListener("updateend", onUpdateEnd);
-          sb.removeEventListener("error", onError);
-          reject(new Error("SourceBuffer error while appending"));
-        };
-        sb.addEventListener("updateend", onUpdateEnd);
-        sb.addEventListener("error", onError);
-        sb.appendBuffer(chunk);
-      });
-
-    try {
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        downloadChunks.push(value);
-        await appendChunk(value);
-
-        if (!started) {
-          started = true;
-          log("Starting playback as soon as first chunk appended.");
-          setStatus("Playing…");
-          howl.play();
-        }
-      }
-
-      await new Promise((r) => {
-        if (!sb.updating) return r();
-        sb.addEventListener("updateend", r, { once: true });
-      });
-
-      ms.endOfStream();
-      log("Stream complete.");
-      if (downloadChunks.length) {
-        const blob = new Blob(downloadChunks, { type: "audio/mpeg" });
-        setLastAudio(blob, { voiceId: params.voiceId, modelId: params.modelId });
-      }
-    } catch (e) {
-      try { ms.endOfStream(); } catch {}
-      throw e;
-    }
   }
 
   function isProbablyIOS() {
@@ -1196,11 +990,6 @@
   loadPrefs();
   void loadVoicesFromSupabase();
   void loadElevenLabsCredits();
-
-  // If MSE isn't possible, auto-uncheck
-  if (els.chkTryMSE && !browserCanUseMSE()) {
-    els.chkTryMSE.checked = false;
-  }
 
   setStatus("Idle");
   log("Ready.");

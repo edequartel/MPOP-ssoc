@@ -7,6 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
 
+const DEFAULT_BLUEHOST_UPLOAD_MP3_URL = "https://www.tastenbraille.com/api/upload_mp3.php"
+
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), {
     status,
@@ -67,8 +69,7 @@ serve(async (req) => {
   const uploadToken = Deno.env.get("UPLOAD_MP3_TOKEN") ?? Deno.env.get("UPLOAD_TOKEN")
   if (!uploadToken) return json(500, { error: "UPLOAD_MP3_TOKEN secret missing in Supabase" })
 
-  const phpUrl = Deno.env.get("BLUEHOST_UPLOAD_MP3_URL")
-  if (!phpUrl) return json(500, { error: "BLUEHOST_UPLOAD_MP3_URL secret missing in Supabase" })
+  const phpUrl = (Deno.env.get("BLUEHOST_UPLOAD_MP3_URL") || DEFAULT_BLUEHOST_UPLOAD_MP3_URL).trim()
 
   const upstreamForm = new FormData()
   upstreamForm.append("token", uploadToken)
