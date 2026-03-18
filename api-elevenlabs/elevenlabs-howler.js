@@ -804,6 +804,7 @@
       setStatus("Preparing split downloads…");
       log(`Preparing ${groups.length} split download${groups.length === 1 ? "" : "s"} from # separators.`);
 
+      const readyDownloads = [];
       let completed = 0;
       let index = 1;
       for (const groupText of groups) {
@@ -811,8 +812,8 @@
           const stem = `split-${Date.now()}-${String(index).padStart(3, "0")}`;
           const filename = buildSplitFilename(index, groupText);
           const result = await buildBlobForMixedGroup(groupText, { voiceId, modelId, outputFormat, stem });
-          downloadBlobViaAnchor(result.value, filename);
-          log(`Download started [deel ${index}]: ${filename}`);
+          readyDownloads.push({ filename, blob: result.value, index });
+          log(`Split bestand klaar [deel ${index}]: ${filename}`);
           completed += 1;
         } catch (e) {
           log(`Split download failed [deel ${index}] "${groupText}": ${e?.message || e}`);
@@ -822,6 +823,10 @@
 
       if (!completed) {
         throw new Error("No split downloads succeeded.");
+      }
+      for (const item of readyDownloads) {
+        downloadBlobViaAnchor(item.blob, item.filename);
+        log(`Download started [deel ${item.index}]: ${item.filename}`);
       }
       log(`Split download klaar: ${completed}/${groups.length} bestanden gestart.`);
       setStatus("Idle");
