@@ -679,21 +679,12 @@
     }, 0);
   }
 
-  function downloadUrlViaAnchor(url, filename) {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename || "elevenlabs.mp3";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }
-
   function buildSplitFilename(index, rawText) {
     const textPart = safeFilenamePart(rawText).slice(0, 40) || "part";
     return `elevenlabs-part-${String(index).padStart(3, "0")}-${textPart}.mp3`;
   }
 
-  async function mergeSourcesToUrl(sources, outputFilename) {
+  async function mergeSourcesToBlob(sources, outputFilename) {
     const mergeRes = await fetchWithJwtRetry("merge-proxy", {
       method: "POST",
       headers: {
@@ -718,7 +709,15 @@
     }
 
     const outputUrlRaw = mergeBody?.outputUrl || mergeBody?.url || `${MIXED_MERGE_OUTPUT_DIR}${outputFilename}`;
-    return `${buildAudioUrl(outputUrlRaw)}${String(outputUrlRaw).includes("?") ? "&" : "?"}t=${Date.now()}`;
+    const outputUrl = buildAudioUrl(outputUrlRaw);
+    const audioRes = await fetch(`${outputUrl}${outputUrl.includes("?") ? "&" : "?"}t=${Date.now()}`, {
+      cache: "no-store",
+    });
+    if (!audioRes.ok) {
+      const body = await audioRes.text().catch(() => "");
+      throw new Error(`Merged audio fetch failed (${audioRes.status}). ${body}`.trim());
+    }
+    return audioRes.blob();
   }
 
   async function buildBlobForMixedGroup(groupText, { voiceId, modelId, outputFormat, stem }) {
@@ -774,7 +773,7 @@
     }
 
     log(`Split merge call with ${sources.length} sources -> ${stem}.mp3`);
-    return { kind: "url", value: await mergeSourcesToUrl(sources, `${stem}.mp3`) };
+    return { kind: "blob", value: await mergeSourcesToBlob(sources, `${stem}.mp3`) };
   }
 
   function setDownloadSplitFilesButtonBusy(busy, label = "Download # MP3s") {
@@ -812,8 +811,7 @@
           const stem = `split-${Date.now()}-${String(index).padStart(3, "0")}`;
           const filename = buildSplitFilename(index, groupText);
           const result = await buildBlobForMixedGroup(groupText, { voiceId, modelId, outputFormat, stem });
-          if (result.kind === "url") downloadUrlViaAnchor(result.value, filename);
-          else downloadBlobViaAnchor(result.value, filename);
+          downloadBlobViaAnchor(result.value, filename);
           log(`Download started [deel ${index}]: ${filename}`);
           completed += 1;
         } catch (e) {
