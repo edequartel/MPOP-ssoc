@@ -74,6 +74,7 @@
             <div class="pill">Signed in: <span id="userEmail" class="ok"></span></div>
             <div class="pill">Role: <span id="userRole" class="ok"></span></div>
           </div>
+        <div id="userDisplayName" class="tiny mt-10"></div>
         <div class="btnrow mt-10">
           <button id="btnRefresh">Ververs lijst</button>
           <button id="btnSignOut">Log uit</button>
@@ -1186,7 +1187,9 @@
           .maybeSingle();
 
         const role = error ? "unknown" : (prof?.role || "unknown");
+        const displayName = error ? "" : (prof?.display_name || "");
         $("userRole").textContent = role;
+        $("userDisplayName").textContent = displayName ? displayName : "";
         isViewerRole = role === "viewer";
         isAdminRole = role === "admin";
         setEditorReadonly(isViewerRole);
@@ -1195,6 +1198,7 @@
         await loadItems();
       } else {
         msg($("authMsg"), "");
+        $("userDisplayName").textContent = "";
         $("itemsList").innerHTML = "";
         hideEditor();
         isViewerRole = false;
