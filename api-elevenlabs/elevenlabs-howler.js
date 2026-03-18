@@ -22,6 +22,7 @@
     btnProduceMergedJwt: $("btnProduceMergedJwt"),
     btnPlayMerged: $("btnPlayMerged"),
     btnDownloadMergedFile: $("btnDownloadMergedFile"),
+    btnDownloadSplitFiles: $("btnDownloadSplitFiles"),
     btnRefreshCredits: $("btnRefreshCredits"),
     creditSummary: $("creditSummary"),
     creditUsed: $("creditUsed"),
@@ -597,6 +598,18 @@
     return Math.min(5000, Math.max(0, n));
   }
 
+  function parseHashSeparatedGroups(rawInput) {
+    const raw = String(rawInput || "");
+    const groups = raw
+      .split("#")
+      .map((part) => part.replace(/\s+/g, " ").trim())
+      .filter(Boolean);
+    if (!groups.length) {
+      throw new Error("No # segments found. Separate each download with #.");
+    }
+    return groups;
+  }
+
   async function uploadBlobToStoryEndpoint(blob, { path, audiofile }) {
     const form = new FormData();
     form.append("path", path);
@@ -651,6 +664,151 @@
     }, 0);
 
     return { method: "anchor" };
+  }
+
+  function downloadBlobViaAnchor(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || "elevenlabs.mp3";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => {
+      try { URL.revokeObjectURL(url); } catch {}
+    }, 0);
+  }
+
+  function buildSplitFilename(index, rawText) {
+    const textPart = safeFilenamePart(rawText).slice(0, 40) || "part";
+    return `elevenlabs-part-${String(index).padStart(3, "0")}-${textPart}.mp3`;
+  }
+
+  async function mergeSourcesToBlob(sources, outputFilename) {
+    const mergeRes = await fetchWithJwtRetry("merge-proxy", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        outputDir: MIXED_MERGE_OUTPUT_DIR,
+        sources,
+        outputFilename,
+        gapMs: getMergeGapMs(),
+        debug: true,
+        tryCopyFirst: false,
+      }),
+    });
+
+    const mergeBodyText = await mergeRes.text().catch(() => "");
+    let mergeBody = null;
+    try { mergeBody = mergeBodyText ? JSON.parse(mergeBodyText) : null; } catch {}
+    if (!mergeRes.ok || mergeBody?.ok === false) {
+      throw new Error(`Mixed merge failed (${mergeRes.status}). ${mergeBodyText}`.trim());
+    }
+
+    const outputUrlRaw = mergeBody?.outputUrl || mergeBody?.url || `${MIXED_MERGE_OUTPUT_DIR}${outputFilename}`;
+    const outputUrl = buildAudioUrl(outputUrlRaw);
+    const audioRes = await fetch(`${outputUrl}${outputUrl.includes("?") ? "&" : "?"}t=${Date.now()}`, {
+      cache: "no-store",
+    });
+    if (!audioRes.ok) {
+      const body = await audioRes.text().catch(() => "");
+      throw new Error(`Merged audio fetch failed (${audioRes.status}). ${body}`.trim());
+    }
+    return audioRes.blob();
+  }
+
+  async function buildBlobForMixedGroup(groupText, { voiceId, modelId, outputFormat, stem }) {
+    const segments = parseMixedTextSegments(groupText);
+    if (segments.length === 1) {
+      const seg = segments[0];
+      if (seg.type === "speech") return fetchSpeechTokenMp3Blob(seg.value);
+      if (seg.type === "general") {
+        const normalized = String(seg.value || "").replace(/\.mp3$/i, "").trim();
+        const relPath = `${GENERAL_BASE_PATH}${normalized}.mp3`;
+        const res = await fetch(buildAudioUrl(relPath), { cache: "no-store" });
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`General token fetch failed (${res.status}) for ${relPath}. ${body}`.trim());
+        }
+        return res.blob();
+      }
+      return synthesizeTextToMp3BlobViaTtsProxy({ voiceId, text: seg.value, modelId, outputFormat });
+    }
+
+    const sources = [];
+    let partNo = 1;
+    for (const seg of segments) {
+      if (seg.type === "speech") {
+        const normalized = seg.value.replace(/\.mp3$/i, "");
+        sources.push(`${SPEECH_BASE_PATH}${normalized}.mp3`);
+        continue;
+      }
+      if (seg.type === "general") {
+        const normalized = seg.value.replace(/\.mp3$/i, "");
+        sources.push(`${GENERAL_BASE_PATH}${normalized}.mp3`);
+        continue;
+      }
+      const blob = await synthesizeTextToMp3BlobViaTtsProxy({ voiceId, text: seg.value, modelId, outputFormat });
+      const partFilename = `${stem}-part-${String(partNo).padStart(3, "0")}.mp3`;
+      await uploadBlobToStoryEndpoint(blob, {
+        path: MIXED_MERGE_PARTS_PATH,
+        audiofile: partFilename,
+      });
+      sources.push(`/${MIXED_MERGE_PARTS_PATH}/${partFilename}`);
+      partNo += 1;
+    }
+
+    return mergeSourcesToBlob(sources, `${stem}.mp3`);
+  }
+
+  function setDownloadSplitFilesButtonBusy(busy, label = "Download # MP3s") {
+    if (!els.btnDownloadSplitFiles) return;
+    els.btnDownloadSplitFiles.disabled = !!busy;
+    els.btnDownloadSplitFiles.textContent = busy ? label : "Download # MP3s";
+  }
+
+  async function onDownloadSplitFiles() {
+    const voiceId = (els.voiceId?.value || "").trim();
+    const text = (els.text?.value || "").trim();
+    const modelId = "eleven_v3";
+    const outputFormat = FIXED_OUTPUT_FORMAT;
+
+    persistRememberFlags();
+    persistVoiceId(voiceId);
+    persistModelId(modelId);
+
+    if (!voiceId || !text) {
+      log("Missing required fields for split download: Voice ID and Text are required.");
+      setStatus("Missing input");
+      return;
+    }
+
+    setDownloadSplitFilesButtonBusy(true, "Downloading...");
+    try {
+      const groups = parseHashSeparatedGroups(text);
+      setStatus("Preparing split downloads…");
+      log(`Preparing ${groups.length} split download${groups.length === 1 ? "" : "s"} from # separators.`);
+
+      let index = 1;
+      for (const groupText of groups) {
+        const stem = `split-${Date.now()}-${String(index).padStart(3, "0")}`;
+        const filename = buildSplitFilename(index, groupText);
+        const blob = await buildBlobForMixedGroup(groupText, { voiceId, modelId, outputFormat, stem });
+        downloadBlobViaAnchor(blob, filename);
+        log(`Download started: ${filename}`);
+        index += 1;
+      }
+
+      setStatus("Idle");
+    } catch (e) {
+      log(`Split download failed: ${e?.message || e}`);
+      setStatus("Error");
+    } finally {
+      setDownloadSplitFilesButtonBusy(false);
+    }
   }
 
   async function onPlay() {
@@ -965,6 +1123,7 @@
   els.btnProduceMergedJwt?.addEventListener("click", onProduceMergedJwt);
   els.btnPlayMerged?.addEventListener("click", onPlayMerged);
   els.btnDownloadMergedFile?.addEventListener("click", onDownloadMergedFile);
+  els.btnDownloadSplitFiles?.addEventListener("click", onDownloadSplitFiles);
   els.btnRefreshCredits?.addEventListener("click", () => { void loadElevenLabsCredits(); });
   els.btnVoiceInfo?.addEventListener("click", onVoiceInfoClick);
   els.voiceId?.addEventListener("change", () => {
