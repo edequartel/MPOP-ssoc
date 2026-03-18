@@ -63,6 +63,59 @@ body {
   padding: 1rem;
 }
 
+.credit-card {
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border) 75%);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgba(122, 162, 255, 0.12), rgba(79, 107, 237, 0.05)),
+    #0c0f16;
+}
+
+.credit-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.credit-label {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.credit-stats {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.credit-stat {
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: rgba(15, 17, 23, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.credit-stat span {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.credit-stat strong {
+  font-size: 1rem;
+}
+
+.credit-meta {
+  margin: 0.9rem 0 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -179,4 +232,26 @@ body {
   color: #cbd5e1;
   font-size: 0.9rem;
   line-height: 1.35;
+}
+
+@media (max-width: 700px) {
+  .credit-card-head {
+    flex-direction: column;
+  }
+
+  .credit-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .credit-stats,
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .toggles {
+    margin-left: 0;
+    align-items: flex-start;
+  }
 }

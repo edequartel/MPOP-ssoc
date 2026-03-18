@@ -1,0 +1,117 @@
+<!-- file: elevenlabs-howler.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ElevenLabs Voice Settings</title>
+  <link rel="stylesheet" href="./elevenlabs-howler.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="header">
+      <h1>ElevenLabs Voice Settings</h1>
+      <div class="header-actions">
+        <button type="button" class="btn" onclick="window.location.href='./general-sounds.html'">General Sounds</button>
+        <button type="button" class="btn" onclick="window.location.href='../index.html'">Home</button>
+      </div>
+    </header>
+
+    <section class="panel">
+      <div class="grid">
+        <div class="credit-card full" aria-live="polite">
+          <div class="credit-card-head">
+            <div>
+              <p class="credit-label">ElevenLabs credits</p>
+              <strong id="creditSummary">Laden...</strong>
+            </div>
+            <button id="btnRefreshCredits" type="button" class="btn">Refresh credits</button>
+          </div>
+          <div class="credit-stats">
+            <div class="credit-stat">
+              <span>Gebruikt</span>
+              <strong id="creditUsed">-</strong>
+            </div>
+            <div class="credit-stat">
+              <span>Beschikbaar</span>
+              <strong id="creditRemaining">-</strong>
+            </div>
+            <div class="credit-stat">
+              <span>Limiet</span>
+              <strong id="creditLimit">-</strong>
+            </div>
+            <div class="credit-stat">
+              <span>Plan</span>
+              <strong id="creditTier">-</strong>
+            </div>
+          </div>
+          <p id="creditMeta" class="credit-meta">Credits worden opgehaald via een beveiligde server-call op basis van je Supabase-login.</p>
+        </div>
+
+        <label class="field">
+          <span>Voice</span>
+          <div class="voice-select-row">
+            <select id="voiceId">
+              <option value="">Loading voices...</option>
+            </select>
+            <button id="btnVoiceInfo" type="button" class="btn" disabled>Info</button>
+          </div>
+        </label>
+
+        <label class="field">
+          <span>Merge gap (ms)</span>
+          <input id="mergeGapMs" type="number" min="0" max="5000" step="50" value="500" />
+        </label>
+
+        <label class="field full">
+          <span>Text</span>
+          <textarea id="text" rows="5" placeholder="Type text to speak…"></textarea>
+        </label>
+
+        <div class="actions full">
+          <button id="btnClear" class="btn">Clear log</button>
+          
+          <button id="clearTextBtn" class="btn">
+  Clear text
+</button>
+          
+          
+          <div class="merged-actions">
+            <button id="btnProduceMergedJwt" class="btn">Produce</button>
+            <button id="btnPlayMerged" class="btn">Play</button>
+            <button id="btnDownloadMergedFile" class="btn">Download</button>
+          </div>
+
+          <div class="toggles" role="group" aria-label="Preferences">
+            <label class="toggle">
+              <input id="chkRememberVoice" type="checkbox" checked />
+              <span>Remember selected voice</span>
+            </label>
+            <label class="toggle">
+              <input id="chkTryMSE" type="checkbox" checked />
+              <span>Try "true streaming" (MediaSource) first</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="grid">
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="row">
+        <strong>Status:</strong>
+        <span id="status" class="status">Idle</span>
+      </div>
+      <pre id="log" class="log" aria-live="polite"></pre>
+    </section>
+  </main>
+
+  <!-- Howler.js -->
+  <script src="https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js"></script>
+  <script src="./elevenlabs-howler.js"></script>
+</body>
+</html>

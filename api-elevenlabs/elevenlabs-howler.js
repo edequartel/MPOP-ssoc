@@ -5,14 +5,12 @@
   const $ = (id) => document.getElementById(id);
 
   const els = {
-    apiKey: $("apiKey"),
     voiceId: $("voiceId"),
     text: $("text"),
     modelId: $("modelId"),
     outputFormat: $("outputFormat"),
     mergeGapMs: $("mergeGapMs"),
     chkRememberVoice: $("chkRememberVoice"),
-    chkRememberKey: $("chkRememberKey"),
     chkRememberModel: $("chkRememberModel"),
     chkTryMSE: $("chkTryMSE"),
     btnVoiceInfo: $("btnVoiceInfo"),
@@ -24,6 +22,13 @@
     btnProduceMergedJwt: $("btnProduceMergedJwt"),
     btnPlayMerged: $("btnPlayMerged"),
     btnDownloadMergedFile: $("btnDownloadMergedFile"),
+    btnRefreshCredits: $("btnRefreshCredits"),
+    creditSummary: $("creditSummary"),
+    creditUsed: $("creditUsed"),
+    creditRemaining: $("creditRemaining"),
+    creditLimit: $("creditLimit"),
+    creditTier: $("creditTier"),
+    creditMeta: $("creditMeta"),
     status: $("status"),
     log: $("log"),
   };
@@ -48,14 +53,16 @@
   const SPEECH_BASE_PATH = "/sounds/nl/speech/";
   const GENERAL_BASE_PATH = "/sounds/general/";
   const DOWNLOAD_MERGED_API_URL = "https://www.tastenbraille.com/api/download_merged.php";
+  const ELEVENLABS_SUBSCRIPTION_PROXY_URLS = [
+    "../api/elevenlabs_subscription.php",
+    "https://www.tastenbraille.com/api/elevenlabs_subscription.php",
+  ];
 
   const STORAGE = Object.freeze({
     rememberVoice: "elevenlabs.remember.voiceId",
-    rememberKey: "elevenlabs.remember.apiKey",
     rememberModel: "elevenlabs.remember.modelId",
     voiceId: "elevenlabs.voiceId",
     voiceName: "elevenlabs.voiceName",
-    apiKey: "elevenlabs.apiKey",
     modelId: "elevenlabs.modelId",
     mergeGapMs: "mixedmerge.gapMs",
   });
@@ -255,11 +262,6 @@
     return !!els.chkRememberVoice.checked;
   }
 
-  function isRememberKeyEnabled() {
-    if (!els.chkRememberKey) return false;
-    return !!els.chkRememberKey.checked;
-  }
-
   function isRememberModelEnabled() {
     if (!els.chkRememberModel) return false;
     return !!els.chkRememberModel.checked;
@@ -267,7 +269,6 @@
 
   function persistRememberFlags() {
     if (els.chkRememberVoice) storageSet(STORAGE.rememberVoice, isRememberVoiceEnabled() ? "1" : "0");
-    if (els.chkRememberKey) storageSet(STORAGE.rememberKey, isRememberKeyEnabled() ? "1" : "0");
     if (els.chkRememberModel) storageSet(STORAGE.rememberModel, isRememberModelEnabled() ? "1" : "0");
   }
 
@@ -290,19 +291,6 @@
     storageSet(STORAGE.voiceId, value);
     if (selectedName) storageSet(STORAGE.voiceName, selectedName);
     else storageDel(STORAGE.voiceName);
-  }
-
-  function persistApiKey(valueRaw) {
-    if (!els.apiKey) return;
-    const value = (valueRaw ?? els.apiKey.value ?? "").trim();
-
-    if (!isRememberKeyEnabled()) {
-      storageDel(STORAGE.apiKey);
-      return;
-    }
-
-    if (!value) storageDel(STORAGE.apiKey);
-    else storageSet(STORAGE.apiKey, value);
   }
 
   function persistModelId(valueRaw) {
@@ -329,14 +317,10 @@
 
   function loadPrefs() {
     const rememberVoice = storageGet(STORAGE.rememberVoice);
-    const rememberKey = storageGet(STORAGE.rememberKey);
     const rememberModel = storageGet(STORAGE.rememberModel);
 
     if (els.chkRememberVoice) {
       els.chkRememberVoice.checked = rememberVoice == null ? true : rememberVoice === "1";
-    }
-    if (els.chkRememberKey) {
-      els.chkRememberKey.checked = rememberKey === "1";
     }
     if (els.chkRememberModel) {
       els.chkRememberModel.checked = rememberModel == null ? true : rememberModel === "1";
@@ -344,11 +328,6 @@
 
     if (isRememberVoiceEnabled()) {
       savedVoiceIdPref = (storageGet(STORAGE.voiceId) || "").trim();
-    }
-
-    if (isRememberKeyEnabled()) {
-      const savedApiKey = storageGet(STORAGE.apiKey);
-      if (savedApiKey && els.apiKey) els.apiKey.value = savedApiKey;
     }
 
     if (isRememberModelEnabled()) {
@@ -365,6 +344,107 @@
 
   function setStatus(msg) {
     if (els.status) els.status.textContent = msg;
+  }
+
+  function hasCreditsUi() {
+    return !!(els.creditSummary || els.creditUsed || els.creditRemaining || els.creditLimit || els.creditTier || els.creditMeta);
+  }
+
+  function setCreditsSummary(summary, meta = "") {
+    if (els.creditSummary) els.creditSummary.textContent = summary;
+    if (els.creditMeta) els.creditMeta.textContent = meta;
+  }
+
+  function formatNumber(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "-";
+    return new Intl.NumberFormat("nl-NL").format(n);
+  }
+
+  function formatUnixDate(unixSeconds) {
+    const n = Number(unixSeconds);
+    if (!Number.isFinite(n) || n <= 0) return "";
+    try {
+      return new Intl.DateTimeFormat("nl-NL", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(n * 1000));
+    } catch {
+      return "";
+    }
+  }
+
+  function setCreditsFields({ used = "-", remaining = "-", limit = "-", tier = "-" } = {}) {
+    if (els.creditUsed) els.creditUsed.textContent = used;
+    if (els.creditRemaining) els.creditRemaining.textContent = remaining;
+    if (els.creditLimit) els.creditLimit.textContent = limit;
+    if (els.creditTier) els.creditTier.textContent = tier;
+  }
+
+  async function fetchElevenLabsSubscriptionViaPhp() {
+    const jwt = await getFreshSupabaseAccessToken(false);
+    let lastError = null;
+
+    for (const url of ELEVENLABS_SUBSCRIPTION_PROXY_URLS) {
+      try {
+        const res = await fetch(url, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${jwt}`,
+            "Accept": "application/json",
+          },
+        });
+
+        const bodyText = await res.text().catch(() => "");
+        let body = null;
+        try { body = bodyText ? JSON.parse(bodyText) : null; } catch {}
+
+        if (!res.ok) {
+          const detail = body?.error || body?.details || bodyText || res.statusText;
+          throw new Error(`${url} -> ${res.status}: ${String(detail).trim()}`);
+        }
+
+        return body || {};
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    throw lastError || new Error("ElevenLabs subscription proxy not available.");
+  }
+
+  async function loadElevenLabsCredits() {
+    if (!hasCreditsUi()) return;
+
+    if (els.btnRefreshCredits) els.btnRefreshCredits.disabled = true;
+    setCreditsSummary("Credits laden...", "Bezig met ophalen via beveiligde server-call.");
+
+    try {
+      const body = await fetchElevenLabsSubscriptionViaPhp();
+      const used = Number(body?.character_count || 0);
+      const limit = Number(body?.character_limit || 0);
+      const remaining = Math.max(0, limit - used);
+      const tier = String(body?.tier || body?.status || "-").trim() || "-";
+      const resetAt = formatUnixDate(body?.next_character_count_reset_unix);
+
+      setCreditsFields({
+        used: formatNumber(used),
+        remaining: formatNumber(remaining),
+        limit: formatNumber(limit),
+        tier,
+      });
+      setCreditsSummary(
+        `${formatNumber(remaining)} credits beschikbaar`,
+        resetAt ? `Reset op ${resetAt}.` : "Actuele stand opgehaald via beveiligde server-call."
+      );
+      log(`ElevenLabs credits loaded: used=${used}, remaining=${remaining}, limit=${limit}, tier=${tier}.`);
+    } catch (e) {
+      setCreditsFields();
+      setCreditsSummary("Credits niet beschikbaar", e?.message || String(e));
+      log(`ERROR loading ElevenLabs credits: ${e?.message || e}`);
+    } finally {
+      if (els.btnRefreshCredits) els.btnRefreshCredits.disabled = false;
+    }
   }
 
   function safeFilenamePart(s) {
@@ -780,20 +860,18 @@
   }
 
   async function onPlay() {
-    const apiKey = (els.apiKey?.value || "").trim();
     const voiceId = (els.voiceId?.value || "").trim();
     const text = (els.text?.value || "").trim();
     const modelId = "eleven_v3";
     const outputFormat = FIXED_OUTPUT_FORMAT;
 
     persistRememberFlags();
-    persistApiKey(apiKey);
     persistVoiceId(voiceId);
     persistModelId(modelId);
     clearLastAudio();
 
-    if (!apiKey || !voiceId || !text) {
-      log("Missing required fields: API key, Voice ID, and Text are required.");
+    if (!voiceId || !text) {
+      log("Missing required fields: Voice ID and Text are required.");
       setStatus("Missing input");
       return;
     }
@@ -807,39 +885,30 @@
     els.btnPlay && (els.btnPlay.disabled = true);
     els.btnStop && (els.btnStop.disabled = false);
 
-    const baseParams = {
-      apiKey,
-      voiceId,
-      text,
-      modelId,
-      outputFormat,
-      signal: currentAbort.signal,
-    };
-
-    const tryMSE = !!(els.chkTryMSE?.checked && browserCanUseMSE());
-
     try {
-      if (tryMSE) {
-        try {
-          await playViaMediaSource(baseParams);
-          return;
-        } catch (e) {
-          log(`MediaSource streaming failed; falling back. Reason: ${e.message}`);
-
-          // IMPORTANT: do not abort here. But after a failed fetch, some browsers treat the signal as "bad".
-          // Create a fresh AbortController for fallback to avoid: "signal is aborted without reason"
-          cleanupAudio({ abortFetch: false });
-
-          currentAbort = new AbortController();
-          baseParams.signal = currentAbort.signal;
-        }
-      } else {
-        if (els.chkTryMSE?.checked && !browserCanUseMSE()) {
-          log("MediaSource not available/unsupported here; using fallback directly.");
-        }
-      }
-
-      await playViaBlobBuffering(baseParams);
+      log("Using secured TTS proxy for playback.");
+      setStatus("Downloading…");
+      const blob = await synthesizeTextToMp3BlobViaTtsProxy({ voiceId, text, modelId, outputFormat });
+      setLastAudio(blob, { voiceId, modelId });
+      const url = URL.createObjectURL(blob);
+      currentObjectUrl = url;
+      await new Promise((resolve, reject) => {
+        setStatus("Playing…");
+        currentHowl = new Howl({
+          src: [url],
+          html5: true,
+          format: ["mp3"],
+          onplay: () => log("Howler: play"),
+          onend: () => {
+            log("Howler: end");
+            setStatus("Idle");
+            resolve();
+          },
+          onloaderror: (_id, err) => reject(new Error(`Howler load error: ${err}`)),
+          onplayerror: (_id, err) => reject(new Error(`Howler play error: ${err}`)),
+        });
+        currentHowl.play();
+      });
     } catch (e) {
       const msg = e?.message || String(e);
       if (/aborted/i.test(msg) || (e?.name && String(e.name).toLowerCase().includes("abort"))) {
@@ -1102,8 +1171,8 @@
   els.btnProduceMergedJwt?.addEventListener("click", onProduceMergedJwt);
   els.btnPlayMerged?.addEventListener("click", onPlayMerged);
   els.btnDownloadMergedFile?.addEventListener("click", onDownloadMergedFile);
+  els.btnRefreshCredits?.addEventListener("click", () => { void loadElevenLabsCredits(); });
   els.btnVoiceInfo?.addEventListener("click", onVoiceInfoClick);
-  els.apiKey?.addEventListener("change", () => persistApiKey());
   els.voiceId?.addEventListener("change", () => {
     persistVoiceId();
     refreshVoiceInfoButton();
@@ -1111,10 +1180,6 @@
   els.modelId?.addEventListener("change", () => persistModelId());
   els.mergeGapMs?.addEventListener("change", () => persistMergeGapMs());
 
-  els.chkRememberKey?.addEventListener("change", () => {
-    persistRememberFlags();
-    persistApiKey();
-  });
   els.chkRememberVoice?.addEventListener("change", () => {
     persistRememberFlags();
     persistVoiceId();
@@ -1130,6 +1195,7 @@
 
   loadPrefs();
   void loadVoicesFromSupabase();
+  void loadElevenLabsCredits();
 
   // If MSE isn't possible, auto-uncheck
   if (els.chkTryMSE && !browserCanUseMSE()) {

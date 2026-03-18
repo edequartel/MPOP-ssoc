@@ -397,7 +397,6 @@
     const PDF_BRAILLE_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdfbraille";
     const SHOW_FIELD_NAMES = false;
     const ELEVENLABS_STORAGE_KEYS = {
-      apiKey: "elevenlabs.apiKey",
       voiceId: "elevenlabs.voiceId",
       voiceName: "elevenlabs.voiceName",
       modelId: "elevenlabs.modelId",
@@ -1681,14 +1680,6 @@ function scheduleAutosave() {
       }
     }
 
-    function getElevenLabsEndpoint(voiceId, outputFormat) {
-      const base = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/stream`;
-      if (!outputFormat) return base;
-      const url = new URL(base);
-      url.searchParams.set("output_format", outputFormat);
-      return url.toString();
-    }
-
     function buildElevenLabsBody(text, modelIdRaw) {
       const modelId = (modelIdRaw || "").trim();
       const body = { text };
@@ -2073,30 +2064,7 @@ function scheduleAutosave() {
     }
 
     async function synthesizeTextSegmentToMp3Blob(text) {
-      const apiKey = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.apiKey);
-      const voiceId = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.voiceId);
-      const modelId = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.modelId);
-      const outputFormat = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.outputFormat) || ELEVENLABS_DEFAULT_OUTPUT_FORMAT;
-
-      if (!apiKey || !voiceId) {
-        throw new Error("ElevenLabs API key/Voice ID not found in localStorage. Open ./api-elevenlabs/elevenlabs.html first and save them there.");
-      }
-
-      const res = await fetch(getElevenLabsEndpoint(voiceId, outputFormat), {
-        method: "POST",
-        headers: {
-          "xi-api-key": apiKey,
-          "Content-Type": "application/json",
-          "Accept": "audio/mpeg",
-        },
-        body: JSON.stringify(buildElevenLabsBody(text, modelId)),
-      });
-
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(`ElevenLabs failed (${res.status}). ${body}`.trim());
-      }
-      return res.blob();
+      return synthesizeTextSegmentToMp3BlobViaTtsProxy(text);
     }
 
     async function synthesizeTextSegmentToMp3BlobViaTtsProxy(text) {
