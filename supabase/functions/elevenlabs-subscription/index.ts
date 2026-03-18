@@ -65,9 +65,10 @@ serve(async (req) => {
   try { body = text ? JSON.parse(text) : null } catch {}
 
   if (!upstream.ok) {
+    const details = body?.detail ?? body?.message ?? text ?? upstream.statusText
     return json(upstream.status, {
       error: "ElevenLabs request failed",
-      details: body?.detail ?? body?.message ?? text || upstream.statusText,
+      details,
     })
   }
 
