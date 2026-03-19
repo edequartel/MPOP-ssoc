@@ -30,6 +30,10 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   font-family: "Noto Sans", Arial, sans-serif;
   background: radial-gradient(1200px 600px at 20% 0%, #1b2340 0%, var(--bg) 55%);
