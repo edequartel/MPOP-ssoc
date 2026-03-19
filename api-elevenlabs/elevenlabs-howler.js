@@ -5,6 +5,17 @@
   const $ = (id) => document.getElementById(id);
 
   const els = {
+    authSection: $("authSection"),
+    authLoggedOut: $("authLoggedOut"),
+    authLoggedIn: $("authLoggedIn"),
+    protectedContent: $("protectedContent"),
+    email: $("email"),
+    password: $("password"),
+    btnSignIn: $("btnSignIn"),
+    btnSignOut: $("btnSignOut"),
+    btnTogglePassword: $("btnTogglePassword"),
+    authMsg: $("authMsg"),
+    userEmail: $("userEmail"),
     voiceId: $("voiceId"),
     text: $("text"),
     modelId: $("modelId"),
@@ -64,6 +75,13 @@
     mergeGapMs: "mixedmerge.gapMs",
   });
 
+  function msg(el, text, ok = true) {
+    if (!el) return;
+    el.textContent = text || "";
+    el.classList.toggle("error", !ok && !!text);
+    el.classList.toggle("success", ok && !!text);
+  }
+
   function storageGet(key) {
     try { return localStorage.getItem(key); } catch { return null; }
   }
@@ -117,6 +135,97 @@
     sbConfig = cfg;
     const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
     return createClient(cfg.url, cfg.anonKey);
+  }
+
+  function setAuthUiVisible(loggedIn, session = null) {
+    if (els.authLoggedOut) els.authLoggedOut.hidden = !!loggedIn;
+    if (els.authLoggedIn) els.authLoggedIn.hidden = !loggedIn;
+    if (els.protectedContent) els.protectedContent.hidden = !loggedIn;
+    if (els.userEmail) els.userEmail.textContent = session?.user?.email || "";
+  }
+
+  function setSignedOutState() {
+    setAuthUiVisible(false);
+    if (hasCreditsUi()) {
+      setCreditsFields();
+      setCreditsSummary("Login vereist", "Log eerst in om ElevenLabs-credits en audiofuncties te gebruiken.");
+    }
+    if (els.voiceId) {
+      els.voiceId.innerHTML = "<option value=\"\">Log eerst in</option>";
+    }
+  }
+
+  async function refreshAuthUI(passedSession = null) {
+    if (!sb) sb = await initSupabaseClient();
+    let session = passedSession;
+    if (!session) {
+      const { data, error } = await sb.auth.getSession();
+      if (error) throw error;
+      session = data?.session ?? null;
+    }
+
+    const loggedIn = !!session?.user;
+    setAuthUiVisible(loggedIn, session);
+
+    if (!loggedIn) {
+      setSignedOutState();
+      return null;
+    }
+
+    msg(els.authMsg, "");
+    await loadVoicesFromSupabase();
+    await loadElevenLabsCredits();
+    return session;
+  }
+
+  async function signIn() {
+    try {
+      if (!sb) sb = await initSupabaseClient();
+      msg(els.authMsg, "");
+      const email = (els.email?.value || "").trim();
+      const password = els.password?.value || "";
+      if (!email || !password) {
+        throw new Error("Vul e-mail en wachtwoord in.");
+      }
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      msg(els.authMsg, "Ingelogd.");
+      await refreshAuthUI(data?.session ?? null);
+      log(`Signed in as ${data?.session?.user?.email || email}.`);
+    } catch (e) {
+      msg(els.authMsg, e?.message || String(e), false);
+      log(`Sign-in failed: ${e?.message || e}`);
+    }
+  }
+
+  async function signOut() {
+    try {
+      if (!sb) sb = await initSupabaseClient();
+      msg(els.authMsg, "");
+      await sb.auth.signOut();
+      setSignedOutState();
+      log("Signed out.");
+    } catch (e) {
+      msg(els.authMsg, e?.message || String(e), false);
+      log(`Sign-out failed: ${e?.message || e}`);
+    }
+  }
+
+  function wirePasswordToggle() {
+    const input = els.password;
+    const btn = els.btnTogglePassword;
+    if (!input || !btn) return;
+    const eye = btn.querySelector(".icon-eye");
+    const eyeOff = btn.querySelector(".icon-eye-off");
+    const setVisible = (visible) => {
+      input.type = visible ? "text" : "password";
+      btn.setAttribute("aria-pressed", visible ? "true" : "false");
+      btn.setAttribute("aria-label", visible ? "Verberg wachtwoord" : "Toon wachtwoord");
+      if (eye) eye.classList.toggle("hidden", visible);
+      if (eyeOff) eyeOff.classList.toggle("hidden", !visible);
+    };
+    setVisible(false);
+    btn.addEventListener("click", () => setVisible(input.type === "password"));
   }
 
   function getSupabaseFunctionUrl(functionName) {
@@ -1239,6 +1348,14 @@
   els.btnDownloadSplitZip?.addEventListener("click", onDownloadSplitZip);
   els.btnRefreshCredits?.addEventListener("click", () => { void loadElevenLabsCredits(); });
   els.btnVoiceInfo?.addEventListener("click", onVoiceInfoClick);
+  els.btnSignIn?.addEventListener("click", () => { void signIn(); });
+  els.btnSignOut?.addEventListener("click", () => { void signOut(); });
+  els.email?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") void signIn();
+  });
+  els.password?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") void signIn();
+  });
   els.voiceId?.addEventListener("change", () => {
     persistVoiceId();
     refreshVoiceInfoButton();
@@ -1260,8 +1377,23 @@
   if (els.btnDownload) els.btnDownload.disabled = true;
 
   loadPrefs();
-  void loadVoicesFromSupabase();
-  void loadElevenLabsCredits();
+  wirePasswordToggle();
+  setSignedOutState();
+
+  void (async () => {
+    try {
+      if (!sb) sb = await initSupabaseClient();
+      sb.auth.onAuthStateChange((_event, session) => {
+        void refreshAuthUI(session ?? null);
+      });
+      await refreshAuthUI();
+    } catch (e) {
+      const err = e?.message || String(e);
+      msg(els.authMsg, err, false);
+      log(`Auth init failed: ${err}`);
+      setSignedOutState();
+    }
+  })();
 
   setStatus("Idle");
   log("Ready.");

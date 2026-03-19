@@ -63,6 +63,83 @@ body {
   padding: 1rem;
 }
 
+.auth-panel h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.auth-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.auth-grid {
+  align-items: end;
+}
+
+.password-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.password-row input {
+  flex: 1;
+}
+
+.icon-btn {
+  width: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.auth-actions {
+  margin-top: 0.9rem;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.auth-message {
+  min-height: 1.2rem;
+  margin: 0.8rem 0 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.auth-message.error {
+  color: var(--danger);
+}
+
+.auth-message.success {
+  color: #7bd88f;
+}
+
+.signed-in-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: center;
+}
+
 .credit-card {
   margin-top: 1rem;
   padding: 1rem;
@@ -249,6 +326,12 @@ body {
   .credit-stats,
   .grid {
     grid-template-columns: 1fr;
+  }
+
+  .password-row,
+  .signed-in-row {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .toggles {

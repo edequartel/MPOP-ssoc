@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Audio Login</title>
+  <link rel="stylesheet" href="./elevenlabs-howler.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="header">
+      <h1>Audio Login</h1>
+      <div class="header-actions">
+        <button type="button" class="btn" onclick="window.location.href='./elevenlabs-fem.html'">Originele audio</button>
+        <button type="button" class="btn" onclick="window.location.href='./general-sounds.html'">General Sounds</button>
+        <button type="button" class="btn" onclick="window.location.href='../index.html'">Home</button>
+      </div>
+    </header>
+
+    <section id="authSection" class="panel auth-panel">
+      <div class="auth-head">
+        <div>
+          <p class="credit-label">Aparte toegang</p>
+          <h2>Log in voor ElevenLabs audio</h2>
+        </div>
+      </div>
+
+      <div id="authLoggedOut">
+        <div class="grid auth-grid">
+          <label class="field">
+            <span>E-mail</span>
+            <input id="email" type="email" placeholder="name@school.nl" autocomplete="username" />
+          </label>
+
+          <label class="field">
+            <span>Wachtwoord</span>
+            <div class="password-row">
+              <input id="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+              <button id="btnTogglePassword" type="button" class="btn icon-btn" aria-label="Toon wachtwoord" aria-pressed="false">
+                <span class="icon-eye" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M1.5 12s3.8-6.5 10.5-6.5S22.5 12 22.5 12s-3.8 6.5-10.5 6.5S1.5 12 1.5 12Z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </span>
+                <span class="icon-eye-off hidden" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M1.5 12s3.8-6.5 10.5-6.5S22.5 12 22.5 12s-3.8 6.5-10.5 6.5S1.5 12 1.5 12Z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M3 21 21 3"></path>
+                  </svg>
+                </span>
+              </button>
+            </div>
+          </label>
+        </div>
+
+        <div class="auth-actions">
+          <button id="btnSignIn" type="button" class="btn primary">Inloggen</button>
+        </div>
+        <p id="authMsg" class="auth-message"></p>
+      </div>
+
+      <div id="authLoggedIn" hidden>
+        <div class="signed-in-row">
+          <div>
+            <p class="credit-label">Ingelogd als</p>
+            <strong id="userEmail"></strong>
+          </div>
+          <button id="btnSignOut" type="button" class="btn">Log uit</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="protectedContent" hidden>
+      <div class="credit-card" aria-live="polite">
+        <div class="credit-card-head">
+          <div>
+            <p class="credit-label">ElevenLabs credits</p>
+            <strong id="creditSummary">Laden...</strong>
+          </div>
+          <button id="btnRefreshCredits" type="button" class="btn">Refresh credits</button>
+        </div>
+        <div class="credit-stats">
+          <div class="credit-stat">
+            <span>Gebruikt</span>
+            <strong id="creditUsed">-</strong>
+          </div>
+          <div class="credit-stat">
+            <span>Beschikbaar</span>
+            <strong id="creditRemaining">-</strong>
+          </div>
+          <div class="credit-stat">
+            <span>Limiet</span>
+            <strong id="creditLimit">-</strong>
+          </div>
+          <div class="credit-stat">
+            <span>Plan</span>
+            <strong id="creditTier">-</strong>
+          </div>
+        </div>
+        <p id="creditMeta" class="credit-meta">Credits worden opgehaald via een beveiligde server-call op basis van je Supabase-login.</p>
+      </div>
+
+      <section class="panel">
+        <div class="grid">
+          <label class="field">
+            <span>Voice</span>
+            <div class="voice-select-row">
+              <select id="voiceId">
+                <option value="">Loading voices...</option>
+              </select>
+              <button id="btnVoiceInfo" type="button" class="btn" disabled>Info</button>
+            </div>
+          </label>
+
+          <label class="field">
+            <span>Merge gap (ms)</span>
+            <input id="mergeGapMs" type="number" min="0" max="5000" step="50" value="500" />
+          </label>
+
+          <label class="field full">
+            <span>Text</span>
+            <textarea id="text" rows="5" placeholder="Type text to speak…"></textarea>
+          </label>
+
+          <div class="actions full">
+            <button id="btnClear" class="btn">Clear log</button>
+            <button id="clearTextBtn" class="btn">Clear text</button>
+
+            <div class="merged-actions">
+              <button id="btnProduceMergedJwt" class="btn">Produce</button>
+              <button id="btnPlayMerged" class="btn">Play</button>
+              <button id="btnDownloadMergedFile" class="btn">Download</button>
+              <button id="btnDownloadSplitFiles" class="btn">Download # MP3s</button>
+              <button id="btnDownloadSplitZip" class="btn">Download # ZIP</button>
+            </div>
+
+            <div class="toggles" role="group" aria-label="Preferences">
+              <label class="toggle">
+                <input id="chkRememberVoice" type="checkbox" checked />
+                <span>Remember selected voice</span>
+              </label>
+              <label class="toggle">
+                <input id="chkTryMSE" type="checkbox" checked />
+                <span>Try "true streaming" (MediaSource) first</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="grid"></div>
+      </section>
+
+      <section class="panel">
+        <div class="row">
+          <strong>Status:</strong>
+          <span id="status" class="status">Idle</span>
+        </div>
+        <pre id="log" class="log" aria-live="polite"></pre>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js"></script>
+  <script src="./elevenlabs-howler.js"></script>
+</body>
+</html>
