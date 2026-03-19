@@ -16,6 +16,8 @@
     btnTogglePassword: $("btnTogglePassword"),
     authMsg: $("authMsg"),
     userEmail: $("userEmail"),
+    btnToggleStatusPanel: $("btnToggleStatusPanel"),
+    statusPanel: $("statusPanel"),
     voiceId: $("voiceId"),
     text: $("text"),
     modelId: $("modelId"),
@@ -450,6 +452,15 @@
 
   function setStatus(msg) {
     if (els.status) els.status.textContent = msg;
+  }
+
+  function setStatusPanelVisible(visible) {
+    if (!els.statusPanel) return;
+    els.statusPanel.hidden = !visible;
+    if (els.btnToggleStatusPanel) {
+      els.btnToggleStatusPanel.textContent = visible ? "Hide status" : "Show status";
+      els.btnToggleStatusPanel.setAttribute("aria-pressed", visible ? "true" : "false");
+    }
   }
 
   function hasCreditsUi() {
@@ -1348,6 +1359,10 @@
   els.btnDownloadSplitZip?.addEventListener("click", onDownloadSplitZip);
   els.btnRefreshCredits?.addEventListener("click", () => { void loadElevenLabsCredits(); });
   els.btnVoiceInfo?.addEventListener("click", onVoiceInfoClick);
+  els.btnToggleStatusPanel?.addEventListener("click", () => {
+    const isHidden = !!els.statusPanel?.hidden;
+    setStatusPanelVisible(isHidden);
+  });
   els.btnSignIn?.addEventListener("click", () => { void signIn(); });
   els.btnSignOut?.addEventListener("click", () => { void signOut(); });
   els.email?.addEventListener("keydown", (event) => {
@@ -1379,6 +1394,7 @@
   loadPrefs();
   wirePasswordToggle();
   setSignedOutState();
+  setStatusPanelVisible(false);
 
   void (async () => {
     try {

@@ -118,6 +118,7 @@
           <div class="actions full">
             <button id="btnClear" class="btn">Clear log</button>
             <button id="clearTextBtn" class="btn">Clear text</button>
+            <button id="btnToggleStatusPanel" class="btn" type="button" aria-pressed="false">Show status</button>
 
             <div class="merged-actions">
               <button id="btnProduceMergedJwt" class="btn">Produce</button>
@@ -145,7 +146,7 @@
         <div class="grid"></div>
       </section>
 
-      <section class="panel">
+      <section id="statusPanel" class="panel" hidden>
         <div class="row">
           <strong>Status:</strong>
           <span id="status" class="status">Idle</span>
