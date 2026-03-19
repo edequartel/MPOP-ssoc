@@ -77,12 +77,19 @@ body {
 }
 
 .auth-grid {
+  grid-template-columns: 1fr;
   align-items: end;
 }
 
 .password-row {
   display: flex;
   gap: 0.5rem;
+}
+
+.auth-grid .field input,
+.password-row input,
+.password-row .icon-btn {
+  height: var(--control-h);
 }
 
 .password-row input {
