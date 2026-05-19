@@ -117,7 +117,8 @@ export default async function handler(req, res) {
     if (!codeText) return null;
     const cacheKey = String(pageNumber);
     if (qrCache.has(cacheKey)) return qrCache.get(cacheKey);
-    const qrData = `B${codeText}${pageNumber}`;
+    const pageNumberText = String(pageNumber).padStart(4, "0");
+    const qrData = `B${codeText}${pageNumberText}`;
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
       qrData
     )}`;
