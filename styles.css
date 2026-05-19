@@ -105,9 +105,10 @@ button.busy::after {
 .itembtn[data-woord-groep="2"] { background:var(--wg2-bg); border-color:var(--wg2-border); }
 .itembtn[data-woord-groep="2"]:hover { background:rgba(242, 161, 74, .26); }
 .item-label { flex:1; }
-.title-code-row { display:flex; align-items:center; gap:10px; }
-.title-code-row input { flex:1; min-width:0; }
-.title-code { color:var(--muted); font-size:13px; flex:0 0 auto; }
+.title-code-row { display:flex; align-items:flex-end; gap:10px; }
+.title-code-row > div:first-child { flex:1; min-width:0; }
+.title-code-row > div:last-child { flex:0 0 170px; }
+.title-code-row input { width:100%; }
 .status-dot { width:10px; height:10px; border-radius:50%; flex:0 0 auto; display:inline-block; background:#9aa3b2; }
 .status-dot[data-status="draft"] { background:#ffffff; }
 .status-dot[data-status="started"] { background:#f2a14a; }

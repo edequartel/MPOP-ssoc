@@ -129,10 +129,15 @@
         <label>Auteur</label>
         <input id="auteur" />
 
-        <label>Titel</label>
         <div class="title-code-row">
-          <input id="title" />
-          <span id="titleCode" class="title-code mono"></span>
+          <div>
+            <label>Titel</label>
+            <input id="title" />
+          </div>
+          <div>
+            <label>BrailleStudio code</label>
+            <input id="itemCode" class="title-code mono" />
+          </div>
         </div>
 
         <label>Status</label>
@@ -1398,7 +1403,7 @@ function scheduleAutosave() {
       $("editor").style.display = "block";
 
       $("code").textContent = row.code || "";
-      $("titleCode").textContent = row.code || "";
+      setVal("itemCode", row.code || "");
       $("status").textContent = row.status || "";
       $("version").textContent = String(row.version ?? "");
       $("updatedAt").textContent = formatDateTime(row.updated_at);
@@ -1499,6 +1504,7 @@ function scheduleAutosave() {
         if (showMsg) msg($("saveMsg"), "Saving...");
         const payload = {
           auteur: val("auteur").trim(),
+          code: val("itemCode").trim(),
           title: val("title").trim(),
           status: val("statusSelect"),
 
