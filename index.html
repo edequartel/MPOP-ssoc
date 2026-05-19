@@ -130,7 +130,10 @@
         <input id="auteur" />
 
         <label>Titel</label>
-        <input id="title" />
+        <div class="title-code-row">
+          <input id="title" />
+          <span id="titleCode" class="title-code mono"></span>
+        </div>
 
         <label>Status</label>
         <select id="statusSelect">
@@ -1327,12 +1330,7 @@
         const status = it.status || "no status";
         const label = document.createElement("span");
         label.className = "item-label";
-        const titleText = document.createElement("span");
-        titleText.textContent = title;
-        const codeText = document.createElement("span");
-        codeText.className = "item-code mono";
-        codeText.textContent = it.code || "";
-        label.append(titleText, codeText);
+        label.textContent = title;
         const dot = document.createElement("span");
         dot.className = "status-dot";
         dot.dataset.status = status || "";
@@ -1400,6 +1398,7 @@ function scheduleAutosave() {
       $("editor").style.display = "block";
 
       $("code").textContent = row.code || "";
+      $("titleCode").textContent = row.code || "";
       $("status").textContent = row.status || "";
       $("version").textContent = String(row.version ?? "");
       $("updatedAt").textContent = formatDateTime(row.updated_at);
