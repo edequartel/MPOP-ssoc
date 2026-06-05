@@ -398,13 +398,14 @@
       const el = $(id);
       if (el) el.value = value ?? "";
     };
+    const OWN_SERVER_BASE_URL = "https://www.tastenbraille.com/MPOP";
     const CONFIG_URL_LOCAL = "./supabase-config.js";
-    const PDF_URL_LOCAL = "/api/pdf";
-    const PDF_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdf";
-    const MANUAL_PDF_URL_LOCAL = "/api/manualpdf";
-    const MANUAL_PDF_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/manualpdf";
-    const PDF_BRAILLE_URL_LOCAL = "/api/pdfbraille";
-    const PDF_BRAILLE_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdfbraille";
+    const PDF_URL_LOCAL = `${OWN_SERVER_BASE_URL}/api/pdf`;
+    const PDF_URL_REMOTE = `${OWN_SERVER_BASE_URL}/api/pdf`;
+    const MANUAL_PDF_URL_LOCAL = `${OWN_SERVER_BASE_URL}/api/manualpdf`;
+    const MANUAL_PDF_URL_REMOTE = `${OWN_SERVER_BASE_URL}/api/manualpdf`;
+    const PDF_BRAILLE_URL_LOCAL = `${OWN_SERVER_BASE_URL}/api/pdfbraille`;
+    const PDF_BRAILLE_URL_REMOTE = `${OWN_SERVER_BASE_URL}/api/pdfbraille`;
     const GIT_PULL_URL = "./api/git_pull.php";
     const SHOW_FIELD_NAMES = false;
     const ELEVENLABS_STORAGE_KEYS = {
@@ -522,27 +523,15 @@
     // no UI display of config values
 
     function getSupabaseMergeProxyUrl() {
-      const baseUrl = (sbConfig?.url || "").trim();
-      if (!baseUrl) {
-        throw new Error("Supabase config URL missing.");
-      }
-      return `${baseUrl}/functions/v1/merge-proxy`;
+      return `${OWN_SERVER_BASE_URL}/api/merge_proxy.php`;
     }
 
     function getSupabaseTtsProxyUrl() {
-      const baseUrl = (sbConfig?.url || "").trim();
-      if (!baseUrl) {
-        throw new Error("Supabase config URL missing.");
-      }
-      return `${baseUrl}/functions/v1/tts-proxy`;
+      return `${OWN_SERVER_BASE_URL}/api/tts_proxy.php`;
     }
 
     function getSupabaseUploadMp3ProxyUrl() {
-      const baseUrl = (sbConfig?.url || "").trim();
-      if (!baseUrl) {
-        throw new Error("Supabase config URL missing.");
-      }
-      return `${baseUrl}/functions/v1/upload-mp3-proxy`;
+      return `${OWN_SERVER_BASE_URL}/api/upload_mp3_proxy.php`;
     }
 
     async function getFreshSupabaseAccessToken(forceRefresh = false) {

@@ -96,12 +96,13 @@
 
   async function initSupabaseClient() {
     const CONFIG_URL_LOCAL = "../supabase-config.js";
+    const OWN_SERVER_BASE_URL = "https://www.tastenbraille.com/MPOP";
     const LOCAL_SUPABASE_CONFIG = Object.freeze({
       url: "https://zrcdyzcfsdlmqqwdhctk.supabase.co",
       anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyY2R5emNmc2RsbXFxd2RoY3RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxOTgyNzUsImV4cCI6MjA4Mzc3NDI3NX0.voT1eh_FbBkrv7ZMN7B8VRRbrab7tyx3eV6JuXy4ySs"
     });
     const CONFIG_URLS_REMOTE = [
-      "https://mpop-ssoc.vercel.app/api/supabase-config.js",
+      `${OWN_SERVER_BASE_URL}/supabase-config.js`,
       "https://www.tastenbraille.com/braillestudio/api/supabase-config",
     ];
     let cfg = LOCAL_SUPABASE_CONFIG;
@@ -231,9 +232,16 @@
   }
 
   function getSupabaseFunctionUrl(functionName) {
-    const baseUrl = (sbConfig?.url || "").trim();
-    if (!baseUrl) throw new Error("Supabase config URL missing.");
-    return `${baseUrl}/functions/v1/${functionName}`;
+    const ownServerBaseUrl = "https://www.tastenbraille.com/MPOP";
+    const routes = {
+      "elevenlabs-subscription": "elevenlabs_subscription.php",
+      "merge-proxy": "merge_proxy.php",
+      "tts-proxy": "tts_proxy.php",
+      "upload-mp3-proxy": "upload_mp3_proxy.php",
+    };
+    const route = routes[functionName];
+    if (!route) throw new Error(`Unknown server function: ${functionName}`);
+    return `${ownServerBaseUrl}/api/${route}`;
   }
 
   async function getFreshSupabaseAccessToken(forceRefresh = false) {
