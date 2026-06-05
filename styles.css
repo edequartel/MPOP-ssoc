@@ -62,6 +62,24 @@ button.busy::after {
 .btn-like:hover { background: rgba(255,255,255,.12); }
 .btnrow { display:flex; gap:8px; flex-wrap:wrap; }
 .btnrow button { width:auto; padding:10px 12px; }
+.git-pull-panel {
+  margin-top:24px;
+  padding-top:12px;
+  border-top:1px solid var(--line);
+  text-align:center;
+}
+.git-pull-panel button { width:auto; padding:10px 12px; }
+.git-pull-panel pre {
+  max-width:720px;
+  margin:10px auto 0;
+  padding:10px;
+  overflow:auto;
+  text-align:left;
+  white-space:pre-wrap;
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
 .link-list { display:flex; flex-direction:column; gap:10px; }
 .link-list .btn-like { display:block; width:100%; box-sizing:border-box; padding:12px 14px; }
 .inlineRow { display:flex; gap:8px; align-items:center; }

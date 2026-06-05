@@ -96,10 +96,6 @@
           <button type="button" class="btn-like" onclick="window.open('readme.html','_blank','noreferrer')">Handleiding</button>
           <button type="button" class="btn-like" onclick="window.open('mpop.html','_blank','noreferrer')">MPOP</button>
           <button type="button" class="btn-like" onclick="window.open('./links.html','_blank','noreferrer')">Links</button>
-          <button type="button" class="btn-like" data-admin-only style="display:none" onclick="window.open('./api-elevenlabs/elevenlabs-fem.html','_blank','noreferrer')">Audio</button>
-        </div>
-        <div class="btnrow mt-10">
-          <button type="button" class="btn-like" data-soundcreator-audio style="display:none" onclick="window.open('./api-elevenlabs/elevenlabs-fem.html','_blank','noreferrer')">Audio</button>
         </div>
       </div>
     </div>
@@ -407,6 +403,7 @@
     const MANUAL_PDF_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/manualpdf";
     const PDF_BRAILLE_URL_LOCAL = "/api/pdfbraille";
     const PDF_BRAILLE_URL_REMOTE = "https://mpop-ssoc.vercel.app/api/pdfbraille";
+    const GIT_PULL_URL = "./api/git_pull.php";
     const SHOW_FIELD_NAMES = false;
     const ELEVENLABS_STORAGE_KEYS = {
       voiceId: "elevenlabs.voiceId",
@@ -592,6 +589,12 @@
 
     function msg(el, text, ok=true) {
       el.innerHTML = text ? `<span class="${ok ? 'ok' : 'err'}">${escapeHtml(text)}</span>` : '';
+    }
+
+    function gitPullMsg(text, ok=true) {
+      const el = $("gitPullMsg");
+      if (!el) return;
+      el.innerHTML = text ? `<pre class="${ok ? 'ok' : 'err'}">${escapeHtml(text)}</pre>` : "";
     }
 
     function updateAdminOnlyAudioButtons() {
@@ -1276,6 +1279,7 @@
       try {
         msg($("authMsg"), "");
         msg($("listMsg"), "");
+        gitPullMsg("");
         await sb.auth.signOut();
         await refreshAuthUI();
       } catch (e) {
@@ -1300,6 +1304,41 @@
       btn.addEventListener("click", () => {
         setVisible(input.type === "password");
       });
+    }
+
+    async function runGitPull() {
+      const btn = $("btnGitPull");
+      try {
+        if (!isAdminRole) throw new Error("Alleen admin mag git pull uitvoeren.");
+        const token = await getFreshSupabaseAccessToken();
+        btn.disabled = true;
+        btn.classList.add("busy");
+        gitPullMsg("Git pull wordt uitgevoerd...");
+
+        const res = await fetch(GIT_PULL_URL, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: "{}",
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data?.ok) {
+          throw new Error(data?.error || `Git pull mislukt (${res.status}).`);
+        }
+
+        const output = [
+          data.command ? `$ ${data.command}` : "$ git pull",
+          data.output || "(geen output)",
+        ].join("\n");
+        gitPullMsg(output, true);
+      } catch (e) {
+        gitPullMsg(e.message || String(e), false);
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove("busy");
+      }
     }
 
     // -----------------------------
@@ -3798,6 +3837,7 @@ function scheduleAutosave() {
 
     $("btnSignOut").onclick = signOut;
     $("btnRefresh").onclick = () => loadItems();
+    $("btnGitPull").onclick = runGitPull;
     $("btnPdf").onclick = async () => {
       try {
         if (!currentItem?.id) return;
@@ -4109,6 +4149,10 @@ function scheduleAutosave() {
       }
     });
   </script>
+  <div class="git-pull-panel tiny" data-admin-only style="display:none">
+    <button id="btnGitPull" type="button">Git pull</button>
+    <div id="gitPullMsg" class="mt-10"></div>
+  </div>
   <footer class="tiny muted" style="margin-top:24px; padding-top:12px; border-top:1px solid var(--line); text-align:center;">
     © <span id="copyrightYear"></span> Bartiméus Onderwijs. Alle rechten op de inhoud voorbehouden.
   </footer>
