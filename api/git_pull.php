@@ -31,6 +31,8 @@ if (!function_exists("proc_open")) {
 
 $supabaseUrl = "https://zrcdyzcfsdlmqqwdhctk.supabase.co";
 $supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyY2R5emNmc2RsbXFxd2RoY3RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxOTgyNzUsImV4cCI6MjA4Mzc3NDI3NX0.voT1eh_FbBkrv7ZMN7B8VRRbrab7tyx3eV6JuXy4ySs";
+$gitRemoteUrl = "https://github.com/edequartel/MPOP.git";
+$gitBranch = "main";
 
 function bearerToken(): string {
   $auth = $_SERVER["HTTP_AUTHORIZATION"] ?? "";
@@ -91,7 +93,7 @@ function requireAdmin(string $jwt, string $supabaseUrl, string $anonKey): void {
   }
 }
 
-function runGitPull(string $repoDir): array {
+function runGitPull(string $repoDir, string $remoteUrl, string $branch): array {
   $path = getenv("PATH") ?: "/usr/local/bin:/usr/bin:/bin";
   $home = getenv("HOME") ?: null;
   $env = [
@@ -108,7 +110,8 @@ function runGitPull(string $repoDir): array {
     2 => ["pipe", "w"],
   ];
 
-  $process = proc_open("git pull", $descriptors, $pipes, $repoDir, $env);
+  $command = "git pull --ff-only " . escapeshellarg($remoteUrl) . " " . escapeshellarg($branch);
+  $process = proc_open($command, $descriptors, $pipes, $repoDir, $env);
   if (!is_resource($process)) {
     fail(500, "Could not start git pull.");
   }
@@ -121,6 +124,7 @@ function runGitPull(string $repoDir): array {
   $stderr = "";
   $started = time();
   $timedOut = false;
+  $exitCode = null;
 
   while (true) {
     $stdout .= stream_get_contents($pipes[1]) ?: "";
@@ -128,6 +132,7 @@ function runGitPull(string $repoDir): array {
 
     $status = proc_get_status($process);
     if (!$status["running"]) {
+      $exitCode = array_key_exists("exitcode", $status) ? (int)$status["exitcode"] : null;
       break;
     }
 
@@ -144,7 +149,10 @@ function runGitPull(string $repoDir): array {
   $stderr .= stream_get_contents($pipes[2]) ?: "";
   fclose($pipes[1]);
   fclose($pipes[2]);
-  $exitCode = proc_close($process);
+  $closeCode = proc_close($process);
+  if ($exitCode === null || $exitCode === -1) {
+    $exitCode = (int)$closeCode;
+  }
 
   if ($timedOut) {
     fail(504, "git pull timed out.", [
@@ -157,6 +165,7 @@ function runGitPull(string $repoDir): array {
     "exitCode" => $exitCode,
     "stdout" => $stdout,
     "stderr" => $stderr,
+    "command" => $command,
   ];
 }
 
@@ -168,12 +177,12 @@ if (!$repoDir || !is_dir($repoDir . "/.git")) {
   fail(500, "Repository directory could not be resolved.");
 }
 
-$result = runGitPull($repoDir);
+$result = runGitPull($repoDir, $gitRemoteUrl, $gitBranch);
 $output = trim($result["stdout"] . ($result["stderr"] !== "" ? "\n" . $result["stderr"] : ""));
 
 if ((int)$result["exitCode"] !== 0) {
   fail(500, "git pull failed.", [
-    "command" => "git pull",
+    "command" => $result["command"],
     "exitCode" => $result["exitCode"],
     "output" => $output,
   ]);
@@ -181,7 +190,7 @@ if ((int)$result["exitCode"] !== 0) {
 
 echo json_encode([
   "ok" => true,
-  "command" => "git pull",
+  "command" => $result["command"],
   "exitCode" => $result["exitCode"],
   "output" => $output,
 ], JSON_UNESCAPED_SLASHES);

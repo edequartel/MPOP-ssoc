@@ -96,7 +96,9 @@
           <button type="button" class="btn-like" onclick="window.open('readme.html','_blank','noreferrer')">Handleiding</button>
           <button type="button" class="btn-like" onclick="window.open('mpop.html','_blank','noreferrer')">MPOP</button>
           <button type="button" class="btn-like" onclick="window.open('./links.html','_blank','noreferrer')">Links</button>
+          <button id="btnGitPull" type="button" data-admin-only style="display:none">Git pull</button>
         </div>
+        <div id="gitPullMsg" class="tiny mt-10"></div>
       </div>
     </div>
 
@@ -1325,7 +1327,8 @@
         });
         const data = await res.json().catch(() => null);
         if (!res.ok || !data?.ok) {
-          throw new Error(data?.error || `Git pull mislukt (${res.status}).`);
+          const detail = data?.output ? `${data.error || "Git pull mislukt."}\n\n${data.output}` : (data?.error || `Git pull mislukt (${res.status}).`);
+          throw new Error(detail);
         }
 
         const output = [
@@ -4149,10 +4152,6 @@ function scheduleAutosave() {
       }
     });
   </script>
-  <div class="git-pull-panel tiny" data-admin-only style="display:none">
-    <button id="btnGitPull" type="button">Git pull</button>
-    <div id="gitPullMsg" class="mt-10"></div>
-  </div>
   <footer class="tiny muted" style="margin-top:24px; padding-top:12px; border-top:1px solid var(--line); text-align:center;">
     © <span id="copyrightYear"></span> Bartiméus Onderwijs. Alle rechten op de inhoud voorbehouden.
   </footer>
