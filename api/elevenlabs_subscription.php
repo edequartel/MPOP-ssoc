@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . "/server_auth.php";
+require_once __DIR__ . "/elevenlabs_config_loader.php";
 
 cors_preflight("GET, OPTIONS");
 if ($_SERVER["REQUEST_METHOD"] !== "GET") {
@@ -10,9 +11,10 @@ if ($_SERVER["REQUEST_METHOD"] !== "GET") {
 
 require_allowed_role(["admin", "editor", "soundcreator"]);
 
-$apiKey = getenv("ELEVENLABS_API_KEY") ?: "";
+$config = load_elevenlabs_config();
+$apiKey = elevenlabs_api_key($config);
 if ($apiKey === "") {
-  json_out(500, ["ok" => false, "error" => "ELEVENLABS_API_KEY is missing on the server."]);
+  json_out(500, ["ok" => false, "error" => "ElevenLabs api_key is missing in private/elevenlabs_config.php."]);
 }
 
 $ch = curl_init("https://api.elevenlabs.io/v1/user/subscription");

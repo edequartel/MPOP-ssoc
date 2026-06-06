@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . "/server_auth.php";
+require_once __DIR__ . "/elevenlabs_config_loader.php";
 
 cors_preflight("POST, OPTIONS");
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
@@ -16,17 +17,18 @@ if (!is_array($data)) {
 }
 
 $text = trim((string)($data["text"] ?? ""));
-$voiceId = trim((string)($data["voiceId"] ?? ""));
+$config = load_elevenlabs_config();
+$voiceId = trim((string)($data["voiceId"] ?? "")) ?: elevenlabs_default_voice_id($config);
 $modelId = trim((string)($data["modelId"] ?? "")) ?: "eleven_multilingual_v2";
 $outputFormat = trim((string)($data["outputFormat"] ?? "")) ?: "mp3_44100_128";
 $voiceSettings = $data["voice_settings"] ?? null;
 
 if ($text === "") json_out(400, ["ok" => false, "error" => "Missing text."]);
-if ($voiceId === "") json_out(400, ["ok" => false, "error" => "Missing voiceId."]);
+if ($voiceId === "") json_out(500, ["ok" => false, "error" => "No voiceId supplied and default_voice_id is missing in ElevenLabs config."]);
 
-$apiKey = getenv("ELEVENLABS_API_KEY") ?: "";
+$apiKey = elevenlabs_api_key($config);
 if ($apiKey === "") {
-  json_out(500, ["ok" => false, "error" => "ELEVENLABS_API_KEY is missing on the server."]);
+  json_out(500, ["ok" => false, "error" => "ElevenLabs api_key is missing in private/elevenlabs_config.php."]);
 }
 
 $payload = ["text" => $text, "model_id" => $modelId];

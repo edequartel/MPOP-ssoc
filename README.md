@@ -42,9 +42,34 @@ De items zijn de woorden waar de methode uit bestaat.
 ## Audio afspelen
 
 - Gebruik de **play/pauze** knop om audio te beluisteren.
-- Gebruik <o> <b,a,l> of <b,3_0s)> <4_0s> voor phonetische uitspraak
-- Ruimte tussen letters is standaard een 0,5 sec daarna kun je deze instellen met <1_0s> maximaal 4_0s oplopende met een 0.5 seconde.
-- geberuik {geluid} voor geluiden. Deze geluiden moeten dan wel bestaan. Bestaat deze niet doorgeven dan komen deze erbij.
+- Klik op **Produce** om een tekstblok om te zetten naar één MP3-bestand.
+
+## Audio maken vanuit tekstblokken
+
+In tekstvelden met een **Produce**-knop kun je gesproken tekst combineren met bestaande spraakfragmenten en geluidseffecten.
+
+Gebruik bijvoorbeeld:
+
+```text
+Dit is het woord bal. <bal> {snor}
+Het woord bal bestaat uit de letters <b,a,l>
+Een bal maakt ook een geluid. Het stuitert {stuiter}
+```
+
+De Produce-knop verwerkt dit als volgt:
+
+- Gewone tekst, zoals `Dit is het woord bal.`, wordt door ElevenLabs uitgesproken.
+- Tekst tussen `<` en `>`, zoals `<bal>`, gebruikt een bestaand MP3-bestand uit `sounds/nl/speech/`.
+- Meerdere waarden tussen `<` en `>`, zoals `<b,a,l>`, spelen de losse bestanden `b.mp3`, `a.mp3` en `l.mp3`.
+- Tekst tussen `{` en `}`, zoals `{snor}` of `{stuiter}`, gebruikt een bestaand geluid uit `sounds/general/`.
+- Alle gesproken tekst en bestaande MP3-fragmenten worden daarna automatisch samengevoegd tot één MP3-bestand.
+
+### Pauzes en uitspraak
+
+- De standaardruimte tussen samengevoegde fragmenten is 0,5 seconde.
+- Gebruik bijvoorbeeld `<1_0s>` of `<4_0s>` wanneer daarvoor een bijbehorend spraakfragment bestaat.
+- Controleer met de **play/pauze** knop het resultaat nadat Produce klaar is.
+- Wanneer een genoemd spraakfragment of geluid niet bestaat, kan Produce het eindbestand niet volledig maken. Geef ontbrekende geluiden door zodat ze toegevoegd kunnen worden.
 
 
 ## Afbeeldingen
