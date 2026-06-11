@@ -33,12 +33,12 @@ foreach ($parts as $p) {
 }
 
 $safeRel = implode('/', $parts);
-$fullPath = rtrim($_SERVER['DOCUMENT_ROOT'] ?? '', '/') . '/braillestudio/' . $safeRel;
+$fullPath = rtrim($_SERVER['DOCUMENT_ROOT'] ?? '', '/') . '/braillestudio-data/' . $safeRel;
 $exists = is_file($fullPath);
 
 out(200, [
     'ok' => true,
     'exists' => $exists,
     'path' => '/' . $safeRel,
-    'url' => 'https://www.tastenbraille.com/braillestudio/' . str_replace('%2F', '/', rawurlencode($safeRel)),
+    'url' => 'https://www.tastenbraille.com/braillestudio-data/' . str_replace('%2F', '/', rawurlencode($safeRel)),
 ]);

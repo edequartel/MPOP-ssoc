@@ -5,7 +5,7 @@ declare(strict_types=1);
  * mixedmerge_mp3.php (server-side, shared-hosting friendly)
  *
  * - Requires Bearer token (strict auth first)
- * - Accepts relative source paths under /braillestudio
+ * - Accepts relative source paths under /braillestudio-data
  * - Client provides ONLY:
  *     - outputDir (allow-listed)
  *     - sources[] (relative paths, each must match an allow-listed source prefix)
@@ -43,8 +43,8 @@ if ($auth !== "Bearer {$TOKEN}") {
 // --------------------
 // CONFIG (fixed roots)
 // --------------------
-$ROOT_URL = "https://www.tastenbraille.com/braillestudio";
-$ROOT_FS  = realpath(__DIR__ . "/../braillestudio"); // public_html/braillestudio
+$ROOT_URL = "https://www.tastenbraille.com/braillestudio-data";
+$ROOT_FS  = realpath(__DIR__ . "/../braillestudio-data"); // public_html/braillestudio-data
 
 $FFMPEG   = __DIR__ . "/bin/ffmpeg";
 $TMP_BASE = __DIR__ . "/tmp";

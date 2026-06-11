@@ -73,7 +73,7 @@ if ($documentRoot === '') {
     out(500, ['ok' => false, 'error' => 'DOCUMENT_ROOT not available']);
 }
 
-$baseFsDir = $documentRoot . '/braillestudio';
+$baseFsDir = $documentRoot . '/braillestudio-data';
 $baseFsReal = realpath($baseFsDir);
 if ($baseFsReal === false) {
     out(500, ['ok' => false, 'error' => 'Cannot resolve base directory']);
@@ -112,7 +112,7 @@ foreach ($items as $name) {
     $files[] = [
         'name' => $name,
         'path' => '/' . $relPath,
-        'url' => 'https://www.tastenbraille.com/braillestudio/' . str_replace('%2F', '/', rawurlencode($relPath)),
+        'url' => 'https://www.tastenbraille.com/braillestudio-data/' . str_replace('%2F', '/', rawurlencode($relPath)),
         'bytes' => $bytes === false ? 0 : $bytes,
         'modifiedAt' => $mtime === false ? null : gmdate('c', $mtime),
     ];

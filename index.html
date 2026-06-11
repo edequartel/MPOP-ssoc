@@ -471,8 +471,8 @@
     const opdrachtAudioExistsCheckSeqByNo = new Map([[1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0]]);
     const audioPathVersionByPath = new Map();
     const audioPlayers = new Map();
-    const AUDIO_ENDPOINT = "https://www.tastenbraille.com/braillestudio";
-    const LOGO_AUDIO_URL = "https://www.tastenbraille.com/braillestudio/sounds/nl/stories/mpop-001.mp3";
+    const AUDIO_ENDPOINT = "https://www.tastenbraille.com/braillestudio-data";
+    const LOGO_AUDIO_URL = "https://www.tastenbraille.com/braillestudio-data/sounds/nl/stories/mpop-001.mp3";
     let logoAudioPlayer = null;
     let dummyItemDefaults = null;
     let dummyItemDefaultsPromise = null;
@@ -1763,6 +1763,15 @@ function scheduleAutosave() {
       return `${base || "story"}-story.mp3`;
     }
 
+    function stripAudioStoragePrefix(path) {
+      const prefixes = ["/braillestudio-data/", "/braillestudio/"];
+      for (const prefix of prefixes) {
+        const idx = path.indexOf(prefix);
+        if (idx >= 0) return path.slice(idx + prefix.length);
+      }
+      return path;
+    }
+
     function getStoryUploadTarget() {
       const rawStoryPath = (val("story_audio_path") || "").trim();
       if (!rawStoryPath) throw new Error("story_audio_path is empty.");
@@ -1775,10 +1784,7 @@ function scheduleAutosave() {
         }
       } catch {}
 
-      const brailleStudioPrefix = "/braillestudio/";
-      const idx = normalized.indexOf(brailleStudioPrefix);
-      if (idx >= 0) normalized = normalized.slice(idx + brailleStudioPrefix.length);
-
+      normalized = stripAudioStoragePrefix(normalized);
       normalized = normalized.replace(/^\/+/, "");
       const parts = normalized.split("/").filter(Boolean);
       if (!parts.length) throw new Error("story_audio_path has no target path.");
@@ -1931,10 +1937,7 @@ function scheduleAutosave() {
         }
       } catch {}
 
-      const brailleStudioPrefix = "/braillestudio/";
-      const idx = normalized.indexOf(brailleStudioPrefix);
-      if (idx >= 0) normalized = normalized.slice(idx + brailleStudioPrefix.length);
-
+      normalized = stripAudioStoragePrefix(normalized);
       normalized = normalized.replace(/^\/+/, "");
       const parts = normalized.split("/").filter(Boolean);
       if (!parts.length) throw new Error("object1_audio_path has no target path.");
@@ -1977,10 +1980,7 @@ function scheduleAutosave() {
         }
       } catch {}
 
-      const brailleStudioPrefix = "/braillestudio/";
-      const idx = normalized.indexOf(brailleStudioPrefix);
-      if (idx >= 0) normalized = normalized.slice(idx + brailleStudioPrefix.length);
-
+      normalized = stripAudioStoragePrefix(normalized);
       normalized = normalized.replace(/^\/+/, "");
       const parts = normalized.split("/").filter(Boolean);
       if (!parts.length) throw new Error("object2_audio_path has no target path.");
@@ -2023,10 +2023,7 @@ function scheduleAutosave() {
         }
       } catch {}
 
-      const brailleStudioPrefix = "/braillestudio/";
-      const idx = normalized.indexOf(brailleStudioPrefix);
-      if (idx >= 0) normalized = normalized.slice(idx + brailleStudioPrefix.length);
-
+      normalized = stripAudioStoragePrefix(normalized);
       normalized = normalized.replace(/^\/+/, "");
       const parts = normalized.split("/").filter(Boolean);
       if (!parts.length) throw new Error("object3_audio_path has no target path.");
@@ -2078,10 +2075,7 @@ function scheduleAutosave() {
         }
       } catch {}
 
-      const brailleStudioPrefix = "/braillestudio/";
-      const idx = normalized.indexOf(brailleStudioPrefix);
-      if (idx >= 0) normalized = normalized.slice(idx + brailleStudioPrefix.length);
-
+      normalized = stripAudioStoragePrefix(normalized);
       normalized = normalized.replace(/^\/+/, "");
       const parts = normalized.split("/").filter(Boolean);
       if (!parts.length) throw new Error(`${fieldId} has no target path.`);

@@ -61,7 +61,7 @@
   let preparedMergedSources = [];
   const voiceLinkById = new Map();
   const FIXED_OUTPUT_FORMAT = "mp3_44100_128";
-  const BRAILLE_AUDIO_BASE_URL = "https://www.tastenbraille.com/braillestudio";
+  const BRAILLE_AUDIO_BASE_URL = "https://www.tastenbraille.com/braillestudio-data";
   const MIXED_MERGE_OUTPUT_DIR = "/sounds/nl/out/";
   const MIXED_MERGE_OUTPUT_FILENAME = "merged.mp3";
   const MIXED_MERGE_PARTS_PATH = "sounds/nl/instruction/_parts";

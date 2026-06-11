@@ -112,7 +112,7 @@ if ($documentRoot === '') {
     json_out(500, ['ok' => false, 'error' => 'DOCUMENT_ROOT not available']);
 }
 
-$baseFsDir = $documentRoot . '/braillestudio';
+$baseFsDir = $documentRoot . '/braillestudio-data';
 $targetDir = $baseFsDir . ($path !== '' ? '/' . $path : '');
 $targetPath = $targetDir . '/' . $audiofile;
 
@@ -139,7 +139,7 @@ if ($bytes === false) {
 }
 
 // Publieke URL
-$basePublicUrl = 'https://www.tastenbraille.com/braillestudio';
+$basePublicUrl = 'https://www.tastenbraille.com/braillestudio-data';
 $urlPath = $path !== '' ? $path . '/' . $audiofile : $audiofile;
 $fileUrl = $basePublicUrl . '/' . str_replace('%2F', '/', rawurlencode($urlPath));
 
