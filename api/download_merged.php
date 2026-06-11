@@ -8,7 +8,8 @@ declare(strict_types=1);
 
 $downloadName = "merged.mp3";
 $remoteUrl = "https://www.tastenbraille.com/braillestudio-data/sounds/nl/out/merged.mp3";
-$rootFs = realpath(__DIR__ . "/../braillestudio-data");
+$documentRoot = rtrim((string)($_SERVER["DOCUMENT_ROOT"] ?? ""), "/");
+$rootFs = realpath($documentRoot . "/braillestudio-data");
 $localPath = $rootFs ? $rootFs . "/sounds/nl/out/merged.mp3" : "";
 
 function sendDownloadHeaders(string $filename, int $length = 0): void {

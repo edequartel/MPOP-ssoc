@@ -44,7 +44,9 @@ if ($auth !== "Bearer {$TOKEN}") {
 // CONFIG (fixed roots)
 // --------------------
 $ROOT_URL = "https://www.tastenbraille.com/braillestudio-data";
-$ROOT_FS  = realpath(__DIR__ . "/../braillestudio-data"); // public_html/braillestudio-data
+$DOCUMENT_ROOT = rtrim((string)($_SERVER["DOCUMENT_ROOT"] ?? ""), "/");
+$ROOT_FS_PATH = $DOCUMENT_ROOT . "/braillestudio-data";
+$ROOT_FS = realpath($ROOT_FS_PATH);
 
 $FFMPEG   = __DIR__ . "/bin/ffmpeg";
 $TMP_BASE = __DIR__ . "/tmp";
@@ -152,7 +154,7 @@ if (!is_array($sources) || count($sources) < 1) {
 if ($gapMs < 0 || $gapMs > 5000) fail(400, "gapMs must be 0..5000.");
 
 // Server prerequisites
-if (!$ROOT_FS) fail(500, "Cannot resolve ROOT_FS");
+if (!$ROOT_FS) fail(500, "Cannot resolve ROOT_FS", ["rootFsPath" => $ROOT_FS_PATH]);
 if (!is_file($FFMPEG) || !is_executable($FFMPEG)) fail(500, "ffmpeg missing/not executable");
 if (!is_dir($TMP_BASE) && !mkdir($TMP_BASE, 0775, true)) fail(500, "Cannot create tmp base");
 
