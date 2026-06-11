@@ -96,7 +96,7 @@
 
   async function initSupabaseClient() {
     const CONFIG_URL_LOCAL = "../supabase-config.js";
-    const OWN_SERVER_BASE_URL = "https://www.tastenbraille.com/MPOP";
+    const OWN_SERVER_BASE_URL = "https://www.tastenbraille.com/mpop";
     const LOCAL_SUPABASE_CONFIG = Object.freeze({
       url: "https://zrcdyzcfsdlmqqwdhctk.supabase.co",
       anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpyY2R5emNmc2RsbXFxd2RoY3RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxOTgyNzUsImV4cCI6MjA4Mzc3NDI3NX0.voT1eh_FbBkrv7ZMN7B8VRRbrab7tyx3eV6JuXy4ySs"
@@ -232,7 +232,7 @@
   }
 
   function getSupabaseFunctionUrl(functionName) {
-    const ownServerBaseUrl = "https://www.tastenbraille.com/MPOP";
+    const ownServerBaseUrl = "https://www.tastenbraille.com/mpop";
     const routes = {
       "elevenlabs-subscription": "elevenlabs_subscription.php",
       "merge-proxy": "merge_proxy.php",
