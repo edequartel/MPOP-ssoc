@@ -49,7 +49,26 @@ $DOCUMENT_ROOT = rtrim((string)($_SERVER["DOCUMENT_ROOT"] ?? ""), "/");
 $ROOT_FS_PATH = $DOCUMENT_ROOT . "/braillestudio-data";
 $ROOT_FS = realpath($ROOT_FS_PATH);
 
-$FFMPEG   = __DIR__ . "/bin/ffmpeg";
+$PATH_FFMPEG_CANDIDATES = array_map(
+  static fn(string $dir): string => rtrim($dir, "/") . "/ffmpeg",
+  array_filter(explode(PATH_SEPARATOR, getenv("PATH") ?: ""))
+);
+$FFMPEG_CANDIDATES = array_values(array_unique(array_filter([
+  getenv("FFMPEG_PATH") ?: null,
+  $DOCUMENT_ROOT . "/api/bin/ffmpeg",
+  __DIR__ . "/bin/ffmpeg",
+  "/usr/local/bin/ffmpeg",
+  "/usr/bin/ffmpeg",
+  "/opt/homebrew/bin/ffmpeg",
+  ...$PATH_FFMPEG_CANDIDATES,
+])));
+$FFMPEG = null;
+foreach ($FFMPEG_CANDIDATES as $candidate) {
+  if (is_file($candidate) && is_executable($candidate)) {
+    $FFMPEG = $candidate;
+    break;
+  }
+}
 $TMP_BASE = __DIR__ . "/tmp";
 
 // MP3 output settings (used when encoding)
@@ -170,7 +189,7 @@ if (!in_array($inputPrefix, $ALLOWED_INPUT_PREFIXES, true)) {
 
 // Server prerequisites
 if (!$ROOT_FS) fail(500, "Cannot resolve ROOT_FS", ["rootFsPath" => $ROOT_FS_PATH]);
-if (!is_file($FFMPEG) || !is_executable($FFMPEG)) fail(500, "ffmpeg missing/not executable");
+if (!$FFMPEG) fail(500, "ffmpeg missing/not executable", ["checkedFfmpegPaths" => $FFMPEG_CANDIDATES]);
 if (!is_dir($TMP_BASE) && !mkdir($TMP_BASE, 0775, true)) fail(500, "Cannot create tmp base");
 
 // Output dir (client selected, allow-listed)
