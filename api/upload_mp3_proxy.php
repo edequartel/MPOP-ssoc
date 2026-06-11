@@ -17,7 +17,7 @@ if ($path === "" || $audiofile === "" || !isset($_FILES["file"])) {
 }
 
 $uploadToken = getenv("UPLOAD_MP3_TOKEN") ?: getenv("UPLOAD_TOKEN") ?: "een_heel_lang_random_token_hier";
-$targetUrl = getenv("BLUEHOST_UPLOAD_MP3_URL") ?: "https://www.tastenbraille.com/api/upload_mp3.php";
+$targetUrl = getenv("BLUEHOST_UPLOAD_MP3_URL") ?: "https://www.tastenbraille.com/mpop/api/upload_mp3.php";
 $tmpName = (string)($_FILES["file"]["tmp_name"] ?? "");
 $originalName = (string)($_FILES["file"]["name"] ?? $audiofile);
 if ($tmpName === "" || !is_uploaded_file($tmpName)) {

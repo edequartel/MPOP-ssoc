@@ -130,6 +130,27 @@ button.busy::after {
 .kpi { display:flex; gap:10px; flex-wrap:wrap; }
 .kpi button { width:auto; padding:4px 10px; font-size:12px; }
 .btn-small { width:auto; padding:6px 8px; font-size:12px; }
+.error-log-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.error-log-header .section-title { margin:0; }
+.error-log { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+.error-log-entry {
+  border:1px solid rgba(255,107,107,.35);
+  border-radius:10px;
+  background:rgba(255,107,107,.08);
+  overflow:hidden;
+}
+.error-log-meta { padding:6px 8px; color:#ffb4b4; font-size:11px; border-bottom:1px solid rgba(255,107,107,.2); }
+.error-log-entry pre {
+  margin:0;
+  padding:8px;
+  max-height:180px;
+  overflow:auto;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  color:var(--fg);
+  font-size:11px;
+  line-height:1.35;
+}
 .pill { border:1px solid var(--line); border-radius:999px; padding:4px 10px; font-size:12px; color:var(--muted); }
 .display-name { font-size:16px; font-weight:600; color:var(--fg); font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; letter-spacing:.01em; padding:6px 2px 4px; margin-bottom:12px; }
 .ok { color:#b7f7c1; }

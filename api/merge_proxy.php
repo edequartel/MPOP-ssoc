@@ -16,7 +16,7 @@ if ($raw === "" || json_decode($raw, true) === null) {
 }
 
 $uploadToken = getenv("UPLOAD_TOKEN") ?: "een_heel_lang_random_token_hier";
-$targetUrl = getenv("BLUEHOST_MERGE_URL") ?: "https://www.tastenbraille.com/api/mixedmerge_mp3.php";
+$targetUrl = getenv("BLUEHOST_MERGE_URL") ?: "https://www.tastenbraille.com/mpop/api/mixedmerge_mp3.php";
 
 $ch = curl_init($targetUrl);
 curl_setopt_array($ch, [
@@ -40,6 +40,15 @@ curl_close($ch);
 
 if ($body === false) {
   json_out(502, ["ok" => false, "error" => "Merge request failed.", "detail" => $err]);
+}
+
+if ($status >= 400) {
+  $errorBody = json_decode((string)$body, true);
+  if (is_array($errorBody)) {
+    $errorBody["proxyTargetUrl"] = $targetUrl;
+    $body = json_encode($errorBody, JSON_UNESCAPED_SLASHES);
+    $contentType = "application/json; charset=utf-8";
+  }
 }
 
 http_response_code($status ?: 502);

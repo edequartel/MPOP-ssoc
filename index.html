@@ -103,6 +103,15 @@
         </div>
         <div id="gitPullMsg" class="tiny mt-10"></div>
       </div>
+
+      <div class="card" id="errorLogCard">
+        <div class="error-log-header">
+          <h2 class="section-title">Foutenlog</h2>
+          <button id="btnClearErrorLog" type="button" class="btn-small">Wis</button>
+        </div>
+        <div id="errorLogEmpty" class="muted">Geen fouten geregistreerd.</div>
+        <div id="errorLog" class="error-log" aria-live="polite"></div>
+      </div>
     </div>
 
     <!-- RIGHT: Editor -->
@@ -420,7 +429,6 @@
     };
     const ELEVENLABS_DEFAULT_OUTPUT_FORMAT = "mp3_44100_128";
     const STORY_AUDIO_EXISTS_CHECK_URL = "https://www.tastenbraille.com/api/check_audio_exists.php";
-    const KLANKZUIVER_MERGE_API_URL = "https://www.tastenbraille.com/api/mixedmerge_mp3.php";
     const KLANKZUIVER_SOURCE_BASE_PATH = "/sounds/nl/speech/";
     const GENERAL_SOURCE_BASE_PATH = "/sounds/general/";
     const KLANKZUIVER_OUTPUT_DIR = "/sounds/nl/klankzuiver/";
@@ -581,8 +589,40 @@
       }
     }
 
+    function appendErrorLog(message, context = "") {
+      const log = $("errorLog");
+      const empty = $("errorLogEmpty");
+      if (!log || !message) return;
+
+      if (empty) empty.classList.add("hidden");
+      const entry = document.createElement("div");
+      entry.className = "error-log-entry";
+
+      const header = document.createElement("div");
+      header.className = "error-log-meta";
+      const timestamp = new Date().toLocaleTimeString();
+      header.textContent = context ? `${timestamp} · ${context}` : timestamp;
+
+      const body = document.createElement("pre");
+      body.textContent = String(message);
+      entry.append(header, body);
+      log.prepend(entry);
+
+      while (log.children.length > 20) {
+        log.lastElementChild?.remove();
+      }
+    }
+
+    function clearErrorLog() {
+      const log = $("errorLog");
+      if (log) log.replaceChildren();
+      $("errorLogEmpty")?.classList.remove("hidden");
+    }
+
     function msg(el, text, ok=true) {
+      if (!el) return;
       el.innerHTML = text ? `<span class="${ok ? 'ok' : 'err'}">${escapeHtml(text)}</span>` : '';
+      if (text && !ok) appendErrorLog(text, el.id || "UI");
     }
 
     function gitPullMsg(text, ok=true) {
@@ -4091,6 +4131,13 @@ function scheduleAutosave() {
     });
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeImageLightbox();
+    });
+    $("btnClearErrorLog").addEventListener("click", clearErrorLog);
+    window.addEventListener("error", (event) => {
+      appendErrorLog(event.error?.stack || event.message || "Onbekende browserfout", "Browser");
+    });
+    window.addEventListener("unhandledrejection", (event) => {
+      appendErrorLog(event.reason?.stack || event.reason?.message || String(event.reason || "Onbekende promise-fout"), "Promise");
     });
 
     // Upload buttons -> update db path fields
