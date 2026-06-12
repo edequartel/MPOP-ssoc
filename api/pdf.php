@@ -246,24 +246,22 @@ $html = '<!doctype html>
   .image-area {
     position: absolute;
     left: 17mm;
-    right: 17mm;
-    bottom: 34mm;
+    top: 34mm;
     display: table;
     width: 176mm;
+    height: 229mm;
     text-align: center;
   }
-  .image-area-1 { top: 47mm; height: 216mm; }
-  .image-area-2, .image-area-3 { top: 43mm; height: 220mm; }
   .image-cell {
     display: table-cell;
     width: 176mm;
-    height: 100%;
+    height: 229mm;
     vertical-align: middle;
     text-align: center;
   }
   .main-image {
     max-width: 176mm;
-    max-height: 216mm;
+    max-height: 229mm;
   }
   .missing { color: #555; font-size: 12pt; }
 </style>

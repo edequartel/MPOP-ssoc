@@ -28,8 +28,8 @@ $html = '<style>
 .title,.braille-title{position:absolute;left:18mm;right:18mm;text-align:center;font-size:32pt;line-height:1}.title{top:12mm}.braille-title{top:27mm}
 .page-number{position:absolute;top:6mm;right:3mm;font-size:12pt;white-space:nowrap}.braille-page{margin-left:3mm;font-size:32pt;vertical-align:middle}
 .marker{position:absolute;width:11.3mm;height:11.3mm}.marker img{width:11.3mm;height:11.3mm}.top-left{top:27mm;left:17mm}.top-right{top:27mm;right:17mm}.bottom-left{bottom:17mm;left:17mm}.bottom-right{bottom:17mm;right:17mm}
-.image-area{position:absolute;left:17mm;right:17mm;bottom:34mm;display:table;width:176mm;text-align:center}.image-area-1{top:47mm;height:216mm}.image-area-2,.image-area-3{top:43mm;height:220mm}
-.image-cell{display:table-cell;width:176mm;height:100%;vertical-align:middle;text-align:center}.main-image{max-width:150mm;max-height:180mm}
+.image-area{position:absolute;left:17mm;top:34mm;display:table;width:176mm;height:229mm;text-align:center}
+.image-cell{display:table-cell;width:176mm;height:229mm;vertical-align:middle;text-align:center}.main-image{max-width:150mm;max-height:180mm}
 </style>' . $pages;
 
 $options = new Options();
