@@ -29,7 +29,7 @@
         <img
           id="logoImage"
           src="https://www.tastenbraille.com/braillestudio-data/resources/mpop/logo.png"
-          data-full-url="https://www.tastenbraille.com/braillestudio/resources/mpop/kinderen.png"
+          data-full-url="https://www.tastenbraille.com/braillestudio-data/resources/mpop/kinderen.png"
           alt="MPOP logo"
         />
       </div>
@@ -3714,12 +3714,17 @@ function scheduleAutosave() {
       player.play();
     }
 
-    function playLogoAudio() {
+    async function playLogoAudio() {
       if (!logoAudioPlayer) {
         logoAudioPlayer = new Audio(LOGO_AUDIO_URL);
       }
       logoAudioPlayer.currentTime = 0;
-      logoAudioPlayer.play();
+      try {
+        await logoAudioPlayer.play();
+      } catch (error) {
+        const detail = error?.message || String(error);
+        appendErrorLog(`${error?.name || "PlaybackError"}: ${detail}\n${LOGO_AUDIO_URL}`, "Logo audio");
+      }
     }
 
     function stopLogoAudio() {
