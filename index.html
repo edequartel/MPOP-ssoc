@@ -33,6 +33,70 @@
           alt="MPOP logo"
         />
       </div>
+      <div class="card" id="itemsCard">
+        <h2 class="section-title">2 Kies item</h2>
+        <div id="itemsLoggedOut" class="muted">Log in om items te bekijken.</div>
+        <div id="itemsLoggedIn" class="hidden">
+          <div id="listMsg" class="tiny mt-10"></div>
+          <div class="list mt-8" id="itemsList"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="btnrow">
+          <button type="button" class="btn-like" onclick="window.open('readme.html','_blank','noreferrer')">Handleiding</button>
+          <button type="button" class="btn-like" onclick="window.open('mpop.html','_blank','noreferrer')">MPOP</button>
+          <button type="button" class="btn-like" onclick="window.open('./links.html','_blank','noreferrer')">Links</button>
+          <button id="btnGitPull" type="button" data-admin-only style="display:none">Git pull</button>
+          <button id="btnToggleStoragePaths" type="button" aria-expanded="false" aria-controls="storagePaths">Paden</button>
+        </div>
+        <div id="gitPullMsg" class="tiny mt-10"></div>
+        <div id="storagePaths" class="storage-paths hidden">
+          <h2 class="section-title">Opslagpaden</h2>
+          <div class="storage-path-row">
+            <strong>Basis</strong>
+            <a href="https://www.tastenbraille.com/braillestudio-data/" target="_blank" rel="noreferrer">https://www.tastenbraille.com/braillestudio-data/</a>
+          </div>
+          <div class="storage-path-row">
+            <strong>Verhalen</strong>
+            <a href="https://www.tastenbraille.com/braillestudio-data/sounds/nl/stories/" target="_blank" rel="noreferrer">/sounds/nl/stories/</a>
+          </div>
+          <div class="storage-path-row">
+            <strong>Klankzuiver</strong>
+            <a href="https://www.tastenbraille.com/braillestudio-data/sounds/nl/klankzuiver/" target="_blank" rel="noreferrer">/sounds/nl/klankzuiver/</a>
+          </div>
+          <div class="storage-path-row">
+            <strong>Objecten</strong>
+            <a href="https://www.tastenbraille.com/braillestudio-data/sounds/nl/objects/" target="_blank" rel="noreferrer">/sounds/nl/objects/</a>
+          </div>
+          <div class="storage-path-row">
+            <strong>Opdrachten</strong>
+            <a href="https://www.tastenbraille.com/braillestudio-data/sounds/nl/opdracht/" target="_blank" rel="noreferrer">/sounds/nl/opdracht/</a>
+          </div>
+          <div class="storage-path-row">
+            <strong>Tijdelijke audiodelen</strong>
+            <a href="https://www.tastenbraille.com/braillestudio-data/sounds/nl/instruction/_parts/" target="_blank" rel="noreferrer">/sounds/nl/instruction/_parts/</a>
+          </div>
+          <div class="storage-path-row">
+            <strong>Afbeeldingen MPOP</strong>
+            <a href="https://www.tastenbraille.com/braillestudio-data/resources/mpop/" target="_blank" rel="noreferrer">/resources/mpop/</a>
+          </div>
+          <div class="storage-path-row">
+            <strong>Documenten MPOP v1</strong>
+            <a href="https://www.tastenbraille.com/braillestudio-data/mpop/versie1/" target="_blank" rel="noreferrer">/mpop/versie1/</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="errorLogCard">
+        <div class="error-log-header">
+          <h2 class="section-title">Foutenlog</h2>
+          <button id="btnClearErrorLog" type="button" class="btn-small">Wis</button>
+        </div>
+        <div id="errorLogEmpty" class="muted">Geen fouten geregistreerd.</div>
+        <div id="errorLog" class="error-log" aria-live="polite"></div>
+      </div>
+
       <div class="card">
         <h2 class="section-title">1 Log in</h2>
 <!--
@@ -83,72 +147,6 @@
           <button id="btnSignOut">Log uit</button>
         </div>
       </div>
-      </div>
-
-      <div class="card" id="itemsCard">
-        <h2 class="section-title">2 Kies item</h2>
-        <div id="itemsLoggedOut" class="muted">Log in om items te bekijken.</div>
-        <div id="itemsLoggedIn" class="hidden">
-          <div id="listMsg" class="tiny mt-10"></div>
-          <div class="list mt-8" id="itemsList"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="btnrow">
-          <button type="button" class="btn-like" onclick="window.open('readme.html','_blank','noreferrer')">Handleiding</button>
-          <button type="button" class="btn-like" onclick="window.open('mpop.html','_blank','noreferrer')">MPOP</button>
-          <button type="button" class="btn-like" onclick="window.open('./links.html','_blank','noreferrer')">Links</button>
-          <button id="btnGitPull" type="button" data-admin-only style="display:none">Git pull</button>
-        </div>
-        <div id="gitPullMsg" class="tiny mt-10"></div>
-        <button id="btnToggleStoragePaths" type="button" class="mt-10" aria-expanded="false" aria-controls="storagePaths">
-          Toon opslagpaden
-        </button>
-        <div id="storagePaths" class="storage-paths hidden">
-          <h2 class="section-title">Opslagpaden</h2>
-          <div class="storage-path-row">
-            <strong>Basis</strong>
-            <a href="https://www.tastenbraille.com/braillestudio-data/" target="_blank" rel="noreferrer">https://www.tastenbraille.com/braillestudio-data/</a>
-          </div>
-          <div class="storage-path-row">
-            <strong>Verhalen</strong>
-            <a href="https://www.tastenbraille.com/braillestudio-data/sounds/nl/stories/" target="_blank" rel="noreferrer">/sounds/nl/stories/</a>
-          </div>
-          <div class="storage-path-row">
-            <strong>Klankzuiver</strong>
-            <a href="https://www.tastenbraille.com/braillestudio-data/sounds/nl/klankzuiver/" target="_blank" rel="noreferrer">/sounds/nl/klankzuiver/</a>
-          </div>
-          <div class="storage-path-row">
-            <strong>Objecten</strong>
-            <a href="https://www.tastenbraille.com/braillestudio-data/sounds/nl/objects/" target="_blank" rel="noreferrer">/sounds/nl/objects/</a>
-          </div>
-          <div class="storage-path-row">
-            <strong>Opdrachten</strong>
-            <a href="https://www.tastenbraille.com/braillestudio-data/sounds/nl/opdracht/" target="_blank" rel="noreferrer">/sounds/nl/opdracht/</a>
-          </div>
-          <div class="storage-path-row">
-            <strong>Tijdelijke audiodelen</strong>
-            <a href="https://www.tastenbraille.com/braillestudio-data/sounds/nl/instruction/_parts/" target="_blank" rel="noreferrer">/sounds/nl/instruction/_parts/</a>
-          </div>
-          <div class="storage-path-row">
-            <strong>Afbeeldingen MPOP</strong>
-            <a href="https://www.tastenbraille.com/braillestudio-data/resources/mpop/" target="_blank" rel="noreferrer">/resources/mpop/</a>
-          </div>
-          <div class="storage-path-row">
-            <strong>Documenten MPOP v1</strong>
-            <a href="https://www.tastenbraille.com/braillestudio-data/mpop/versie1/" target="_blank" rel="noreferrer">/mpop/versie1/</a>
-          </div>
-        </div>
-      </div>
-
-      <div class="card" id="errorLogCard">
-        <div class="error-log-header">
-          <h2 class="section-title">Foutenlog</h2>
-          <button id="btnClearErrorLog" type="button" class="btn-small">Wis</button>
-        </div>
-        <div id="errorLogEmpty" class="muted">Geen fouten geregistreerd.</div>
-        <div id="errorLog" class="error-log" aria-live="polite"></div>
       </div>
     </div>
 
@@ -452,8 +450,8 @@
     const CONFIG_URL_LOCAL = "./supabase-config.js";
     const PDF_URL_LOCAL = "./api/pdf.php";
     const PDF_URL_REMOTE = `${OWN_SERVER_BASE_URL}/api/pdf.php`;
-    const MANUAL_PDF_URL_LOCAL = `${OWN_SERVER_BASE_URL}/api/manualpdf`;
-    const MANUAL_PDF_URL_REMOTE = `${OWN_SERVER_BASE_URL}/api/manualpdf`;
+    const MANUAL_PDF_URL_LOCAL = "./api/manualpdf.php";
+    const MANUAL_PDF_URL_REMOTE = `${OWN_SERVER_BASE_URL}/api/manualpdf.php`;
     const PDF_BRAILLE_URL_LOCAL = "./api/pdfbraille.php";
     const PDF_BRAILLE_URL_REMOTE = `${OWN_SERVER_BASE_URL}/api/pdfbraille.php`;
     const GIT_PULL_URL = "./api/git_pull.php";
@@ -4190,7 +4188,7 @@ function scheduleAutosave() {
       const willShow = panel.classList.contains("hidden");
       panel.classList.toggle("hidden", !willShow);
       button.setAttribute("aria-expanded", String(willShow));
-      button.textContent = willShow ? "Verberg opslagpaden" : "Toon opslagpaden";
+      button.textContent = "Paden";
     });
     window.addEventListener("error", (event) => {
       appendErrorLog(event.error?.stack || event.message || "Onbekende browserfout", "Browser");
