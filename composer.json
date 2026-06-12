@@ -1,0 +1,8 @@
+{
+    "name": "tastenbraille/mpop-ssoc",
+    "description": "MPOP editor and PDF generation endpoints",
+    "license": "proprietary",
+    "require": {
+        "dompdf/dompdf": "^3.1"
+    }
+}

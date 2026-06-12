@@ -439,8 +439,6 @@
   </div>
 
   <script type="module">
-    import { PDFDocument, StandardFonts, rgb } from "./node_modules/pdf-lib/dist/pdf-lib.esm.min.js";
-
     const $ = (id) => document.getElementById(id);
     const val = (id) => {
       const el = $(id);
@@ -452,6 +450,8 @@
     };
     const OWN_SERVER_BASE_URL = "https://www.tastenbraille.com/mpop";
     const CONFIG_URL_LOCAL = "./supabase-config.js";
+    const PDF_URL_LOCAL = "./api/pdf.php";
+    const PDF_URL_REMOTE = `${OWN_SERVER_BASE_URL}/api/pdf.php`;
     const MANUAL_PDF_URL_LOCAL = `${OWN_SERVER_BASE_URL}/api/manualpdf`;
     const MANUAL_PDF_URL_REMOTE = `${OWN_SERVER_BASE_URL}/api/manualpdf`;
     const PDF_BRAILLE_URL_LOCAL = `${OWN_SERVER_BASE_URL}/api/pdfbraille`;
@@ -3903,97 +3903,6 @@ function scheduleAutosave() {
       }
     }
 
-    async function generateMultimodalPdfBlob() {
-      const pdfDoc = await PDFDocument.create();
-      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-      const pageWidth = 595;
-      const pageHeight = 842;
-      const margin = 48;
-      const title = (val("title") || currentItem?.title || "MPOP item").trim();
-      const imagePaths = [val("image1_path"), val("image2_path"), val("image3_path")];
-
-      pdfDoc.setTitle(`MPOP multimodaal - ${title}`);
-      pdfDoc.setCreator("MPOP++ editor");
-
-      for (let index = 0; index < imagePaths.length; index += 1) {
-        const pageNumber = index + 1;
-        const page = pdfDoc.addPage([pageWidth, pageHeight]);
-        const pageLabel = `Pagina ${pageNumber}`;
-        const pageLabelWidth = font.widthOfTextAtSize(pageLabel, 11);
-        page.drawText(pageLabel, {
-          x: pageWidth - margin - pageLabelWidth,
-          y: pageHeight - 34,
-          size: 11,
-          font,
-          color: rgb(0.25, 0.25, 0.25),
-        });
-
-        let imageTop = pageHeight - margin;
-        if (index === 0) {
-          const safeTitle = title.replace(/[^\x20-\x7E]/g, "");
-          const titleSize = 28;
-          const titleWidth = boldFont.widthOfTextAtSize(safeTitle, titleSize);
-          page.drawText(safeTitle, {
-            x: Math.max(margin, (pageWidth - titleWidth) / 2),
-            y: pageHeight - 82,
-            size: titleSize,
-            font: boldFont,
-          });
-          imageTop = pageHeight - 120;
-        }
-
-        const imagePath = (imagePaths[index] || "").trim();
-        const imageUrl = buildImageUrl(imagePath);
-        let embeddedImage = null;
-        if (imageUrl) {
-          try {
-            const response = await fetch(imageUrl, { cache: "no-store" });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const bytes = await response.arrayBuffer();
-            const contentType = (response.headers.get("content-type") || "").toLowerCase();
-            embeddedImage = contentType.includes("png") || /\.png(?:$|[?#])/i.test(imageUrl)
-              ? await pdfDoc.embedPng(bytes)
-              : await pdfDoc.embedJpg(bytes);
-          } catch (error) {
-            console.warn(`Multimodale PDF: afbeelding kon niet worden geladen: ${imageUrl}`, error);
-          }
-        }
-
-        if (embeddedImage) {
-          const availableWidth = pageWidth - margin * 2;
-          const availableHeight = imageTop - margin;
-          const scale = Math.min(
-            availableWidth / embeddedImage.width,
-            availableHeight / embeddedImage.height,
-            1
-          );
-          const width = embeddedImage.width * scale;
-          const height = embeddedImage.height * scale;
-          page.drawImage(embeddedImage, {
-            x: (pageWidth - width) / 2,
-            y: margin + (availableHeight - height) / 2,
-            width,
-            height,
-          });
-        } else {
-          const message = imageUrl
-            ? "Afbeelding kon niet worden geladen"
-            : "Geen afbeelding ingesteld";
-          const messageWidth = font.widthOfTextAtSize(message, 14);
-          page.drawText(message, {
-            x: (pageWidth - messageWidth) / 2,
-            y: pageHeight / 2,
-            size: 14,
-            font,
-            color: rgb(0.4, 0.4, 0.4),
-          });
-        }
-      }
-
-      return new Blob([await pdfDoc.save()], { type: "application/pdf" });
-    }
-
     // -----------------------------
     // Wire up buttons
     // -----------------------------
@@ -4011,7 +3920,22 @@ function scheduleAutosave() {
         setButtonBusy($("btnPdf"), true, "PDF bezig...");
         msg($("saveMsg"), "PDF wordt gemaakt...");
         await flushAutosaveForPdf();
-        const blob = await generateMultimodalPdfBlob();
+        const { data } = await sb.auth.getSession();
+        const token = data?.session?.access_token;
+        const qs = `?id=${encodeURIComponent(currentItem.id)}`;
+        let r = await fetch(`${PDF_URL_LOCAL}${qs}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (r.status === 404) {
+          r = await fetch(`${PDF_URL_REMOTE}${qs}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        }
+        if (!r.ok) {
+          const body = await r.text().catch(() => "");
+          throw new Error(`PDF failed (${r.status}). ${body}`.trim());
+        }
+        const blob = await r.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
