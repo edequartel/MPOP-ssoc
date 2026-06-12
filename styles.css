@@ -75,6 +75,26 @@ button.busy::after {
 }
 .link-list { display:flex; flex-direction:column; gap:10px; }
 .link-list .btn-like { display:block; width:100%; box-sizing:border-box; padding:12px 14px; }
+.storage-paths {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid var(--line);
+}
+.storage-paths.hidden { display:none; }
+.storage-path-row {
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  font-size:12px;
+}
+.storage-path-row strong { color:var(--fg); }
+.storage-path-row a {
+  color:#7cc4ff;
+  overflow-wrap:anywhere;
+}
 .inlineRow { display:flex; gap:8px; align-items:center; }
 .inlineRow input { flex:1; }
 .inlineRow button { width:auto; padding:8px 10px; }

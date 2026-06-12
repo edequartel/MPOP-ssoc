@@ -3,16 +3,16 @@
 ### [Zo leer je kinderen lezen en spellen](https://www.zoleerjekinderenlezenenspellen.nl/)
 Zo leer je kinderen lezen en spellen is een onderwijs-methodiek en ondersteuningstraject voor leerkrachten gericht op het verbeteren van het technisch lees- en spellingonderwijs bij kinderen. Het biedt een gestructureerde aanpak om lezen en spellen effectief aan te leren in de basisschool, door duidelijke instructies, oefeningen en begeleidingsmateriaal voor leerkrachten. Het doel is de effectiviteit van lees- en spellinglessen te vergroten, zodat meer kinderen met succes leren lezen en spellen, en dit geïntegreerd kan worden binnen het bestaande onderwijs.  
 
-### [LEGO braille bricks](https://www.tastenbraille.com/braillestudio/versie1/lego_acitiviteiten_braillebricks_NL_v3.pdf)
+### [LEGO braille bricks](https://www.tastenbraille.com/braillestudio-data/mpop/versie1/lego_acitiviteiten_braillebricks_NL_v3.pdf)
 Een praktische handleiding met activiteiten waarbij LEGO Braille Bricks worden ingezet om beginnende braillevaardigheden spelenderwijs te ontwikkelen. De nadruk ligt op tactiel ontdekken, letterherkenning, fonologisch bewustzijn en samenwerken. Geschikt voor jonge leerlingen en goed toepasbaar binnen onderwijs dat uitgaat van “learning by plaay”.
 
-### [LTP (Learning Through Play)](https://www.tastenbraille.com/braillestudio/versie1/learning-through-play_web.pdf)
+### [LTP (Learning Through Play)](https://www.tastenbraille.com/braillestudio-data/mpop/versie1/learning-through-play_web.pdf)
 Dit document beschrijft de pedagogische visie achter leren door spel. Het laat zien hoe betrokkenheid, actief experimenteren, sociale interactie en betekenisvolle context bijdragen aan diep leren. Het biedt een theoretisch kader dat helpt bij het ontwerpen van motiverende braillelessen en rijke leeromgevingen.
 
-### [Ontwerprichtlijnen voor zweltekeningen](https://www.tastenbraille.com/braillestudio/versie1/Ontwerprichtlijnen-voor-zweltekeningen.pdf)
+### [Ontwerprichtlijnen voor zweltekeningen](https://www.tastenbraille.com/braillestudio-data/mpop/versie1/Ontwerprichtlijnen-voor-zweltekeningen.pdf)
 Een set richtlijnen voor het ontwerpen van tactiele afbeeldingen die goed leesbaar zijn voor leerlingen met een visuele beperking. Behandelt onder andere vereenvoudiging, lijngebruik, schaal, textuur en contrast. Zeer bruikbaar voor iedereen die lesmateriaal ontwikkelt waarin voelen centraal staat.
 
-### [Curriculum Braille](https://www.tastenbraille.com/braillestudio/versie1/Curriculum-Braille-maart-2025.pdf)
+### [Curriculum Braille](https://www.tastenbraille.com/braillestudio-data/mpop/versie1/Curriculum-Braille-maart-2025.pdf)
 Een uitgebreid overzicht van leerdoelen, leerlijnen en didactische aanpak voor brailleonderwijs. Het document ondersteunt scholen bij het systematisch opbouwen van braillevaardigheid — van voorbereidende tactiele vaardigheden tot vloeiend lezen en schrijven — en helpt bij het borgen van kwaliteit en continuïteit binnen het onderwijsprogramma.
 
 ### [Leerweg TekenMee](https://www.eduvip.nl/onderwerp/themas/teken-mee/)
