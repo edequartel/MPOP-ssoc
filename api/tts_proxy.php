@@ -19,7 +19,7 @@ if (!is_array($data)) {
 $text = trim((string)($data["text"] ?? ""));
 $config = load_elevenlabs_config();
 $voiceId = trim((string)($data["voiceId"] ?? "")) ?: elevenlabs_default_voice_id($config);
-$modelId = trim((string)($data["modelId"] ?? "")) ?: "eleven_multilingual_v2";
+$modelId = trim((string)($data["modelId"] ?? "")) ?: "eleven_v3";
 $outputFormat = trim((string)($data["outputFormat"] ?? "")) ?: "mp3_44100_128";
 $voiceSettings = $data["voice_settings"] ?? null;
 

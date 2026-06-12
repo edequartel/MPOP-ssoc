@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
 
-const DEFAULT_MODEL_ID = "eleven_multilingual_v2"
+const DEFAULT_MODEL_ID = "eleven_v3"
 const DEFAULT_OUTPUT_FORMAT = "mp3_44100_128"
 
 function json(status: number, body: unknown) {

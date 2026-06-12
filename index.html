@@ -465,6 +465,7 @@
       outputFormat: "elevenlabs.outputFormat",
       mergeGapMs: "mixedmerge.gapMs",
     };
+    const ELEVENLABS_DEFAULT_MODEL_ID = "eleven_v3";
     const ELEVENLABS_DEFAULT_OUTPUT_FORMAT = "mp3_44100_128";
     const STORY_AUDIO_EXISTS_CHECK_URL = "https://www.tastenbraille.com/api/check_audio_exists.php";
     const KLANKZUIVER_SOURCE_BASE_PATH = "/sounds/nl/speech/";
@@ -1815,10 +1816,17 @@ function scheduleAutosave() {
       }
     }
 
+    function normalizeElevenLabsV3AudioTags(text) {
+      return String(text || "")
+        .replace(/\[\s*stilte\s*\]/gi, "[long pause]");
+    }
+
     function buildElevenLabsBody(text, modelIdRaw) {
-      const modelId = (modelIdRaw || "").trim();
-      const body = { text };
-      if (modelId) body.model_id = modelId;
+      const modelId = (modelIdRaw || ELEVENLABS_DEFAULT_MODEL_ID).trim();
+      const body = {
+        text: modelId === "eleven_v3" ? normalizeElevenLabsV3AudioTags(text) : text,
+        model_id: modelId,
+      };
 
       if (modelId === "eleven_v3") {
         body.voice_settings = { ttd_stability: 0.5 };
@@ -2198,13 +2206,13 @@ function scheduleAutosave() {
 
     async function synthesizeTextSegmentToMp3BlobViaTtsProxy(text) {
       const voiceId = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.voiceId);
-      const modelId = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.modelId);
+      const modelId = ELEVENLABS_DEFAULT_MODEL_ID;
       const outputFormat = getElevenLabsSetting(ELEVENLABS_STORAGE_KEYS.outputFormat) || ELEVENLABS_DEFAULT_OUTPUT_FORMAT;
 
       const jwt = await getFreshSupabaseAccessToken(false);
       const body = buildElevenLabsBody(text, modelId);
       const payload = {
-        text,
+        text: body.text,
         voiceId,
         modelId: typeof body.model_id === "string" ? body.model_id : "",
         outputFormat,
